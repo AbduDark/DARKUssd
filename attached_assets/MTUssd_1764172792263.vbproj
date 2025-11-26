@@ -1,0 +1,123 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{CBADD0D7-6161-4AAB-9A84-9A38CCC79E8E}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>MTUssd</RootNamespace>
+    <AssemblyName>MTUssd</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>MTUssd.ico</ApplicationIcon>
+    <StartupObject>MTUssd.My.MyApplication</StartupObject>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036,42314</NoWarn>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <NoWarn>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036,42314</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="MySql.Data" />
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Management" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppDesigner Include="My Project\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CData.vb" />
+    <Compile Include="cdataMysql.vb" />
+    <Compile Include="encoding_mod.vb" />
+    <Compile Include="frmAddCards.Designer.vb">
+      <DependentUpon>frmAddCards.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmAddCards.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmAddVCNums.Designer.vb">
+      <DependentUpon>frmAddVCNums.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmAddVCNums.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmConError.Designer.vb">
+      <DependentUpon>frmConError.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmConError.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmfawrysms.Designer.vb">
+      <DependentUpon>frmfawrysms.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmfawrysms.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmSrvNums.Designer.vb">
+      <DependentUpon>frmSrvNums.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmSrvNums.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="frmUssd.Designer.vb">
+      <DependentUpon>frmUssd.vb</DependentUpon>
+    </Compile>
+    <Compile Include="frmUssd.vb">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="My Project\AssemblyInfo.vb" />
+    <Compile Include="MysqlConn.vb" />
+    <Compile Include="My\MyApplication.vb" />
+    <Compile Include="My\MyComputer.vb" />
+    <Compile Include="My\MyProject.vb" />
+    <Compile Include="My\MySettings.Designer.vb">
+      <DependentUpon>MySettings.settings</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <Compile Include="My\MySettingsProperty.vb" />
+    <Compile Include="My\Resources\Resources.vb" />
+    <Compile Include="SMS\Encoder\ConcatenatedShortMessage.vb" />
+    <Compile Include="SMS\Encoder\SMS.vb" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="frmAddCards.resources" />
+    <EmbeddedResource Include="frmAddVCNums.resources" />
+    <EmbeddedResource Include="frmConError.resources" />
+    <EmbeddedResource Include="frmfawrysms.resources" />
+    <EmbeddedResource Include="frmSrvNums.resources" />
+    <EmbeddedResource Include="frmUssd.resources" />
+    <EmbeddedResource Include="Resources.resources" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="app.manifest" />
+    <None Include="My\MySettings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>MySettings.Designer.vb</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
+</Project>
