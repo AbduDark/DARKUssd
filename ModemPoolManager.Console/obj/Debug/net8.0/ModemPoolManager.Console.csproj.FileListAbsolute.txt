@@ -12,3 +12,4 @@
 /home/runner/workspace/ModemPoolManager.Console/obj/Debug/net8.0/ModemPoolManager.Console.pdb
 /home/runner/workspace/ModemPoolManager.Console/obj/Debug/net8.0/ModemPoolManager.Console.genruntimeconfig.cache
 /home/runner/workspace/ModemPoolManager.Console/obj/Debug/net8.0/ref/ModemPoolManager.Console.dll
+/home/runner/workspace/ModemPoolManager.Console/obj/Debug/net8.0/ModemPoolManager.Console.sourcelink.json

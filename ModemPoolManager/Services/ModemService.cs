@@ -11,10 +11,34 @@ public class ModemService : IDisposable
 {
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _portLocks = new();
     private readonly ConcurrentDictionary<string, SerialPort> _persistentPorts = new();
+    private readonly int _baudRate = 115200;
 
     private SemaphoreSlim GetPortLock(string portName)
     {
         return _portLocks.GetOrAdd(portName, _ => new SemaphoreSlim(1, 1));
+    }
+
+    private SerialPort GetOrCreatePort(string portName)
+    {
+        return _persistentPorts.GetOrAdd(portName, name =>
+        {
+            var port = new SerialPort(name, _baudRate, Parity.None, 8, StopBits.One)
+            {
+                ReadTimeout = 30000,
+                WriteTimeout = 3000,
+                Encoding = Encoding.ASCII
+            };
+            return port;
+        });
+    }
+
+    private void EnsurePortOpen(SerialPort port)
+    {
+        if (!port.IsOpen)
+        {
+            port.Open();
+            Thread.Sleep(100);
+        }
     }
 
     public List<string> GetZTEDiagnosticsPorts()
@@ -63,6 +87,12 @@ public class ModemService : IDisposable
                 var isConnected = await TestPortConnectionAsync(port);
                 modem.IsConnected = isConnected;
                 modem.Status = isConnected ? "متصل" : "غير متصل";
+                
+                if (isConnected)
+                {
+                    var serialPort = GetOrCreatePort(port);
+                    EnsurePortOpen(serialPort);
+                }
             }
             catch
             {
@@ -86,25 +116,22 @@ public class ModemService : IDisposable
         
         try
         {
-            using var port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One)
-            {
-                ReadTimeout = 3000,
-                WriteTimeout = 3000
-            };
-
-            port.Open();
-            await Task.Delay(100);
+            var port = GetOrCreatePort(portName);
+            EnsurePortOpen(port);
             
-            port.Write("AT\r");
+            port.DiscardInBuffer();
+            port.DiscardOutBuffer();
+            
+            await Task.Run(() => port.Write("AT\r"));
             await Task.Delay(500);
             
-            var response = port.ReadExisting();
-            port.Close();
+            var response = await Task.Run(() => port.ReadExisting());
             
             return response.Contains("OK");
         }
         catch
         {
+            _persistentPorts.TryRemove(portName, out _);
             return false;
         }
         finally
@@ -119,7 +146,7 @@ public class ModemService : IDisposable
         {
             var response = await SendATCommandAsync(portName, "AT+CNUM", 3000);
             
-            var match = Regex.Match(response, @"\+CNUM:.*?\"([^\"]+)\".*?\"(\+?\d+)\"");
+            var match = Regex.Match(response, @"\+CNUM:.*?""([^""]+)"".*?""(\+?\d+)""");
             if (match.Success)
             {
                 return match.Groups[2].Value;
@@ -208,44 +235,42 @@ public class ModemService : IDisposable
         
         try
         {
-            using var port = new SerialPort(portName, 115200, Parity.None, 8, StopBits.One)
-            {
-                ReadTimeout = timeout,
-                WriteTimeout = 3000,
-                Encoding = Encoding.ASCII
-            };
+            var port = GetOrCreatePort(portName);
+            port.ReadTimeout = timeout;
+            EnsurePortOpen(port);
 
             var response = new StringBuilder();
             
-            port.Open();
-            await Task.Delay(100);
-
             port.DiscardInBuffer();
             port.DiscardOutBuffer();
 
-            port.Write(command + "\r");
+            await Task.Run(() => port.Write(command + "\r"));
 
             var startTime = DateTime.Now;
             while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
             {
                 await Task.Delay(100);
+                
                 if (port.BytesToRead > 0)
                 {
-                    response.Append(port.ReadExisting());
+                    var data = await Task.Run(() => port.ReadExisting());
+                    response.Append(data);
                     
                     var currentResponse = response.ToString();
                     if (currentResponse.Contains("OK") || 
                         currentResponse.Contains("ERROR") ||
                         currentResponse.Contains("+CUSD:"))
                     {
-                        await Task.Delay(500);
-                        response.Append(port.ReadExisting());
+                        await Task.Delay(300);
+                        if (port.BytesToRead > 0)
+                        {
+                            response.Append(await Task.Run(() => port.ReadExisting()));
+                        }
                         break;
                     }
                 }
             }
 
-            port.Close();
             return response.ToString();
         }
         finally
@@ -330,6 +355,19 @@ public class ModemService : IDisposable
         catch
         {
             return "N/A";
+        }
+    }
+
+    public void CloseAllPorts()
+    {
+        foreach (var kvp in _persistentPorts)
+        {
+            try
+            {
+                if (kvp.Value.IsOpen)
+                    kvp.Value.Close();
+            }
+            catch { }
         }
     }
 
