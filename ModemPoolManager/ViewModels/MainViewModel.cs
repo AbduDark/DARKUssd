@@ -67,7 +67,24 @@ public partial class MainViewModel : ObservableObject
             ConnectedCount = Modems.Count(m => m.IsConnected);
             TotalPorts = Modems.Count;
             
-            StatusMessage = $"تم العثور على {ConnectedCount} مودم متصل";
+            if (ConnectedCount == 0)
+            {
+                var allDevices = _modemService.GetAllComDevices();
+                if (allDevices.Count > 0)
+                {
+                    var deviceList = string.Join("\n", allDevices);
+                    System.Windows.MessageBox.Show(
+                        $"لم يتم العثور على مودمات متوافقة.\n\nالأجهزة المكتشفة:\n{deviceList}\n\nإذا كان المودم موجوداً بإسم مختلف، يرجى إبلاغنا باسم الجهاز.",
+                        "معلومات الأجهزة",
+                        System.Windows.MessageBoxButton.OK,
+                        System.Windows.MessageBoxImage.Information);
+                }
+                StatusMessage = "لم يتم العثور على مودمات - تحقق من الاتصال";
+            }
+            else
+            {
+                StatusMessage = $"تم العثور على {ConnectedCount} مودم متصل";
+            }
         }
         catch (Exception ex)
         {

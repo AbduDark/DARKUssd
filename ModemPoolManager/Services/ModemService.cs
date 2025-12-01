@@ -41,6 +41,29 @@ public class ModemService : IDisposable
         }
     }
 
+    public List<string> GetAllComDevices()
+    {
+        var devices = new List<string>();
+        
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(
+                "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%COM%'");
+            
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                var caption = obj["Caption"]?.ToString() ?? "";
+                if (!string.IsNullOrEmpty(caption))
+                {
+                    devices.Add(caption);
+                }
+            }
+        }
+        catch { }
+
+        return devices;
+    }
+
     public List<string> GetZTEDiagnosticsPorts()
     {
         var ports = new List<string>();
@@ -54,7 +77,40 @@ public class ModemService : IDisposable
             {
                 var caption = obj["Caption"]?.ToString() ?? "";
                 
-                if (caption.Contains("ZTE Diagnostics Interface", StringComparison.OrdinalIgnoreCase))
+                bool isValidModemPort = false;
+                
+                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
+                    !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase) &&
+                    !caption.Contains("NVM", StringComparison.OrdinalIgnoreCase))
+                {
+                    isValidModemPort = true;
+                }
+                
+                if (caption.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
+                {
+                    isValidModemPort = true;
+                }
+                
+                if (caption.Contains("Modem", StringComparison.OrdinalIgnoreCase) &&
+                    !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase))
+                {
+                    isValidModemPort = true;
+                }
+                
+                if (caption.Contains("Mobile", StringComparison.OrdinalIgnoreCase) &&
+                    caption.Contains("Broadband", StringComparison.OrdinalIgnoreCase))
+                {
+                    isValidModemPort = true;
+                }
+
+                if (caption.Contains("USB", StringComparison.OrdinalIgnoreCase) &&
+                    caption.Contains("Serial", StringComparison.OrdinalIgnoreCase) &&
+                    !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase))
+                {
+                    isValidModemPort = true;
+                }
+                
+                if (isValidModemPort)
                 {
                     var match = Regex.Match(caption, @"\(COM(\d+)\)");
                     if (match.Success)
