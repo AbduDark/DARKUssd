@@ -292,6 +292,9 @@
                                 <Button Content="📱 جلب الأرقام" Command="{Binding GetPhoneNumbersCommand}" 
                                         Style="{StaticResource BlueButton}"
                                         IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                <Button Content="📶 تحديث الإشارات" Command="{Binding RefreshAllSignalsCommand}" 
+                                        Style="{StaticResource OrangeButton}"
+                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -337,32 +340,52 @@
                                                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" 
                                                               Margin="0,0,6,0"/>
 
-                                                    <!-- Signal Bars Indicator -->
-                                                    <Border Grid.Column="1" Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
-                                                            Padding="6,3" Margin="0,0,4,0" CornerRadius="4" ToolTip="{Binding SignalStrength}">
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Height="14">
-                                                            <!-- Bar 1 (shows when SignalBars >= 1) -->
-                                                            <Rectangle Width="3" Height="4" Margin="0,0,1,0" VerticalAlignment="Bottom"
-                                                                       Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
-                                                                       Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=1}"/>
-                                                            <!-- Bar 2 (shows when SignalBars >= 2) -->
-                                                            <Rectangle Width="3" Height="6" Margin="0,0,1,0" VerticalAlignment="Bottom"
-                                                                       Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
-                                                                       Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=2}"/>
-                                                            <!-- Bar 3 (shows when SignalBars >= 3) -->
-                                                            <Rectangle Width="3" Height="8" Margin="0,0,1,0" VerticalAlignment="Bottom"
-                                                                       Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
-                                                                       Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=3}"/>
-                                                            <!-- Bar 4 (shows when SignalBars >= 4) -->
-                                                            <Rectangle Width="3" Height="11" Margin="0,0,1,0" VerticalAlignment="Bottom"
-                                                                       Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
-                                                                       Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=4}"/>
-                                                            <!-- Bar 5 (shows when SignalBars >= 5) -->
-                                                            <Rectangle Width="3" Height="14" VerticalAlignment="Bottom"
-                                                                       Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
-                                                                       Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=5}"/>
-                                                        </StackPanel>
-                                                    </Border>
+                                                    <!-- Signal Bars Indicator with Refresh Button -->
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                        <Border Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
+                                                                Padding="6,3" Margin="0,0,2,0" CornerRadius="4" ToolTip="{Binding SignalStrength}">
+                                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Height="14">
+                                                                <!-- Bar 1 (shows when SignalBars >= 1) -->
+                                                                <Rectangle Width="3" Height="4" Margin="0,0,1,0" VerticalAlignment="Bottom"
+                                                                           Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
+                                                                           Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=1}"/>
+                                                                <!-- Bar 2 (shows when SignalBars >= 2) -->
+                                                                <Rectangle Width="3" Height="6" Margin="0,0,1,0" VerticalAlignment="Bottom"
+                                                                           Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
+                                                                           Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=2}"/>
+                                                                <!-- Bar 3 (shows when SignalBars >= 3) -->
+                                                                <Rectangle Width="3" Height="8" Margin="0,0,1,0" VerticalAlignment="Bottom"
+                                                                           Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
+                                                                           Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=3}"/>
+                                                                <!-- Bar 4 (shows when SignalBars >= 4) -->
+                                                                <Rectangle Width="3" Height="11" Margin="0,0,1,0" VerticalAlignment="Bottom"
+                                                                           Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
+                                                                           Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=4}"/>
+                                                                <!-- Bar 5 (shows when SignalBars >= 5) -->
+                                                                <Rectangle Width="3" Height="14" VerticalAlignment="Bottom"
+                                                                           Fill="{Binding SignalColor, Converter={StaticResource SignalColorConverter}}"
+                                                                           Opacity="{Binding SignalBars, Converter={StaticResource SignalBarsToOpacityConverter}, ConverterParameter=5}"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <!-- Refresh Signal Button -->
+                                                        <Button ToolTip="تحديث الإشارة" Cursor="Hand" Margin="0,0,4,0"
+                                                                Command="{Binding DataContext.RefreshModemSignalCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
+                                                                            CornerRadius="4" Padding="4,2" x:Name="border">
+                                                                        <TextBlock Text="↻" FontSize="10" Foreground="#58A6FF" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#30363D"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
 
                                                     <Border Grid.Column="2" Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
                                                             Padding="8,3" Margin="0,0,4,0">
@@ -376,10 +399,31 @@
                                                                    Foreground="#C9D1D9" FontFamily="Consolas"/>
                                                     </Border>
 
-                                                    <TextBlock Grid.Column="4" Text="{Binding PhoneNumber}" FontSize="12" FontWeight="Bold"
-                                                               Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
-                                                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,4,0"
-                                                               FontFamily="Consolas"/>
+                                                    <!-- Phone Number with Refresh Button -->
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="12" FontWeight="Bold"
+                                                                   Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
+                                                                   VerticalAlignment="Center" Margin="8,0,4,0"
+                                                                   FontFamily="Consolas"/>
+                                                        <!-- Refresh Phone Number Button -->
+                                                        <Button ToolTip="تحديث الرقم" Cursor="Hand"
+                                                                Command="{Binding DataContext.RefreshModemPhoneNumberCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
+                                                                            CornerRadius="4" Padding="4,2" x:Name="border">
+                                                                        <TextBlock Text="↻" FontSize="10" Foreground="#D29922" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#30363D"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
 

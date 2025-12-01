@@ -243,28 +243,26 @@ public class ModemService : IDisposable
         {
             var response = await SendATCommandAsync(portName, "AT+CNUM", 2000);
             
-            if (response.Contains("ERROR"))
+            if (!response.Contains("ERROR"))
             {
-                return "غير معروف";
-            }
-            
-            var patterns = new[]
-            {
-                @"\+CNUM:\s*""[^""]*""\s*,\s*""(\+?\d{10,15})""",
-                @"\+CNUM:\s*,\s*""(\+?\d{10,15})""",
-                @"\+CNUM:\s*""(\+?\d{10,15})""",
-                @"""(\+?\d{10,15})"""
-            };
-            
-            foreach (var pattern in patterns)
-            {
-                var match = Regex.Match(response, pattern);
-                if (match.Success)
+                var patterns = new[]
                 {
-                    var number = match.Groups[1].Value;
-                    if (!string.IsNullOrEmpty(number) && number.Length >= 10)
+                    @"\+CNUM:\s*""[^""]*""\s*,\s*""(\+?\d{10,15})""",
+                    @"\+CNUM:\s*,\s*""(\+?\d{10,15})""",
+                    @"\+CNUM:\s*""(\+?\d{10,15})""",
+                    @"""(\+?\d{10,15})"""
+                };
+                
+                foreach (var pattern in patterns)
+                {
+                    var match = Regex.Match(response, pattern);
+                    if (match.Success)
                     {
-                        return number;
+                        var number = match.Groups[1].Value;
+                        if (!string.IsNullOrEmpty(number) && number.Length >= 10)
+                        {
+                            return number;
+                        }
                     }
                 }
             }
@@ -274,6 +272,175 @@ public class ModemService : IDisposable
         catch
         {
             return "غير معروف";
+        }
+    }
+
+    public async Task<string> GetPhoneNumberWithUssdFallbackAsync(string portName, string? operatorName = null)
+    {
+        try
+        {
+            var number = await GetPhoneNumberAsync(portName);
+            if (number != "غير معروف" && !number.StartsWith("خطأ"))
+            {
+                return number;
+            }
+
+            if (string.IsNullOrEmpty(operatorName))
+            {
+                operatorName = await GetOperatorAsync(portName);
+            }
+
+            string ussdCode = GetPhoneNumberUssdCode(operatorName);
+            if (string.IsNullOrEmpty(ussdCode))
+            {
+                return "غير معروف";
+            }
+
+            Console.WriteLine($"[{portName}] جاري جلب الرقم باستخدام USSD: {ussdCode}");
+            var ussdResponse = await SendUssdCommandAsync(portName, $"AT+CUSD=1,\"{ussdCode}\",15", 8);
+            
+            var extractedNumber = ExtractPhoneNumberFromUssd(ussdResponse);
+            if (!string.IsNullOrEmpty(extractedNumber))
+            {
+                return extractedNumber;
+            }
+
+            return "غير معروف";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في جلب الرقم: {ex.Message}");
+            return "غير معروف";
+        }
+    }
+
+    private string GetPhoneNumberUssdCode(string? operatorName)
+    {
+        if (string.IsNullOrEmpty(operatorName))
+            return "*878#";
+
+        var opLower = operatorName.ToLowerInvariant();
+        
+        if (opLower.Contains("vodafone") || opLower.Contains("فودافون"))
+            return "*878#";
+        
+        if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل"))
+            return "*100*6*1*2#";
+        
+        if (opLower.Contains("etisalat") || opLower.Contains("اتصالات"))
+            return "*947#";
+        
+        if (opLower.Contains("we") || opLower.Contains("وي") || opLower.Contains("المصرية"))
+            return "*999#";
+        
+        if (opLower.Contains("stc") || opLower.Contains("اس تي سي"))
+            return "*166*2#";
+        
+        if (opLower.Contains("mobily") || opLower.Contains("موبايلي"))
+            return "*1100#";
+        
+        if (opLower.Contains("zain") || opLower.Contains("زين"))
+            return "*142*3#";
+        
+        return "*878#";
+    }
+
+    private string? ExtractPhoneNumberFromUssd(string ussdResponse)
+    {
+        var patterns = new[]
+        {
+            @"(\+?20\d{10})",
+            @"(\+?966\d{9})",
+            @"(01[0-2,5]\d{8})",
+            @"(05\d{8})",
+            @"(\d{11})",
+            @"رقمك[:\s]*(\d{10,11})",
+            @"Your number[:\s]*(\d{10,15})",
+            @"(\+?\d{10,15})"
+        };
+
+        foreach (var pattern in patterns)
+        {
+            var match = Regex.Match(ussdResponse, pattern);
+            if (match.Success)
+            {
+                var number = match.Groups[1].Value;
+                if (number.Length >= 10)
+                {
+                    return number;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public async Task<bool> RefreshModemSignalAsync(Modem modem)
+    {
+        if (modem.IsBusy) return false;
+        
+        try
+        {
+            modem.IsBusy = true;
+            var (strength, level) = await GetSignalStrengthWithLevelAsync(modem.PortName);
+            modem.SignalStrength = strength;
+            modem.SignalLevel = level;
+            modem.LastActivity = DateTime.Now;
+            ModemUpdated?.Invoke(this, modem);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{modem.PortName}] خطأ في تحديث الإشارة: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            modem.IsBusy = false;
+        }
+    }
+
+    public async Task<bool> RefreshModemPhoneNumberAsync(Modem modem)
+    {
+        if (modem.IsBusy) return false;
+        
+        try
+        {
+            modem.IsBusy = true;
+            
+            var number = await GetPhoneNumberAsync(modem.PortName);
+            if (number == "غير معروف")
+            {
+                if (string.IsNullOrEmpty(modem.Operator))
+                {
+                    modem.Operator = await GetOperatorAsync(modem.PortName);
+                }
+                
+                string ussdCode = GetPhoneNumberUssdCode(modem.Operator);
+                Console.WriteLine($"[{modem.PortName}] جاري جلب الرقم باستخدام USSD: {ussdCode}");
+                var ussdResponse = await SendUssdCommandAsync(modem.PortName, $"AT+CUSD=1,\"{ussdCode}\",15", 8);
+                
+                var extractedNumber = ExtractPhoneNumberFromUssd(ussdResponse);
+                if (!string.IsNullOrEmpty(extractedNumber))
+                {
+                    number = extractedNumber;
+                }
+            }
+            
+            modem.PhoneNumber = number;
+            modem.LastActivity = DateTime.Now;
+            ModemUpdated?.Invoke(this, modem);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{modem.PortName}] خطأ في جلب الرقم: {ex.Message}");
+            modem.PhoneNumber = "غير معروف";
+            return false;
+        }
+        finally
+        {
+            modem.IsBusy = false;
         }
     }
 
@@ -952,16 +1119,17 @@ public class ModemService : IDisposable
     {
         try
         {
+            modem.Operator = await GetOperatorAsync(modem.PortName);
+            
             var tasks = new Task[]
             {
-                Task.Run(async () => modem.PhoneNumber = await GetPhoneNumberAsync(modem.PortName)),
+                Task.Run(async () => modem.PhoneNumber = await GetPhoneNumberWithUssdFallbackAsync(modem.PortName, modem.Operator)),
                 Task.Run(async () => 
                 {
                     var (strength, level) = await GetSignalStrengthWithLevelAsync(modem.PortName);
                     modem.SignalStrength = strength;
                     modem.SignalLevel = level;
-                }),
-                Task.Run(async () => modem.Operator = await GetOperatorAsync(modem.PortName))
+                })
             };
             
             await Task.WhenAll(tasks);

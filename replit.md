@@ -294,3 +294,35 @@ var response = await modemService.SendUssdCommandPublicAsync("COM5", "*100#", 10
 [COM5] انتهت فترة الاستماع بعد 10.0 ثانية
 [COM5] No USSD response received
 ```
+
+## تحسين جلب رقم الهاتف (ديسمبر 2025)
+### المشكلة السابقة:
+كان البرنامج يستخدم أمر `AT+CNUM` فقط لجلب رقم الهاتف، والذي لا يعمل مع جميع الشرائح.
+
+### الحل الجديد:
+تم إضافة طريقة بديلة باستخدام أكواد USSD حسب الشبكة:
+
+| الشبكة | كود USSD |
+|--------|----------|
+| فودافون | `*878#` |
+| اورنج/موبينيل | `*100*6*1*2#` |
+| اتصالات | `*947#` |
+| WE/وي | `*999#` |
+| STC | `*166*2#` |
+| موبايلي | `*1100#` |
+| زين | `*142*3#` |
+
+#### الدوال الجديدة:
+- `GetPhoneNumberWithUssdFallbackAsync(portName, operatorName)` - تجرب AT+CNUM أولاً، ثم USSD كبديل
+- `GetPhoneNumberUssdCode(operatorName)` - تحديد كود USSD حسب اسم الشبكة
+- `ExtractPhoneNumberFromUssd(ussdResponse)` - استخراج الرقم من رد USSD
+
+#### أزرار التحديث الجديدة:
+- **زرار تحديث الإشارة (↻ أزرق)**: بجانب مؤشر قوة الإشارة في كل كارت مودم
+- **زرار تحديث الرقم (↻ برتقالي)**: بجانب رقم الهاتف في كل كارت مودم
+- **زرار تحديث جميع الإشارات**: في شريط الأدوات العلوي
+
+#### أوامر ViewModel الجديدة:
+- `RefreshModemSignalCommand` - تحديث إشارة مودم معين
+- `RefreshModemPhoneNumberCommand` - تحديث رقم مودم معين
+- `RefreshAllSignalsCommand` - تحديث جميع الإشارات

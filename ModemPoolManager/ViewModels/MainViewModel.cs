@@ -257,9 +257,9 @@ public partial class MainViewModel : ObservableObject
             
             var tasks = connectedModems.Select(async modem =>
             {
-                modem.PhoneNumber = await _modemService.GetPhoneNumberAsync(modem.PortName);
-                modem.SignalStrength = await _modemService.GetSignalStrengthAsync(modem.PortName);
                 modem.Operator = await _modemService.GetOperatorAsync(modem.PortName);
+                modem.PhoneNumber = await _modemService.GetPhoneNumberWithUssdFallbackAsync(modem.PortName, modem.Operator);
+                modem.SignalStrength = await _modemService.GetSignalStrengthAsync(modem.PortName);
                 modem.Info = await _modemService.GetModemInfoAsync(modem.PortName);
                 modem.UnreadSmsCount = await _smsService.GetUnreadCountAsync(modem.PortName);
                 modem.Status = "جاهز";
@@ -270,6 +270,84 @@ public partial class MainViewModel : ObservableObject
             
             OnPropertyChanged(nameof(Modems));
             StatusMessage = $"تم جلب معلومات {connectedModems.Count} مودم";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshModemSignalAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected || modem.IsBusy) return;
+        
+        try
+        {
+            var previousStatus = modem.Status;
+            modem.Status = "جاري التحديث...";
+            
+            var success = await _modemService.RefreshModemSignalAsync(modem);
+            
+            modem.Status = success ? "جاهز" : previousStatus;
+            StatusMessage = success 
+                ? $"تم تحديث إشارة {modem.PortName}: {modem.SignalStrength}" 
+                : $"المودم {modem.PortName} مشغول";
+        }
+        catch (Exception ex)
+        {
+            modem.Status = "خطأ";
+            StatusMessage = $"خطأ في تحديث الإشارة: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshModemPhoneNumberAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected || modem.IsBusy) return;
+        
+        try
+        {
+            var previousStatus = modem.Status;
+            modem.Status = "جاري جلب الرقم...";
+            
+            var success = await _modemService.RefreshModemPhoneNumberAsync(modem);
+            
+            modem.Status = success ? "جاهز" : previousStatus;
+            StatusMessage = success 
+                ? $"تم تحديث رقم {modem.PortName}: {modem.PhoneNumber}" 
+                : $"المودم {modem.PortName} مشغول";
+        }
+        catch (Exception ex)
+        {
+            modem.Status = "خطأ";
+            StatusMessage = $"خطأ في جلب الرقم: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshAllSignalsAsync()
+    {
+        try
+        {
+            IsProcessing = true;
+            StatusMessage = "جاري تحديث جميع الإشارات...";
+
+            var connectedModems = Modems.Where(m => m.IsConnected && !m.IsBusy).ToList();
+            
+            int successCount = 0;
+            foreach (var modem in connectedModems)
+            {
+                var success = await _modemService.RefreshModemSignalAsync(modem);
+                if (success) successCount++;
+            }
+            
+            OnPropertyChanged(nameof(Modems));
+            StatusMessage = $"تم تحديث إشارات {successCount}/{connectedModems.Count} مودم";
         }
         catch (Exception ex)
         {
