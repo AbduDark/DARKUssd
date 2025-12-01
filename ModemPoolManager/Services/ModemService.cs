@@ -3,6 +3,7 @@ using System.IO.Ports;
 using System.Management;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Timers;
 using ModemPoolManager.Models;
 
 namespace ModemPoolManager.Services;
@@ -11,7 +12,18 @@ public class ModemService : IDisposable
 {
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _portLocks = new();
     private readonly ConcurrentDictionary<string, SerialPort> _persistentPorts = new();
+    private readonly ConcurrentDictionary<string, Modem> _activeModems = new();
     private readonly int _baudRate = 115200;
+    
+    private ManagementEventWatcher? _insertWatcher;
+    private ManagementEventWatcher? _removeWatcher;
+    private System.Timers.Timer? _statusTimer;
+    private bool _isMonitoring;
+    
+    public event EventHandler<Modem>? ModemConnected;
+    public event EventHandler<Modem>? ModemDisconnected;
+    public event EventHandler<Modem>? ModemUpdated;
+    public event EventHandler<string>? MonitoringStatusChanged;
 
     private SemaphoreSlim GetPortLock(string portName)
     {
@@ -561,8 +573,201 @@ public class ModemService : IDisposable
         }
     }
 
+    public void StartMonitoring(int updateIntervalMs = 5000)
+    {
+        if (_isMonitoring) return;
+        _isMonitoring = true;
+        
+        try
+        {
+            var insertQuery = new WqlEventQuery(
+                "SELECT * FROM __InstanceCreationEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_PnPEntity' AND TargetInstance.ClassGuid = '{4D36E978-E325-11CE-BFC1-08002BE10318}'");
+            _insertWatcher = new ManagementEventWatcher(insertQuery);
+            _insertWatcher.EventArrived += OnDeviceInserted;
+            _insertWatcher.Start();
+            
+            var removeQuery = new WqlEventQuery(
+                "SELECT * FROM __InstanceDeletionEvent WITHIN 2 WHERE TargetInstance ISA 'Win32_PnPEntity' AND TargetInstance.ClassGuid = '{4D36E978-E325-11CE-BFC1-08002BE10318}'");
+            _removeWatcher = new ManagementEventWatcher(removeQuery);
+            _removeWatcher.EventArrived += OnDeviceRemoved;
+            _removeWatcher.Start();
+        }
+        catch { }
+        
+        _statusTimer = new System.Timers.Timer(updateIntervalMs);
+        _statusTimer.Elapsed += async (s, e) => await UpdateAllModemsStatusAsync();
+        _statusTimer.AutoReset = true;
+        _statusTimer.Start();
+        
+        MonitoringStatusChanged?.Invoke(this, "بدء المراقبة التلقائية");
+        
+        Task.Run(async () => await ScanForModemsAsync());
+    }
+
+    public void StopMonitoring()
+    {
+        if (!_isMonitoring) return;
+        _isMonitoring = false;
+        
+        try
+        {
+            _insertWatcher?.Stop();
+            _insertWatcher?.Dispose();
+            _insertWatcher = null;
+            
+            _removeWatcher?.Stop();
+            _removeWatcher?.Dispose();
+            _removeWatcher = null;
+        }
+        catch { }
+        
+        _statusTimer?.Stop();
+        _statusTimer?.Dispose();
+        _statusTimer = null;
+        
+        MonitoringStatusChanged?.Invoke(this, "توقف المراقبة");
+    }
+
+    private void OnDeviceInserted(object sender, EventArrivedEventArgs e)
+    {
+        Task.Run(async () =>
+        {
+            await Task.Delay(2000);
+            await ScanForModemsAsync();
+        });
+    }
+
+    private void OnDeviceRemoved(object sender, EventArrivedEventArgs e)
+    {
+        Task.Run(async () =>
+        {
+            await Task.Delay(500);
+            await CheckForDisconnectedModemsAsync();
+        });
+    }
+
+    private async Task ScanForModemsAsync()
+    {
+        try
+        {
+            var ports = GetZTEDiagnosticsPorts();
+            int index = _activeModems.Count + 1;
+            
+            foreach (var portName in ports)
+            {
+                if (!_activeModems.ContainsKey(portName))
+                {
+                    var isConnected = await TestPortConnectionAsync(portName);
+                    if (isConnected)
+                    {
+                        var modem = new Modem
+                        {
+                            Index = index++,
+                            PortName = portName,
+                            IsConnected = true,
+                            Status = "جاري التحميل..."
+                        };
+                        
+                        _activeModems[portName] = modem;
+                        ModemConnected?.Invoke(this, modem);
+                        
+                        await LoadModemInfoAsync(modem);
+                    }
+                }
+            }
+        }
+        catch { }
+    }
+
+    private async Task CheckForDisconnectedModemsAsync()
+    {
+        try
+        {
+            var currentPorts = GetZTEDiagnosticsPorts();
+            var disconnectedPorts = _activeModems.Keys.Where(p => !currentPorts.Contains(p)).ToList();
+            
+            foreach (var portName in disconnectedPorts)
+            {
+                if (_activeModems.TryRemove(portName, out var modem))
+                {
+                    modem.IsConnected = false;
+                    modem.Status = "تم الفصل";
+                    modem.SignalStrength = "N/A";
+                    
+                    if (_persistentPorts.TryRemove(portName, out var port))
+                    {
+                        try { port.Close(); port.Dispose(); } catch { }
+                    }
+                    
+                    ModemDisconnected?.Invoke(this, modem);
+                }
+            }
+        }
+        catch { }
+    }
+
+    private async Task LoadModemInfoAsync(Modem modem)
+    {
+        try
+        {
+            modem.PhoneNumber = await GetPhoneNumberAsync(modem.PortName);
+            modem.SignalStrength = await GetSignalStrengthAsync(modem.PortName);
+            modem.Operator = await GetOperatorAsync(modem.PortName);
+            modem.Status = "متصل";
+            modem.LastActivity = DateTime.Now;
+            
+            ModemUpdated?.Invoke(this, modem);
+        }
+        catch
+        {
+            modem.Status = "خطأ في التحميل";
+            ModemUpdated?.Invoke(this, modem);
+        }
+    }
+
+    private async Task UpdateAllModemsStatusAsync()
+    {
+        if (!_isMonitoring) return;
+        
+        await CheckForDisconnectedModemsAsync();
+        await ScanForModemsAsync();
+        
+        foreach (var modem in _activeModems.Values.ToList())
+        {
+            if (modem.IsConnected && !modem.IsBusy)
+            {
+                try
+                {
+                    var isStillConnected = await TestPortConnectionAsync(modem.PortName);
+                    if (isStillConnected)
+                    {
+                        var newSignal = await GetSignalStrengthAsync(modem.PortName);
+                        if (modem.SignalStrength != newSignal)
+                        {
+                            modem.SignalStrength = newSignal;
+                            modem.LastActivity = DateTime.Now;
+                            ModemUpdated?.Invoke(this, modem);
+                        }
+                    }
+                    else
+                    {
+                        modem.IsConnected = false;
+                        modem.Status = "تم الفصل";
+                        _activeModems.TryRemove(modem.PortName, out _);
+                        ModemDisconnected?.Invoke(this, modem);
+                    }
+                }
+                catch { }
+            }
+        }
+    }
+
+    public IEnumerable<Modem> GetActiveModems() => _activeModems.Values;
+
     public void Dispose()
     {
+        StopMonitoring();
+        
         foreach (var port in _persistentPorts.Values)
         {
             try
