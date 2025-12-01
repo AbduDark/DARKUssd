@@ -48,15 +48,19 @@ public class ModemService : IDisposable
         try
         {
             using var searcher = new ManagementObjectSearcher(
-                "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%ZTE Diagnostics%' OR Caption LIKE '%ZTE%' OR Caption LIKE '%Modem%'");
+                "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%COM%'");
             
             foreach (ManagementObject obj in searcher.Get())
             {
                 var caption = obj["Caption"]?.ToString() ?? "";
-                var match = Regex.Match(caption, @"\(COM(\d+)\)");
-                if (match.Success)
+                
+                if (caption.Contains("ZTE Diagnostics Interface", StringComparison.OrdinalIgnoreCase))
                 {
-                    ports.Add($"COM{match.Groups[1].Value}");
+                    var match = Regex.Match(caption, @"\(COM(\d+)\)");
+                    if (match.Success)
+                    {
+                        ports.Add($"COM{match.Groups[1].Value}");
+                    }
                 }
             }
         }
