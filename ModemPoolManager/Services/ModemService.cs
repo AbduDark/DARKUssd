@@ -153,11 +153,28 @@ public class ModemService : IDisposable
             port.DiscardOutBuffer();
             
             await Task.Run(() => port.Write("AT\r"));
-            await Task.Delay(500);
             
-            var response = await Task.Run(() => port.ReadExisting());
+            var response = new StringBuilder();
+            var timeout = 3000;
+            var startTime = DateTime.Now;
             
-            return response.Contains("OK");
+            while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
+            {
+                await Task.Delay(100);
+                
+                if (port.BytesToRead > 0)
+                {
+                    var data = await Task.Run(() => port.ReadExisting());
+                    response.Append(data);
+                    
+                    if (response.ToString().Contains("OK"))
+                    {
+                        return true;
+                    }
+                }
+            }
+            
+            return response.ToString().Contains("OK");
         }
         catch
         {
