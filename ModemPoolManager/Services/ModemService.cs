@@ -237,11 +237,46 @@ public class ModemService : IDisposable
         }
     }
 
+    private bool IsValidEgyptianNumber(string number)
+    {
+        if (string.IsNullOrEmpty(number)) return false;
+        
+        var normalized = NormalizeEgyptianNumber(number);
+        if (string.IsNullOrEmpty(normalized)) return false;
+        
+        return Regex.IsMatch(normalized, @"^01[0125]\d{8}$");
+    }
+
+    private string? NormalizeEgyptianNumber(string number)
+    {
+        if (string.IsNullOrEmpty(number)) return null;
+        
+        var cleaned = Regex.Replace(number, @"[^\d+]", "");
+        
+        if (cleaned.StartsWith("+20") && cleaned.Length == 13)
+        {
+            return "0" + cleaned.Substring(3);
+        }
+        
+        if (cleaned.StartsWith("20") && cleaned.Length == 12)
+        {
+            return "0" + cleaned.Substring(2);
+        }
+        
+        if (cleaned.StartsWith("01") && cleaned.Length == 11)
+        {
+            return cleaned;
+        }
+        
+        return null;
+    }
+
     public async Task<string> GetPhoneNumberAsync(string portName)
     {
         try
         {
             var response = await SendATCommandAsync(portName, "AT+CNUM", 2000);
+            Console.WriteLine($"[{portName}] AT+CNUM response: {response}");
             
             if (!response.Contains("ERROR"))
             {
@@ -258,10 +293,17 @@ public class ModemService : IDisposable
                     var match = Regex.Match(response, pattern);
                     if (match.Success)
                     {
-                        var number = match.Groups[1].Value;
-                        if (!string.IsNullOrEmpty(number) && number.Length >= 10)
+                        var rawNumber = match.Groups[1].Value;
+                        var normalized = NormalizeEgyptianNumber(rawNumber);
+                        
+                        if (normalized != null && IsValidEgyptianNumber(normalized))
                         {
-                            return number;
+                            Console.WriteLine($"[{portName}] Valid Egyptian number: {normalized}");
+                            return normalized;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"[{portName}] Invalid number from AT+CNUM: {rawNumber}");
                         }
                     }
                 }
@@ -347,31 +389,34 @@ public class ModemService : IDisposable
 
     private string? ExtractPhoneNumberFromUssd(string ussdResponse)
     {
+        Console.WriteLine($"Extracting phone from USSD: {ussdResponse}");
+        
         var patterns = new[]
         {
             @"(\+?20\d{10})",
-            @"(\+?966\d{9})",
-            @"(01[0-2,5]\d{8})",
-            @"(05\d{8})",
-            @"(\d{11})",
+            @"(01[0125]\d{8})",
             @"رقمك[:\s]*(\d{10,11})",
             @"Your number[:\s]*(\d{10,15})",
-            @"(\+?\d{10,15})"
+            @"(\d{11})"
         };
 
         foreach (var pattern in patterns)
         {
-            var match = Regex.Match(ussdResponse, pattern);
-            if (match.Success)
+            var matches = Regex.Matches(ussdResponse, pattern);
+            foreach (Match match in matches)
             {
-                var number = match.Groups[1].Value;
-                if (number.Length >= 10)
+                var rawNumber = match.Groups[1].Value;
+                var normalized = NormalizeEgyptianNumber(rawNumber);
+                
+                if (normalized != null && IsValidEgyptianNumber(normalized))
                 {
-                    return number;
+                    Console.WriteLine($"Valid Egyptian number from USSD: {normalized}");
+                    return normalized;
                 }
             }
         }
 
+        Console.WriteLine("No valid Egyptian number found in USSD response");
         return null;
     }
 
