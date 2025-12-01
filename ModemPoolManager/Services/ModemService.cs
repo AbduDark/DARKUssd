@@ -249,7 +249,7 @@ public class ModemService : IDisposable
                 return match.Groups[2].Value;
             }
 
-            response = await SendATCommandAsync(portName, "AT+CUSD=1,\"*100#\",15", 10000);
+            response = await SendUssdCommandAsync(portName, "AT+CUSD=1,\"*100#\",15", 10);
             match = Regex.Match(response, @"(\+?\d{10,15})");
             if (match.Success)
             {
@@ -280,7 +280,7 @@ public class ModemService : IDisposable
         return results.ToList();
     }
 
-    public async Task<UssdResult> ExecuteUssdAsync(Modem modem, string ussdCode)
+    public async Task<UssdResult> ExecuteUssdAsync(Modem modem, string ussdCode, int ussdWaitTimeSeconds = 10)
     {
         var result = new UssdResult
         {
@@ -295,14 +295,26 @@ public class ModemService : IDisposable
             var encodedUssd = EncodeUssd(ussdCode);
             var command = $"AT+CUSD=1,\"{encodedUssd}\",15";
             
-            var response = await SendATCommandAsync(modem.PortName, command, 30000);
+            var response = await SendUssdCommandAsync(modem.PortName, command, ussdWaitTimeSeconds);
             
             result.Response = DecodeUssdResponse(response);
-            result.IsSuccess = response.Contains("+CUSD:") || response.Contains("OK");
+            result.IsSuccess = response.Contains("+CUSD:");
             
             if (!result.IsSuccess)
             {
-                result.ErrorMessage = "لا توجد استجابة من الشبكة";
+                if (response.Contains("No USSD response received"))
+                {
+                    result.ErrorMessage = "No USSD response received";
+                    result.Response = "لم يتم استلام رد USSD خلال فترة الانتظار";
+                }
+                else if (response.Contains("ERROR"))
+                {
+                    result.ErrorMessage = "خطأ من المودم";
+                }
+                else
+                {
+                    result.ErrorMessage = "لا توجد استجابة من الشبكة";
+                }
             }
         }
         catch (Exception ex)
@@ -368,6 +380,102 @@ public class ModemService : IDisposable
                 }
             }
 
+            return response.ToString();
+        }
+        finally
+        {
+            portLock.Release();
+        }
+    }
+
+    private async Task<string> SendUssdCommandAsync(string portName, string command, int ussdWaitTimeSeconds = 10)
+    {
+        var portLock = GetPortLock(portName);
+        await portLock.WaitAsync();
+        
+        try
+        {
+            var port = GetOrCreatePort(portName);
+            port.ReadTimeout = 60000;
+            EnsurePortOpen(port);
+
+            var response = new StringBuilder();
+            var ussdLines = new List<string>();
+            bool receivedOk = false;
+            bool receivedError = false;
+            
+            port.DiscardInBuffer();
+            port.DiscardOutBuffer();
+
+            Console.WriteLine($"[{portName}] إرسال: {command}");
+            await Task.Run(() => port.Write(command + "\r"));
+
+            var commandStartTime = DateTime.Now;
+            var totalTimeout = ussdWaitTimeSeconds * 1000;
+            
+            Console.WriteLine($"[{portName}] بدء الاستماع لمدة {ussdWaitTimeSeconds} ثانية...");
+            
+            while ((DateTime.Now - commandStartTime).TotalMilliseconds < totalTimeout)
+            {
+                await Task.Delay(100);
+                
+                if (port.BytesToRead > 0)
+                {
+                    var data = await Task.Run(() => port.ReadExisting());
+                    response.Append(data);
+                    
+                    var lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var line in lines)
+                    {
+                        var trimmedLine = line.Trim();
+                        
+                        if (trimmedLine.Contains("+CUSD:"))
+                        {
+                            Console.WriteLine($"[{portName}] +CUSD: {trimmedLine}");
+                            if (!ussdLines.Contains(trimmedLine))
+                            {
+                                ussdLines.Add(trimmedLine);
+                            }
+                        }
+                        else if (trimmedLine == "OK" && !receivedOk)
+                        {
+                            receivedOk = true;
+                            var elapsed = (DateTime.Now - commandStartTime).TotalSeconds;
+                            var remaining = ussdWaitTimeSeconds - elapsed;
+                            Console.WriteLine($"[{portName}] OK استلم بعد {elapsed:F1} ثانية - الاستمرار في الاستماع لمدة {remaining:F1} ثانية إضافية...");
+                        }
+                        else if (trimmedLine.Contains("ERROR"))
+                        {
+                            receivedError = true;
+                            Console.WriteLine($"[{portName}] خطأ: {trimmedLine}");
+                        }
+                    }
+                }
+                
+                if (receivedError)
+                {
+                    Console.WriteLine($"[{portName}] توقف بسبب خطأ من المودم");
+                    break;
+                }
+            }
+            
+            var totalElapsed = (DateTime.Now - commandStartTime).TotalSeconds;
+            Console.WriteLine($"[{portName}] انتهت فترة الاستماع بعد {totalElapsed:F1} ثانية");
+            
+            if (ussdLines.Count > 0)
+            {
+                Console.WriteLine($"[{portName}] تم استلام {ussdLines.Count} رد(ود) USSD:");
+                foreach (var ussdLine in ussdLines)
+                {
+                    Console.WriteLine($"  → {ussdLine}");
+                }
+            }
+            else if (!receivedError)
+            {
+                Console.WriteLine($"[{portName}] No USSD response received");
+                response.AppendLine("No USSD response received");
+            }
+            
             return response.ToString();
         }
         finally
@@ -458,6 +566,13 @@ public class ModemService : IDisposable
     public async Task<string> SendATCommandPublicAsync(string portName, string command, int timeout = 5000)
     {
         return await SendATCommandAsync(portName, command, timeout);
+    }
+
+    public async Task<string> SendUssdCommandPublicAsync(string portName, string ussdCode, int ussdWaitTimeSeconds = 10)
+    {
+        var encodedUssd = EncodeUssd(ussdCode);
+        var command = $"AT+CUSD=1,\"{encodedUssd}\",15";
+        return await SendUssdCommandAsync(portName, command, ussdWaitTimeSeconds);
     }
 
     public async Task<ModemInfo> GetModemInfoAsync(string portName)
