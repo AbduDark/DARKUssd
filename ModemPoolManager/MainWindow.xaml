@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:converters="clr-namespace:ModemPoolManager.Converters"
         mc:Ignorable="d"
         Title="مدير المودمات - Modem Pool Manager Pro" 
         Height="900" Width="1400"
@@ -12,6 +13,10 @@
         MinHeight="700" MinWidth="1100">
 
     <Window.Resources>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <converters:OperatorToBrushConverter x:Key="OperatorToBrushConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+        
         <Style x:Key="ModernButton" TargetType="Button">
             <Setter Property="Background" Value="#238636"/>
             <Setter Property="Foreground" Value="White"/>
@@ -289,45 +294,43 @@
                         </Grid>
                     </Border>
 
-                    <Grid Grid.Row="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                        <ItemsControl ItemsSource="{Binding Modems}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel Orientation="Horizontal"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Width="320" Height="280" Margin="8" CornerRadius="12" 
+                                            BorderThickness="1" Background="#161B22">
+                                        <Border.BorderBrush>
+                                            <SolidColorBrush Color="#30363D"/>
+                                        </Border.BorderBrush>
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding Status}" Value="نجح">
+                                                        <Setter Property="BorderBrush" Value="#238636"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding Status}" Value="فشل">
+                                                        <Setter Property="BorderBrush" Value="#DA3633"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                        <Setter Property="BorderBrush" Value="#D29922"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto"/>
+                                                <RowDefinition Height="*"/>
+                                                <RowDefinition Height="Auto"/>
+                                            </Grid.RowDefinitions>
 
-                        <Border Grid.Column="0" Style="{StaticResource CardPanel}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
-
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <TextBlock Text="📡" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="المودمات المتصلة" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                </StackPanel>
-
-                                <ListView Grid.Row="1" ItemsSource="{Binding Modems}" 
-                                          Background="Transparent" BorderThickness="0"
-                                          ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ListViewItem">
-                                                        <ContentPresenter/>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border Background="#21262D" CornerRadius="8" Padding="14" Margin="0,4" 
-                                                    BorderBrush="#30363D" BorderThickness="1">
+                                            <Border Grid.Row="0" Background="#21262D" CornerRadius="12,12,0,0" Padding="12,10">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
@@ -335,31 +338,28 @@
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
 
-                                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,12,0"
-                                                              Style="{StaticResource ModernCheckBox}"/>
+                                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" 
+                                                              Style="{StaticResource ModernCheckBox}" Margin="0,0,10,0"/>
 
                                                     <StackPanel Grid.Column="1">
                                                         <StackPanel Orientation="Horizontal">
                                                             <TextBlock Text="{Binding Index, StringFormat='مودم {0}'}" 
-                                                                       FontSize="15" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                                            <Border Background="#0D419D" CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
-                                                                <TextBlock Text="{Binding PortName}" FontSize="11" Foreground="#58A6FF"/>
+                                                                       FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                                            <Border Background="#0D419D" CornerRadius="4" Padding="6,2" Margin="8,0,0,0">
+                                                                <TextBlock Text="{Binding PortName}" FontSize="10" Foreground="#58A6FF"/>
                                                             </Border>
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="16" 
-                                                                   Foreground="#3FB950" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
-                                                            <TextBlock Text="{Binding Operator}" FontSize="12" Foreground="#8B949E"/>
-                                                            <TextBlock Text=" | " FontSize="12" Foreground="#484F58"/>
+                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="18" FontWeight="Bold" Margin="0,4,0,0"
+                                                                   Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"/>
+                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+                                                            <TextBlock Text="{Binding Operator}" FontSize="11" Foreground="#8B949E"/>
+                                                            <TextBlock Text=" | " FontSize="11" Foreground="#484F58"/>
                                                             <TextBlock Text="{Binding SignalStrength, StringFormat='📶 {0}'}" 
-                                                                       FontSize="12" Foreground="#8B949E"/>
+                                                                       FontSize="11" Foreground="#8B949E"/>
                                                         </StackPanel>
-                                                        <TextBlock Text="{Binding LastResponse}" FontSize="12" 
-                                                                   Foreground="#D29922" TextWrapping="Wrap" Margin="0,6,0,0"
-                                                                   MaxWidth="350" TextTrimming="CharacterEllipsis"/>
                                                     </StackPanel>
 
-                                                    <Border Grid.Column="2" CornerRadius="6" Padding="10,6" VerticalAlignment="Top">
+                                                    <Border Grid.Column="2" CornerRadius="6" Padding="8,4" VerticalAlignment="Top">
                                                         <Border.Style>
                                                             <Style TargetType="Border">
                                                                 <Setter Property="Background" Value="#1F6FEB"/>
@@ -376,84 +376,103 @@
                                                                 </Style.Triggers>
                                                             </Style>
                                                         </Border.Style>
-                                                        <TextBlock Text="{Binding Status}" FontSize="11" Foreground="White" FontWeight="SemiBold"/>
+                                                        <TextBlock Text="{Binding Status}" FontSize="10" Foreground="White" FontWeight="SemiBold"/>
                                                     </Border>
                                                 </Grid>
                                             </Border>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </Grid>
-                        </Border>
 
-                        <Border Grid.Column="1" Style="{StaticResource CardPanel}">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="*"/>
-                                </Grid.RowDefinitions>
+                                            <Grid Grid.Row="1" Margin="12,8">
+                                                <Grid Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="*"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Viewbox Width="60" Height="60" VerticalAlignment="Center">
+                                                        <Grid>
+                                                            <Ellipse Width="50" Height="50" Stroke="#30363D" StrokeThickness="4"/>
+                                                            <Ellipse Width="50" Height="50" Stroke="#D29922" StrokeThickness="4"
+                                                                     StrokeDashArray="2,2" RenderTransformOrigin="0.5,0.5">
+                                                                <Ellipse.RenderTransform>
+                                                                    <RotateTransform Angle="0"/>
+                                                                </Ellipse.RenderTransform>
+                                                                <Ellipse.Triggers>
+                                                                    <EventTrigger RoutedEvent="Loaded">
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard RepeatBehavior="Forever">
+                                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(RotateTransform.Angle)"
+                                                                                               From="0" To="360" Duration="0:0:1"/>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </EventTrigger>
+                                                                </Ellipse.Triggers>
+                                                            </Ellipse>
+                                                        </Grid>
+                                                    </Viewbox>
+                                                    <TextBlock Grid.Row="1" Text="جاري التنفيذ..." 
+                                                               HorizontalAlignment="Center" 
+                                                               Foreground="#D29922" FontSize="13" Margin="0,8,0,0"/>
+                                                </Grid>
 
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                    <TextBlock Text="📋" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="نتائج التنفيذ" FontSize="16" FontWeight="Bold" Foreground="#3FB950"/>
-                                </StackPanel>
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto" 
+                                                              Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
+                                                    <ScrollViewer.Style>
+                                                        <Style TargetType="ScrollViewer">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ScrollViewer.Style>
+                                                    <TextBlock Text="{Binding LastResponse}" 
+                                                               FontSize="13" Foreground="#3FB950" 
+                                                               TextWrapping="Wrap" FlowDirection="LeftToRight">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Foreground" Value="#3FB950"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding Status}" Value="فشل">
+                                                                        <Setter Property="Foreground" Value="#F85149"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </ScrollViewer>
+                                            </Grid>
 
-                                <ListView Grid.Row="1" ItemsSource="{Binding Results}" 
-                                          Background="Transparent" BorderThickness="0">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Margin" Value="0"/>
-                                            <Setter Property="Template">
-                                                <Setter.Value>
-                                                    <ControlTemplate TargetType="ListViewItem">
-                                                        <ContentPresenter/>
-                                                    </ControlTemplate>
-                                                </Setter.Value>
-                                            </Setter>
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-                                    <ListView.ItemTemplate>
-                                        <DataTemplate>
-                                            <Border CornerRadius="8" Padding="14" Margin="0,4" 
-                                                    BorderThickness="2,0,0,0">
-                                                <Border.Style>
-                                                    <Style TargetType="Border">
-                                                        <Setter Property="Background" Value="#21262D"/>
-                                                        <Setter Property="BorderBrush" Value="#30363D"/>
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding IsSuccess}" Value="True">
-                                                                <Setter Property="BorderBrush" Value="#3FB950"/>
-                                                            </DataTrigger>
-                                                            <DataTrigger Binding="{Binding IsSuccess}" Value="False">
-                                                                <Setter Property="BorderBrush" Value="#F85149"/>
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </Border.Style>
-                                                <StackPanel>
+                                            <Border Grid.Row="2" Background="#21262D" CornerRadius="0,0,12,12" Padding="12,8">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    
                                                     <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding ModemIndex, StringFormat='مودم {0}'}" 
-                                                                   FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                                        <TextBlock Text="{Binding PhoneNumber, StringFormat=' ({0})'}" 
-                                                                   FontSize="13" Foreground="#8B949E"/>
-                                                        <Border Background="#0D419D" CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
-                                                            <TextBlock Text="{Binding UssdCode}" FontSize="11" Foreground="#58A6FF"/>
-                                                        </Border>
+                                                        <TextBlock Text="⏱" FontSize="12" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding LastResponseDuration.TotalSeconds, StringFormat='{}{0:F1}s'}" 
+                                                                   FontSize="12" Foreground="#58A6FF" Margin="4,0,0,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text=" | " FontSize="12" Foreground="#484F58" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding LastActivity, StringFormat='hh:mm:ss'}" 
+                                                                   FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
                                                     </StackPanel>
-                                                    <TextBlock Text="{Binding Response}" FontSize="13" 
-                                                               Foreground="#3FB950" TextWrapping="Wrap" Margin="0,8,0,0"/>
-                                                    <TextBlock Text="{Binding Timestamp, StringFormat='hh:mm:ss tt'}" 
-                                                               FontSize="10" Foreground="#484F58" Margin="0,6,0,0"/>
-                                                </StackPanel>
+
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                        <TextBlock Text="✓" FontSize="11" Foreground="#3FB950" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding SuccessfulCommands}" FontSize="11" Foreground="#3FB950" 
+                                                                   Margin="2,0,8,0" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="✗" FontSize="11" Foreground="#F85149" VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding FailedCommands}" FontSize="11" Foreground="#F85149" 
+                                                                   Margin="2,0,0,0" VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </Grid>
                                             </Border>
-                                        </DataTemplate>
-                                    </ListView.ItemTemplate>
-                                </ListView>
-                            </Grid>
-                        </Border>
-                    </Grid>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
                 </Grid>
             </TabItem>
 
@@ -620,40 +639,48 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <UniformGrid Grid.Row="0" Columns="4" Margin="0,0,0,10">
-                        <Border Style="{StaticResource CardPanel}" Margin="4">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="📡" FontSize="28" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding ConnectedCount}" FontSize="32" FontWeight="Bold" 
-                                           Foreground="#3FB950" HorizontalAlignment="Center"/>
-                                <TextBlock Text="مودم متصل" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource CardPanel}" Margin="4">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="✅" FontSize="28" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding SuccessfulCommandsCount}" FontSize="32" FontWeight="Bold" 
-                                           Foreground="#58A6FF" HorizontalAlignment="Center"/>
-                                <TextBlock Text="أمر ناجح" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource CardPanel}" Margin="4">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="❌" FontSize="28" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding FailedCommandsCount}" FontSize="32" FontWeight="Bold" 
-                                           Foreground="#F85149" HorizontalAlignment="Center"/>
-                                <TextBlock Text="أمر فاشل" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                        <Border Style="{StaticResource CardPanel}" Margin="4">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="💬" FontSize="28" HorizontalAlignment="Center"/>
-                                <TextBlock Text="{Binding TotalSmsCount}" FontSize="32" FontWeight="Bold" 
-                                           Foreground="#D29922" HorizontalAlignment="Center"/>
-                                <TextBlock Text="رسالة" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Border>
-                    </UniformGrid>
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Background="#238636" CornerRadius="8" Padding="20" Margin="4">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding SuccessfulCommandsCount}" FontSize="36" FontWeight="Bold" 
+                                               Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="أوامر ناجحة" FontSize="14" Foreground="#C9D1D9" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1" Background="#DA3633" CornerRadius="8" Padding="20" Margin="4">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding FailedCommandsCount}" FontSize="36" FontWeight="Bold" 
+                                               Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="أوامر فاشلة" FontSize="14" Foreground="#C9D1D9" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Background="#1F6FEB" CornerRadius="8" Padding="20" Margin="4">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding ConnectedCount}" FontSize="36" FontWeight="Bold" 
+                                               Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="مودمات متصلة" FontSize="14" Foreground="#C9D1D9" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="3" Background="#D29922" CornerRadius="8" Padding="20" Margin="4">
+                                <StackPanel HorizontalAlignment="Center">
+                                    <TextBlock Text="{Binding TotalSmsCount}" FontSize="36" FontWeight="Bold" 
+                                               Foreground="White" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="رسائل" FontSize="14" Foreground="#C9D1D9" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </Border>
 
                     <Border Grid.Row="1" Style="{StaticResource CardPanel}">
                         <Grid>
@@ -683,37 +710,44 @@
                                 </ListView.ItemContainerStyle>
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#21262D" CornerRadius="6" Padding="12" Margin="0,3"
-                                                BorderBrush="#30363D" BorderThickness="1">
+                                        <Border CornerRadius="8" Padding="14" Margin="0,4" BorderThickness="2,0,0,0">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#21262D"/>
+                                                    <Setter Property="BorderBrush" Value="#30363D"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#3FB950"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsSuccess}" Value="False">
+                                                            <Setter Property="BorderBrush" Value="#F85149"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <Grid>
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto"/>
                                                     <ColumnDefinition Width="*"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
-
-                                                <TextBlock Text="{Binding IsSuccess, Converter={StaticResource BoolToVisConverter}}" 
-                                                           FontSize="14" VerticalAlignment="Center" Margin="0,0,10,0">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Setter Property="Text" Value="✅"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsSuccess}" Value="False">
-                                                                    <Setter Property="Text" Value="❌"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
-
-                                                <StackPanel Grid.Column="1">
-                                                    <TextBlock Text="{Binding Command}" FontSize="13" Foreground="#C9D1D9" FontFamily="Consolas"/>
-                                                    <TextBlock Text="{Binding Response}" FontSize="11" Foreground="#8B949E" 
-                                                               TextTrimming="CharacterEllipsis" MaxWidth="500"/>
+                                                <StackPanel>
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <TextBlock Text="{Binding ModemIndex, StringFormat='مودم {0}'}" 
+                                                                   FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                                        <Border Background="#0D419D" CornerRadius="4" Padding="6,2" Margin="10,0,0,0">
+                                                            <TextBlock Text="{Binding Command}" FontSize="11" Foreground="#58A6FF"/>
+                                                        </Border>
+                                                    </StackPanel>
+                                                    <TextBlock Text="{Binding Response}" FontSize="12" 
+                                                               Foreground="#8B949E" TextWrapping="Wrap" Margin="0,6,0,0"
+                                                               MaxWidth="500" TextTrimming="CharacterEllipsis"/>
                                                 </StackPanel>
-
-                                                <TextBlock Grid.Column="2" Text="{Binding Timestamp, StringFormat='hh:mm:ss'}" 
-                                                           FontSize="11" Foreground="#484F58" VerticalAlignment="Center"/>
+                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                                    <TextBlock Text="{Binding ExecutionTime.TotalSeconds, StringFormat='{}{0:F1}s'}" 
+                                                               FontSize="12" Foreground="#58A6FF"/>
+                                                    <TextBlock Text="{Binding Timestamp, StringFormat='hh:mm:ss tt'}" 
+                                                               FontSize="10" Foreground="#484F58" Margin="0,4,0,0"/>
+                                                </StackPanel>
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -725,124 +759,95 @@
             </TabItem>
 
             <TabItem Header="⚙ الإعدادات" Style="{StaticResource TabItemStyle}">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="10">
+                <ScrollViewer Margin="10" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
                         <Border Style="{StaticResource CardPanel}">
                             <StackPanel>
-                                <TextBlock Text="⚙ إعدادات المودم" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC" Margin="0,0,0,16"/>
-                                
-                                <Grid Margin="0,8">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock Text="🔧" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="إعدادات المودم" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+
+                                <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="سرعة الاتصال (Baud Rate):" Foreground="#C9D1D9" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Baud Rate:" Foreground="#8B949E" VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1" Text="{Binding Settings.Modem.BaudRate}" 
-                                             Style="{StaticResource ModernTextBox}" MaxWidth="200" HorizontalAlignment="Right"/>
+                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"/>
                                 </Grid>
 
-                                <Grid Margin="0,8">
+                                <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="مهلة الأوامر (ملي ثانية):" Foreground="#C9D1D9" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Modem.CommandTimeout}" 
-                                             Style="{StaticResource ModernTextBox}" MaxWidth="200" HorizontalAlignment="Right"/>
+                                    <TextBlock Text="Read Timeout:" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Settings.Modem.ReadTimeout}" 
+                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"/>
                                 </Grid>
 
-                                <Grid Margin="0,8">
+                                <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
+                                        <ColumnDefinition Width="150"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="عدد المحاولات:" Foreground="#C9D1D9" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Modem.RetryCount}" 
-                                             Style="{StaticResource ModernTextBox}" MaxWidth="200" HorizontalAlignment="Right"/>
-                                </Grid>
-
-                                <Grid Margin="0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="أقصى عدد للمودمات:" Foreground="#C9D1D9" VerticalAlignment="Center"/>
+                                    <TextBlock Text="Max Modems:" Foreground="#8B949E" VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1" Text="{Binding Settings.Modem.MaxModems}" 
-                                             Style="{StaticResource ModernTextBox}" MaxWidth="200" HorizontalAlignment="Right"/>
+                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"/>
                                 </Grid>
                             </StackPanel>
                         </Border>
 
                         <Border Style="{StaticResource CardPanel}">
                             <StackPanel>
-                                <TextBlock Text="🤖 إعدادات الذكاء الاصطناعي" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC" Margin="0,0,0,16"/>
-                                
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock Text="🤖" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="إعدادات الذكاء الاصطناعي" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+
                                 <CheckBox Content="تفعيل المساعد الذكي" IsChecked="{Binding Settings.Ai.Enabled}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,8"/>
-
-                                <Grid Margin="0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="مفتاح API:" Foreground="#C9D1D9" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Ai.ApiKey}" 
-                                             Style="{StaticResource ModernTextBox}"/>
-                                </Grid>
-
-                                <Grid Margin="0,8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="200"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="الموديل:" Foreground="#C9D1D9" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Ai.Model}" 
-                                             Style="{StaticResource ModernTextBox}" MaxWidth="300" HorizontalAlignment="Right"/>
-                                </Grid>
+                                          Style="{StaticResource ModernCheckBox}" Margin="0,0,0,12"/>
 
                                 <CheckBox Content="تحليل الردود تلقائياً" IsChecked="{Binding Settings.Ai.AutoAnalyzeResponses}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,8"/>
-                                <CheckBox Content="اقتراح الأوامر" IsChecked="{Binding Settings.Ai.SuggestCommands}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,8"/>
+                                          Style="{StaticResource ModernCheckBox}" Margin="0,0,0,12"/>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="150"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="API Key:" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Settings.Ai.ApiKey}" 
+                                             Style="{StaticResource ModernTextBox}" Width="400" HorizontalAlignment="Left"/>
+                                </Grid>
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource CardPanel}">
-                            <StackPanel>
-                                <TextBlock Text="🎨 إعدادات الواجهة" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC" Margin="0,0,0,16"/>
-                                
-                                <CheckBox Content="تفعيل الحركات" IsChecked="{Binding Settings.Ui.AnimationsEnabled}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,8"/>
-                                <CheckBox Content="عرض شريط الحالة" IsChecked="{Binding Settings.Ui.ShowStatusBar}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,8"/>
-                                <CheckBox Content="عرض سجل الأوامر" IsChecked="{Binding Settings.Ui.ShowCommandHistory}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,8"/>
-                            </StackPanel>
-                        </Border>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,20">
-                            <Button Content="💾 حفظ الإعدادات" Command="{Binding SaveSettingsCommand}" Style="{StaticResource ModernButton}" Padding="24,12"/>
-                            <Button Content="↩ إعادة تعيين" Command="{Binding ResetSettingsCommand}" Style="{StaticResource GhostButton}" Padding="24,12"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
+                            <Button Content="💾 حفظ الإعدادات" Command="{Binding SaveSettingsCommand}" Style="{StaticResource ModernButton}"/>
+                            <Button Content="↩ إعادة تعيين" Command="{Binding ResetSettingsCommand}" Style="{StaticResource GhostButton}"/>
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
         </TabControl>
 
-        <Border Grid.Row="2" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,0" Padding="16,10">
+        <Border Grid.Row="2" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,0" Padding="16,8">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <TextBlock Text="{Binding StatusMessage}" FontSize="13" Foreground="#8B949E" VerticalAlignment="Center"/>
-                
+                <StackPanel Orientation="Horizontal">
+                    <Ellipse Width="8" Height="8" Fill="#3FB950" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center"/>
+                </StackPanel>
+
                 <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <ProgressBar Width="150" Height="6" 
-                                 IsIndeterminate="{Binding IsProcessing}"
-                                 Background="#21262D" Foreground="#238636"
-                                 Visibility="{Binding IsProcessing, Converter={StaticResource BoolToVisConverter}}"/>
+                    <TextBlock Text="Modem Pool Manager Pro v2.0" Foreground="#484F58" FontSize="11" VerticalAlignment="Center"/>
                 </StackPanel>
             </Grid>
         </Border>

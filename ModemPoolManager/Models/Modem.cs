@@ -53,6 +53,7 @@ public partial class Modem : ObservableObject
     private int _failedCommands;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ResponseDurationText))]
     private TimeSpan _lastResponseDuration;
 
     [ObservableProperty]
