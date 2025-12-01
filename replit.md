@@ -161,3 +161,25 @@ dotnet run
 - دعم "ZTE NMEA Device" بالإضافة لـ "ZTE Diagnostics Interface"
 - استخدام WMI Query: `SELECT * FROM Win32_PnPEntity`
 - إصلاح مشكلة إعادة التوصيل (تحديث IsConnected)
+
+## تحديث الواجهة الجديد (ديسمبر 2025)
+### التصميم الجديد للمودمات:
+- **كروت صغيرة لكل مودم** (320x280 بكسل) في شكل WrapPanel
+- **دوائر تحميل متحركة** تظهر أثناء تنفيذ الأوامر
+- **رقم الهاتف ملون حسب الشبكة**:
+  - Vodafone/فودافون: أحمر
+  - Orange/اورنج: برتقالي
+  - Etisalat/اتصالات: أخضر
+  - WE/وي: بنفسجي
+  - STC: بنفسجي داكن
+  - Mobily: أزرق سماوي
+  - Zain: أخضر فاتح
+- **عرض وقت التنفيذ** في أسفل كل كارت
+- **عرض الرد** في منتصف الكارت مع التمرير
+- **عداد النجاح والفشل** لكل مودم
+
+### الملفات المحدثة:
+- `ModemPoolManager/Models/Modem.cs` - إضافة LastResponseDuration و LastResponseTime
+- `ModemPoolManager/Converters/OperatorToBrushConverter.cs` - محول لتلوين الأرقام حسب الشبكة
+- `ModemPoolManager/MainWindow.xaml` - التصميم الجديد بالكامل
+- `ModemPoolManager/ViewModels/MainViewModel.cs` - تتبع وقت التنفيذ لكل مودم
