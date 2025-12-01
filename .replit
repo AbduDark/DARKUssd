@@ -18,9 +18,12 @@ args = "Modem Pool Manager"
 name = "Modem Pool Manager"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd ModemPoolManager.Console && dotnet run"
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "dotnet run --project ModemPoolManager.Console/ModemPoolManager.Console.csproj"
+
+[nix]
+channel = "stable-25_05"
