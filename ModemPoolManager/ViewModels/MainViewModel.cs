@@ -348,14 +348,23 @@ public partial class MainViewModel : ObservableObject
 
             var connectedModems = Modems.Where(m => m.IsConnected && !m.IsBusy).ToList();
             
-            int successCount = 0;
+            var tasks = connectedModems.Select(async modem =>
+            {
+                modem.Status = "جاري التحديث...";
+                var success = await _modemService.RefreshModemSignalAsync(modem);
+                modem.Status = success ? "جاهز" : "خطأ";
+                return success;
+            });
+            
+            var results = await Task.WhenAll(tasks);
+            int successCount = results.Count(r => r);
+            
             foreach (var modem in connectedModems)
             {
-                var success = await _modemService.RefreshModemSignalAsync(modem);
-                if (success) successCount++;
+                OnPropertyChanged(nameof(modem.SignalStrength));
+                OnPropertyChanged(nameof(modem.SignalLevel));
             }
             
-            OnPropertyChanged(nameof(Modems));
             StatusMessage = $"تم تحديث إشارات {successCount}/{connectedModems.Count} مودم";
         }
         catch (Exception ex)

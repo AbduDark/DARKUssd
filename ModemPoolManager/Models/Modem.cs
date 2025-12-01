@@ -38,6 +38,9 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private string _operator = "N/A";
 
+    [ObservableProperty]
+    private string _networkMode = "N/A";
+
     public int SignalBars => SignalLevel switch
     {
         >= 20 => 5,

@@ -809,6 +809,84 @@ public class ModemService : IDisposable
         return await SendATCommandAsync(portName, command, timeout);
     }
 
+    public async Task<bool> SetNetworkModeAsync(string portName, string operatorName)
+    {
+        try
+        {
+            bool is2GOnly = false;
+            
+            if (!string.IsNullOrEmpty(operatorName))
+            {
+                var opLower = operatorName.ToLowerInvariant();
+                is2GOnly = opLower.Contains("vodafone") || opLower.Contains("فودافون");
+            }
+            
+            string command;
+            string targetMode = is2GOnly ? "2G" : "3G";
+            
+            if (is2GOnly)
+            {
+                command = "AT+ZSNT=0,0,1";
+                Console.WriteLine($"[{portName}] ضبط الشبكة على 2G فقط (Vodafone)");
+            }
+            else
+            {
+                command = "AT+ZSNT=0,0,2";
+                Console.WriteLine($"[{portName}] ضبط الشبكة على 3G فقط");
+            }
+            
+            var response = await SendATCommandAsync(portName, command, 5000);
+            
+            if (response.Contains("ERROR"))
+            {
+                Console.WriteLine($"[{portName}] AT+ZSNT غير مدعوم، جاري تجربة AT^SYSCFG...");
+                if (is2GOnly)
+                {
+                    command = "AT^SYSCFG=2,0,3FFFFFFF,0,0";
+                }
+                else
+                {
+                    command = "AT^SYSCFG=2,2,3FFFFFFF,0,2";
+                }
+                response = await SendATCommandAsync(portName, command, 5000);
+            }
+            
+            var success = response.Contains("OK");
+            Console.WriteLine($"[{portName}] نتيجة ضبط الشبكة ({targetMode}): {(success ? "نجح" : "فشل")}");
+            return success;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في ضبط الشبكة: {ex.Message}");
+            return false;
+        }
+    }
+
+    public async Task<string> GetNetworkModeAsync(string portName)
+    {
+        try
+        {
+            var response = await SendATCommandAsync(portName, "AT+ZSNT?", 3000);
+            var match = Regex.Match(response, @"\+ZSNT:\s*(\d+),(\d+),(\d+)");
+            if (match.Success)
+            {
+                var mode = match.Groups[3].Value;
+                return mode switch
+                {
+                    "0" => "تلقائي",
+                    "1" => "2G فقط",
+                    "2" => "3G فقط",
+                    _ => mode
+                };
+            }
+            return "غير معروف";
+        }
+        catch
+        {
+            return "غير معروف";
+        }
+    }
+
     public async Task<string> SendUssdCommandPublicAsync(string portName, string ussdCode, int ussdWaitTimeSeconds = 10)
     {
         var encodedUssd = EncodeUssd(ussdCode);
@@ -1120,6 +1198,15 @@ public class ModemService : IDisposable
         try
         {
             modem.Operator = await GetOperatorAsync(modem.PortName);
+            
+            var networkModeSet = await SetNetworkModeAsync(modem.PortName, modem.Operator);
+            
+            modem.NetworkMode = await GetNetworkModeAsync(modem.PortName);
+            if (modem.NetworkMode == "غير معروف" && networkModeSet)
+            {
+                var opLower = modem.Operator?.ToLowerInvariant() ?? "";
+                modem.NetworkMode = (opLower.Contains("vodafone") || opLower.Contains("فودافون")) ? "2G" : "3G";
+            }
             
             var tasks = new Task[]
             {
