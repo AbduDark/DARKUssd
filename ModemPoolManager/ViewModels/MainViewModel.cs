@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -29,7 +30,7 @@ public partial class MainViewModel : ObservableObject
     private string _ussdCode = "*100#";
 
     [ObservableProperty]
-    private string _statusMessage = "جاهز للعمل - اضغط تحديث للبحث عن المودمات";
+    private string _statusMessage = "جاري المراقبة التلقائية للمودمات...";
 
     [ObservableProperty]
     private bool _isProcessing;
@@ -39,6 +40,9 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private int _totalPorts;
+    
+    [ObservableProperty]
+    private bool _isMonitoring;
 
     [ObservableProperty]
     private string _customUssd1 = "*100#";
@@ -85,6 +89,102 @@ public partial class MainViewModel : ObservableObject
         CustomUssd1 = _settings.General.QuickUssdCommands.ElementAtOrDefault(0) ?? "*100#";
         CustomUssd2 = _settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
         CustomUssd3 = _settings.General.QuickUssdCommands.ElementAtOrDefault(2) ?? "*102#";
+        
+        _modemService.ModemConnected += OnModemConnected;
+        _modemService.ModemDisconnected += OnModemDisconnected;
+        _modemService.ModemUpdated += OnModemUpdated;
+        _modemService.MonitoringStatusChanged += OnMonitoringStatusChanged;
+        
+        _modemService.StartMonitoring(5000);
+        IsMonitoring = true;
+    }
+
+    private void OnModemConnected(object? sender, Modem modem)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
+            if (existing == null)
+            {
+                Modems.Add(modem);
+                StatusMessage = $"تم اكتشاف مودم جديد: {modem.PortName}";
+            }
+            else
+            {
+                existing.IsConnected = true;
+                existing.Status = modem.Status;
+                existing.PhoneNumber = modem.PhoneNumber;
+                existing.SignalStrength = modem.SignalStrength;
+                existing.Operator = modem.Operator;
+                existing.LastActivity = DateTime.Now;
+                StatusMessage = $"تم إعادة توصيل المودم: {modem.PortName}";
+            }
+            UpdateCounts();
+        });
+    }
+
+    private void OnModemDisconnected(object? sender, Modem modem)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
+            if (existing != null)
+            {
+                existing.IsConnected = false;
+                existing.Status = "تم الفصل ❌";
+                existing.SignalStrength = "N/A";
+            }
+            UpdateCounts();
+            StatusMessage = $"تم فصل المودم: {modem.PortName}";
+        });
+    }
+
+    private void OnModemUpdated(object? sender, Modem modem)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
+            if (existing != null)
+            {
+                existing.PhoneNumber = modem.PhoneNumber;
+                existing.SignalStrength = modem.SignalStrength;
+                existing.Operator = modem.Operator;
+                existing.Status = modem.Status;
+                existing.LastActivity = modem.LastActivity;
+            }
+            UpdateCounts();
+        });
+    }
+
+    private void OnMonitoringStatusChanged(object? sender, string status)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            StatusMessage = status;
+        });
+    }
+
+    private void UpdateCounts()
+    {
+        ConnectedCount = Modems.Count(m => m.IsConnected);
+        TotalPorts = Modems.Count;
+    }
+
+    [RelayCommand]
+    private void ToggleMonitoring()
+    {
+        if (IsMonitoring)
+        {
+            _modemService.StopMonitoring();
+            IsMonitoring = false;
+            StatusMessage = "تم إيقاف المراقبة التلقائية";
+        }
+        else
+        {
+            _modemService.StartMonitoring(5000);
+            IsMonitoring = true;
+            StatusMessage = "تم بدء المراقبة التلقائية";
+        }
     }
 
     [RelayCommand]
