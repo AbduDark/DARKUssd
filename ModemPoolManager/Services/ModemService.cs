@@ -179,6 +179,23 @@ public class ModemService : IDisposable
         
         try
         {
+            if (_persistentPorts.TryGetValue(portName, out var existingPort))
+            {
+                try
+                {
+                    if (!existingPort.IsOpen)
+                    {
+                        existingPort.Open();
+                        await Task.Delay(100);
+                    }
+                }
+                catch
+                {
+                    _persistentPorts.TryRemove(portName, out _);
+                    try { existingPort.Dispose(); } catch { }
+                }
+            }
+            
             var port = GetOrCreatePort(portName);
             EnsurePortOpen(port);
             
@@ -211,7 +228,7 @@ public class ModemService : IDisposable
         }
         catch
         {
-            _persistentPorts.TryRemove(portName, out _);
+            CleanupPort(portName);
             return false;
         }
         finally
@@ -712,19 +729,34 @@ public class ModemService : IDisposable
                 if (_activeModems.TryRemove(portName, out var modem))
                 {
                     modem.IsConnected = false;
-                    modem.Status = "تم الفصل";
+                    modem.Status = "تم الفصل ❌";
                     modem.SignalStrength = "N/A";
                     
-                    if (_persistentPorts.TryRemove(portName, out var port))
-                    {
-                        try { port.Close(); port.Dispose(); } catch { }
-                    }
+                    CleanupPort(portName);
                     
                     ModemDisconnected?.Invoke(this, modem);
                 }
             }
         }
         catch { }
+    }
+    
+    private void CleanupPort(string portName)
+    {
+        if (_persistentPorts.TryRemove(portName, out var port))
+        {
+            try 
+            { 
+                if (port.IsOpen) port.Close(); 
+                port.Dispose(); 
+            } 
+            catch { }
+        }
+        
+        if (_portLocks.TryRemove(portName, out var lockObj))
+        {
+            try { lockObj.Dispose(); } catch { }
+        }
     }
 
     private async Task LoadModemInfoAsync(Modem modem)
@@ -773,14 +805,26 @@ public class ModemService : IDisposable
                     else
                     {
                         modem.IsConnected = false;
-                        modem.Status = "تم الفصل";
+                        modem.Status = "تم الفصل ❌";
                         _activeModems.TryRemove(modem.PortName, out _);
+                        CleanupPort(modem.PortName);
                         ModemDisconnected?.Invoke(this, modem);
                     }
                 }
                 catch { }
             }
         }
+    }
+    
+    public async Task ForceRescanAsync()
+    {
+        foreach (var portName in _activeModems.Keys.ToList())
+        {
+            CleanupPort(portName);
+        }
+        _activeModems.Clear();
+        
+        await ScanForModemsAsync();
     }
 
     public IEnumerable<Modem> GetActiveModems() => _activeModems.Values;

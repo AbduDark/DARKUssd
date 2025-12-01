@@ -193,16 +193,25 @@ public partial class MainViewModel : ObservableObject
         try
         {
             IsProcessing = true;
-            StatusMessage = "جاري البحث عن المودمات...";
+            StatusMessage = "جاري إعادة فحص المودمات...";
             
+            _modemService.CloseAllPorts();
             Modems.Clear();
             Results.Clear();
-
+            
+            await Task.Delay(1000);
+            
+            await _modemService.ForceRescanAsync();
+            
             var detectedModems = await _modemService.DetectModemsAsync(_settings.Modem.MaxModems);
             
             foreach (var modem in detectedModems)
             {
-                Modems.Add(modem);
+                var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
+                if (existing == null)
+                {
+                    Modems.Add(modem);
+                }
             }
 
             ConnectedCount = Modems.Count(m => m.IsConnected);

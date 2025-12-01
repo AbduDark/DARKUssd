@@ -181,5 +181,21 @@ dotnet run
 ### الملفات المحدثة:
 - `ModemPoolManager/Models/Modem.cs` - إضافة LastResponseDuration و LastResponseTime
 - `ModemPoolManager/Converters/OperatorToBrushConverter.cs` - محول لتلوين الأرقام حسب الشبكة
-- `ModemPoolManager/MainWindow.xaml` - التصميم الجديد بالكامل
+- `ModemPoolManager/MainWindow.xaml` - التصميم الجديد بالكامل (12 مودم في شبكة 4×3)
 - `ModemPoolManager/ViewModels/MainViewModel.cs` - تتبع وقت التنفيذ لكل مودم
+- `ModemPoolManager/Services/ModemService.cs` - تحسين إعادة الاتصال
+
+## إصلاح مشكلة إعادة التوصيل (ديسمبر 2025)
+### المشكلة:
+عند فصل المودم وإعادة توصيله، البرنامج لم يكن يكتشفه مرة أخرى.
+
+### الحل:
+1. **إضافة دالة CleanupPort**: تقوم بتنظيف SerialPort والـ Lock عند فصل المودم
+2. **تحسين TestPortConnectionAsync**: يتحقق من حالة البورت القديم ويحاول إعادة فتحه
+3. **إضافة ForceRescanAsync**: إعادة فحص شاملة تمسح كل البيانات القديمة
+4. **تحسين RefreshPortsAsync**: يستخدم ForceRescanAsync لإعادة الفحص الكامل
+
+### كيف يعمل الآن:
+1. عند فصل المودم → يتم تنظيف الـ SerialPort والـ Lock بالكامل
+2. عند إعادة التوصيل → البرنامج ينشئ اتصال جديد نظيف
+3. زر "تحديث" → يقوم بإعادة فحص كاملة مع تنظيف كل الاتصالات القديمة
