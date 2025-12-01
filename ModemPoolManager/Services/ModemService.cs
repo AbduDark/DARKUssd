@@ -77,20 +77,23 @@ public class ModemService : IDisposable
             {
                 var caption = obj["Caption"]?.ToString() ?? "";
                 
+                var comMatch = Regex.Match(caption, @"\(COM(\d+)\)");
+                if (!comMatch.Success)
+                    continue;
+                
+                string portName = $"COM{comMatch.Groups[1].Value}";
+                
                 bool isValidModemPort = false;
                 
-                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
-                    caption.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
+                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase))
                 {
-                    isValidModemPort = true;
-                }
-                
-                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
-                    !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase) &&
-                    !caption.Contains("NMEA", StringComparison.OrdinalIgnoreCase) &&
-                    !caption.Contains("GPS", StringComparison.OrdinalIgnoreCase))
-                {
-                    isValidModemPort = true;
+                    if (caption.Contains("Diagnostics Interface", StringComparison.OrdinalIgnoreCase) ||
+                        caption.Contains("NMEA Device", StringComparison.OrdinalIgnoreCase) ||
+                        caption.Contains("Application Interface", StringComparison.OrdinalIgnoreCase) ||
+                        caption.Contains("USB Serial", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isValidModemPort = true;
+                    }
                 }
                 
                 if (caption.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
@@ -98,8 +101,7 @@ public class ModemService : IDisposable
                     isValidModemPort = true;
                 }
                 
-                if (caption.Contains("Modem", StringComparison.OrdinalIgnoreCase) &&
-                    !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase))
+                if (caption.Contains("Modem", StringComparison.OrdinalIgnoreCase))
                 {
                     isValidModemPort = true;
                 }
@@ -111,22 +113,14 @@ public class ModemService : IDisposable
                 }
 
                 if (caption.Contains("USB", StringComparison.OrdinalIgnoreCase) &&
-                    caption.Contains("Serial", StringComparison.OrdinalIgnoreCase) &&
-                    !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase))
+                    caption.Contains("Serial", StringComparison.OrdinalIgnoreCase))
                 {
                     isValidModemPort = true;
                 }
                 
-                if (caption.Contains("COM", StringComparison.OrdinalIgnoreCase))
+                if (isValidModemPort)
                 {
-                    var match = Regex.Match(caption, @"\(COM(\d+)\)");
-                    if (match.Success)
-                    {
-                        if (isValidModemPort)
-                        {
-                            ports.Add($"COM{match.Groups[1].Value}");
-                        }
-                    }
+                    ports.Add(portName);
                 }
             }
         }

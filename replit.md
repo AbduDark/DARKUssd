@@ -101,8 +101,17 @@ ModemPoolManager/
 ## طريقة البحث عن المودمات
 يبحث البرنامج عن المودمات مباشرة في قسم "Ports (COM & LPT)" في Device Manager باستخدام:
 - ClassGuid: `{4D36E978-E325-11CE-BFC1-08002BE10318}` (معرف قسم Ports)
-- يبحث عن أجهزة ZTE Diagnostics
-- يبحث عن أي جهاز يحتوي على "Modem" أو "Diagnostics" أو "USB Serial"
+- يستخرج رقم البورت من `(COMx)` في اسم الجهاز
+
+### الأجهزة المدعومة:
+| نوع الجهاز | مثال |
+|-----------|------|
+| ZTE Diagnostics Interface | `ZTE Diagnostics Interface (COM5)` |
+| ZTE NMEA Device | `ZTE NMEA Device (COM6)` |
+| ZTE Application Interface | `ZTE Application Interface (COM7)` |
+| ZTE USB Serial | `ZTE USB Serial (COM8)` |
+| أي جهاز Modem | `USB Modem (COM9)` |
+| Mobile Broadband | `Mobile Broadband Device (COM10)` |
 
 ## طريقة التشغيل
 ```bash
