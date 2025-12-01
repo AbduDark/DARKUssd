@@ -80,8 +80,15 @@ public class ModemService : IDisposable
                 bool isValidModemPort = false;
                 
                 if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
+                    caption.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
+                {
+                    isValidModemPort = true;
+                }
+                
+                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
                     !caption.Contains("NVME", StringComparison.OrdinalIgnoreCase) &&
-                    !caption.Contains("NVM", StringComparison.OrdinalIgnoreCase))
+                    !caption.Contains("NMEA", StringComparison.OrdinalIgnoreCase) &&
+                    !caption.Contains("GPS", StringComparison.OrdinalIgnoreCase))
                 {
                     isValidModemPort = true;
                 }
