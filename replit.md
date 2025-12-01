@@ -98,6 +98,12 @@ ModemPoolManager/
 ## ملاحظة مهمة
 هذا البرنامج يعمل فقط على Windows لأن WPF خاص بـ Windows.
 
+## طريقة البحث عن المودمات
+يبحث البرنامج عن المودمات مباشرة في قسم "Ports (COM & LPT)" في Device Manager باستخدام:
+- ClassGuid: `{4D36E978-E325-11CE-BFC1-08002BE10318}` (معرف قسم Ports)
+- يبحث عن أجهزة ZTE Diagnostics
+- يبحث عن أي جهاز يحتوي على "Modem" أو "Diagnostics" أو "USB Serial"
+
 ## طريقة التشغيل
 ```bash
 cd ModemPoolManager

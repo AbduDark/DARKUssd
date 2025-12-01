@@ -48,7 +48,7 @@ public class ModemService : IDisposable
         try
         {
             using var searcher = new ManagementObjectSearcher(
-                "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%COM%'");
+                "SELECT * FROM Win32_PnPEntity WHERE ClassGuid = '{4D36E978-E325-11CE-BFC1-08002BE10318}'");
             
             foreach (ManagementObject obj in searcher.Get())
             {
@@ -71,7 +71,7 @@ public class ModemService : IDisposable
         try
         {
             using var searcher = new ManagementObjectSearcher(
-                "SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%COM%'");
+                "SELECT * FROM Win32_PnPEntity WHERE ClassGuid = '{4D36E978-E325-11CE-BFC1-08002BE10318}'");
             
             foreach (ManagementObject obj in searcher.Get())
             {
@@ -117,12 +117,15 @@ public class ModemService : IDisposable
                     isValidModemPort = true;
                 }
                 
-                if (isValidModemPort)
+                if (caption.Contains("COM", StringComparison.OrdinalIgnoreCase))
                 {
                     var match = Regex.Match(caption, @"\(COM(\d+)\)");
                     if (match.Success)
                     {
-                        ports.Add($"COM{match.Groups[1].Value}");
+                        if (isValidModemPort)
+                        {
+                            ports.Add($"COM{match.Groups[1].Value}");
+                        }
                     }
                 }
             }
