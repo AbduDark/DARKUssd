@@ -1137,7 +1137,27 @@ public class ModemService : IDisposable
     {
         Task.Run(async () =>
         {
-            await Task.Delay(1000);
+            Console.WriteLine("[WMI] تم اكتشاف جهاز جديد...");
+            await Task.Delay(2000);
+            
+            var ports = GetZTEDiagnosticsPorts();
+            Console.WriteLine($"[WMI] المنافذ المتاحة: {string.Join(", ", ports)}");
+            
+            foreach (var portName in ports)
+            {
+                if (!_activeModems.ContainsKey(portName))
+                {
+                    if (_persistentPorts.TryRemove(portName, out var oldPort))
+                    {
+                        try { if (oldPort.IsOpen) oldPort.Close(); oldPort.Dispose(); } catch { }
+                    }
+                    if (_portLocks.TryRemove(portName, out var oldLock))
+                    {
+                        try { oldLock.Dispose(); } catch { }
+                    }
+                }
+            }
+            
             await ScanForModemsAsync();
         });
     }
@@ -1146,7 +1166,8 @@ public class ModemService : IDisposable
     {
         Task.Run(async () =>
         {
-            await Task.Delay(200);
+            Console.WriteLine("[WMI] تم فصل جهاز...");
+            await Task.Delay(500);
             await CheckForDisconnectedModemsAsync();
         });
     }
@@ -1156,13 +1177,31 @@ public class ModemService : IDisposable
         try
         {
             var ports = GetZTEDiagnosticsPorts();
+            Console.WriteLine($"[Scan] المنافذ المكتشفة: {string.Join(", ", ports)}");
+            Console.WriteLine($"[Scan] المودمات النشطة حالياً: {string.Join(", ", _activeModems.Keys)}");
+            
             int index = _activeModems.Count + 1;
             
             foreach (var portName in ports)
             {
                 if (!_activeModems.ContainsKey(portName))
                 {
+                    Console.WriteLine($"[Scan] جاري اختبار المنفذ: {portName}");
+                    
+                    if (_persistentPorts.TryRemove(portName, out var oldPort))
+                    {
+                        try { if (oldPort.IsOpen) oldPort.Close(); oldPort.Dispose(); } catch { }
+                    }
+                    if (_portLocks.TryRemove(portName, out var oldLock))
+                    {
+                        try { oldLock.Dispose(); } catch { }
+                    }
+                    
+                    await Task.Delay(300);
+                    
                     var isConnected = await TestPortConnectionAsync(portName);
+                    Console.WriteLine($"[Scan] نتيجة اختبار {portName}: {(isConnected ? "متصل" : "غير متصل")}");
+                    
                     if (isConnected)
                     {
                         var modem = new Modem
@@ -1174,14 +1213,18 @@ public class ModemService : IDisposable
                         };
                         
                         _activeModems[portName] = modem;
+                        Console.WriteLine($"[Scan] تم إضافة مودم جديد: {portName}");
                         ModemConnected?.Invoke(this, modem);
                         
-                        await LoadModemInfoAsync(modem);
+                        _ = LoadModemInfoAsync(modem);
                     }
                 }
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Scan] خطأ: {ex.Message}");
+        }
     }
 
     private async Task CheckForDisconnectedModemsAsync()
@@ -1464,13 +1507,39 @@ public class ModemService : IDisposable
     
     public async Task ForceRescanAsync()
     {
+        Console.WriteLine("[ForceRescan] بدء إعادة الفحص الشامل...");
+        
         foreach (var portName in _activeModems.Keys.ToList())
         {
             CleanupPort(portName);
         }
         _activeModems.Clear();
         
+        foreach (var portName in _persistentPorts.Keys.ToList())
+        {
+            if (_persistentPorts.TryRemove(portName, out var port))
+            {
+                try 
+                { 
+                    if (port.IsOpen) port.Close(); 
+                    port.Dispose(); 
+                } 
+                catch { }
+            }
+        }
+        _persistentPorts.Clear();
+        
+        foreach (var lockObj in _portLocks.Values)
+        {
+            try { lockObj.Dispose(); } catch { }
+        }
+        _portLocks.Clear();
+        
+        await Task.Delay(500);
+        
+        Console.WriteLine("[ForceRescan] جاري البحث عن المودمات...");
         await ScanForModemsAsync();
+        Console.WriteLine($"[ForceRescan] تم العثور على {_activeModems.Count} مودم");
     }
 
     public IEnumerable<Modem> GetActiveModems() => _activeModems.Values;

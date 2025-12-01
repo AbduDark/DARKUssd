@@ -204,27 +204,26 @@ public partial class MainViewModel : ObservableObject
             IsProcessing = true;
             StatusMessage = "جاري إعادة فحص المودمات...";
             
-            _modemService.CloseAllPorts();
             Modems.Clear();
             Results.Clear();
-            
-            await Task.Delay(1000);
+            UpdateCounts();
             
             await _modemService.ForceRescanAsync();
             
-            var detectedModems = await _modemService.DetectModemsAsync(_settings.Modem.MaxModems);
+            await Task.Delay(2000);
             
-            foreach (var modem in detectedModems)
+            var activeModems = _modemService.GetActiveModems().ToList();
+            foreach (var modem in activeModems)
             {
                 var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
                 if (existing == null)
                 {
+                    modem.Index = Modems.Count + 1;
                     Modems.Add(modem);
                 }
             }
 
-            ConnectedCount = Modems.Count(m => m.IsConnected);
-            TotalPorts = Modems.Count;
+            UpdateCounts();
             
             if (ConnectedCount == 0)
             {
@@ -232,7 +231,7 @@ public partial class MainViewModel : ObservableObject
                 if (allDevices.Count > 0)
                 {
                     var deviceList = string.Join(", ", allDevices.Take(5));
-                    StatusMessage = $"لم يتم العثور على مودمات. الأجهزة: {deviceList}";
+                    StatusMessage = $"لم يتم العثور على مودمات ZTE. الأجهزة: {deviceList}";
                 }
                 else
                 {
@@ -267,7 +266,7 @@ public partial class MainViewModel : ObservableObject
             var tasks = connectedModems.Select(async modem =>
             {
                 modem.Operator = await _modemService.GetOperatorAsync(modem.PortName);
-                modem.PhoneNumber = await _modemService.GetPhoneNumberWithUssdFallbackAsync(modem.PortName, modem.Operator);
+                modem.PhoneNumber = await _modemService.GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
                 modem.SignalStrength = await _modemService.GetSignalStrengthAsync(modem.PortName);
                 modem.Info = await _modemService.GetModemInfoAsync(modem.PortName);
                 modem.UnreadSmsCount = await _smsService.GetUnreadCountAsync(modem.PortName);

@@ -31,6 +31,8 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Interactive monitoring: auto-detection of new modems, display of phone number and signal strength, disconnection detection, and 5-second signal updates.
     -   **Auto-remove modem from UI when disconnected:** Modem card disappears immediately when device is unplugged.
     -   **Auto-fetch phone number on connection:** Phone number is retrieved automatically using USSD codes when modem is connected.
+    -   **Improved reconnection handling:** When modem is unplugged and replugged, old port resources are cleaned up and new connection is established automatically via WMI event watchers.
+    -   **Robust refresh button:** ForceRescanAsync now properly cleans all port resources (persistent ports, locks) before rescanning.
 -   **Fast phone number retrieval:** Uses the same USSD-direct approach as the old VB.NET system - sends operator-specific USSD codes (*878# for Vodafone, *100*6*1*2# for Orange, *947# for Etisalat) directly without trying AT+CNUM first. Operator and signal are fetched in parallel, then phone number is retrieved via USSD with 6-second timeout.
 -   **Network Mode Management:**
     -   Automatic network mode setting based on operator: Vodafone = 2G only, all other operators = 3G only.
