@@ -106,8 +106,9 @@ public partial class MainViewModel : ObservableObject
             var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
             if (existing == null)
             {
+                modem.Index = Modems.Count + 1;
                 Modems.Add(modem);
-                StatusMessage = $"تم اكتشاف مودم جديد: {modem.PortName}";
+                StatusMessage = $"تم اكتشاف مودم جديد: {modem.PortName} - جاري جلب الرقم...";
             }
             else
             {
@@ -130,13 +131,21 @@ public partial class MainViewModel : ObservableObject
             var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
             if (existing != null)
             {
-                existing.IsConnected = false;
-                existing.Status = "تم الفصل ❌";
-                existing.SignalStrength = "N/A";
+                Modems.Remove(existing);
+                ReindexModems();
             }
             UpdateCounts();
             StatusMessage = $"تم فصل المودم: {modem.PortName}";
         });
+    }
+
+    private void ReindexModems()
+    {
+        int index = 1;
+        foreach (var modem in Modems.OrderBy(m => m.PortName))
+        {
+            modem.Index = index++;
+        }
     }
 
     private void OnModemUpdated(object? sender, Modem modem)

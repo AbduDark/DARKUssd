@@ -1026,7 +1026,7 @@ public class ModemService : IDisposable
     {
         Task.Run(async () =>
         {
-            await Task.Delay(2000);
+            await Task.Delay(1000);
             await ScanForModemsAsync();
         });
     }
@@ -1035,7 +1035,7 @@ public class ModemService : IDisposable
     {
         Task.Run(async () =>
         {
-            await Task.Delay(500);
+            await Task.Delay(200);
             await CheckForDisconnectedModemsAsync();
         });
     }
