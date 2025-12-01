@@ -1,0 +1,27 @@
+System.TypeInitializationException
+  HResult=0x80131534
+  Message=The type initializer for 'ModemPoolManager.Converters.OperatorToBrushConverter' threw an exception.
+  Source=ModemPoolManager
+  StackTrace:
+   at ModemPoolManager.Converters.OperatorToBrushConverter.Convert(Object value, Type targetType, Object parameter, CultureInfo culture) in D:\DARKUssd\DARKUssd\ModemPoolManager\Converters\OperatorToBrushConverter.cs:line 49
+   at System.Windows.Data.BindingExpression.TransferValue(Object newValue, Boolean isASubPropertyChange)
+   at System.Windows.Data.BindingExpression.Activate(Object item)
+   at System.Windows.Data.BindingExpression.AttachToContext(AttachAttempt attempt)
+   at System.Windows.Data.BindingExpression.AttachOverride(DependencyObject target, DependencyProperty dp)
+   at System.Windows.Data.BindingExpressionBase.Attach(DependencyObject target, DependencyProperty dp)
+   at System.Windows.StyleHelper.GetInstanceValue(UncommonField`1 dataField, DependencyObject container, FrameworkElement feChild, FrameworkContentElement fceChild, Int32 childIndex, DependencyProperty dp, Int32 i, EffectiveValueEntry& entry)
+   at System.Windows.FrameworkTemplate.ReceivePropertySet(Object targetObject, XamlMember member, Object value, DependencyObject templatedParent)
+   at System.Windows.FrameworkTemplate.<>c__DisplayClass45_0.<LoadOptimizedTemplateContent>b__3(Object sender, XamlSetValueEventArgs setArgs)
+   at System.Xaml.XamlObjectWriter.OnSetValue(Object eventSender, XamlMember member, Object value)
+   at System.Xaml.XamlObjectWriter.SetValue(Object inst, XamlMember property, Object value)
+   at System.Xaml.XamlObjectWriter.Logic_ApplyPropertyValue(ObjectWriterContext ctx, XamlMember prop, Object value, Boolean onParent)
+   at System.Xaml.XamlObjectWriter.Logic_DoAssignmentToParentProperty(ObjectWriterContext ctx)
+   at System.Xaml.XamlObjectWriter.WriteEndObject()
+   at System.Windows.FrameworkTemplate.LoadTemplateXaml(XamlReader templateReader, XamlObjectWriter currentWriter)
+
+  This exception was originally thrown at this call stack:
+    [External Code]
+    ModemPoolManager.Converters.OperatorToBrushConverter.OperatorToBrushConverter() in OperatorToBrushConverter.cs
+
+Inner Exception 1:
+ArgumentException: An item with the same key has already been added. Key: stc
