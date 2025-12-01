@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ModemPoolManager.Console")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+60375279c1235d3e52a5610c6407f8225ca22d80")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+59e7567da16930f97e00e6c7e4a3697d1d689033")]
 [assembly: System.Reflection.AssemblyProductAttribute("ModemPoolManager.Console")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ModemPoolManager.Console")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
