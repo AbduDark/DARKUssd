@@ -111,5 +111,6 @@ Console.WriteLine("   قم بتحميل مجلد ModemPoolManager وشغله ع�
 Console.ResetColor();
 
 Console.WriteLine("\n" + new string('─', 70));
-Console.WriteLine("اضغط أي مفتاح للخروج...");
-Console.ReadKey();
+Console.ForegroundColor = ConsoleColor.DarkGray;
+Console.WriteLine("Application info displayed successfully.");
+Console.ResetColor();
