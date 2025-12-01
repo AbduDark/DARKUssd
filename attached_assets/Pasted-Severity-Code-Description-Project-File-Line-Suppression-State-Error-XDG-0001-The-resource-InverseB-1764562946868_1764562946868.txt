@@ -1,0 +1,17 @@
+Severity	Code	Description	Project	File	Line	Suppression State
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	266	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	200	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	256	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	272	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	278	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	287	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	489	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	491	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	493	
+Error (active)	CS0103	The name 'Path' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	13	
+Error (active)	CS0103	The name 'Path' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	37	
+Error (active)	CS0103	The name 'File' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	22	
+Error (active)	CS0103	The name 'File' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	24	
+Error (active)	CS0103	The name 'File' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	47	
+Error (active)	CS0103	The name 'Directory' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	38	
+Error (active)	CS0103	The name 'Directory' does not exist in the current context	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\Models\AppSettings.cs	40	
