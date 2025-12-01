@@ -83,42 +83,8 @@ public class ModemService : IDisposable
                 
                 string portName = $"COM{comMatch.Groups[1].Value}";
                 
-                bool isValidModemPort = false;
-                
-                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (caption.Contains("Diagnostics Interface", StringComparison.OrdinalIgnoreCase) ||
-                        caption.Contains("NMEA Device", StringComparison.OrdinalIgnoreCase) ||
-                        caption.Contains("Application Interface", StringComparison.OrdinalIgnoreCase) ||
-                        caption.Contains("USB Serial", StringComparison.OrdinalIgnoreCase))
-                    {
-                        isValidModemPort = true;
-                    }
-                }
-                
-                if (caption.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
-                {
-                    isValidModemPort = true;
-                }
-                
-                if (caption.Contains("Modem", StringComparison.OrdinalIgnoreCase))
-                {
-                    isValidModemPort = true;
-                }
-                
-                if (caption.Contains("Mobile", StringComparison.OrdinalIgnoreCase) &&
-                    caption.Contains("Broadband", StringComparison.OrdinalIgnoreCase))
-                {
-                    isValidModemPort = true;
-                }
-
-                if (caption.Contains("USB", StringComparison.OrdinalIgnoreCase) &&
-                    caption.Contains("Serial", StringComparison.OrdinalIgnoreCase))
-                {
-                    isValidModemPort = true;
-                }
-                
-                if (isValidModemPort)
+                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
+                    caption.Contains("Diagnostics Interface", StringComparison.OrdinalIgnoreCase))
                 {
                     ports.Add(portName);
                 }

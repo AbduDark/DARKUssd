@@ -102,16 +102,18 @@ ModemPoolManager/
 يبحث البرنامج عن المودمات مباشرة في قسم "Ports (COM & LPT)" في Device Manager باستخدام:
 - ClassGuid: `{4D36E978-E325-11CE-BFC1-08002BE10318}` (معرف قسم Ports)
 - يستخرج رقم البورت من `(COMx)` في اسم الجهاز
+- يبحث فقط عن `ZTE Diagnostics Interface` لأنه المنفذ الوحيد الذي يقبل أوامر AT
 
-### الأجهزة المدعومة:
-| نوع الجهاز | مثال |
+### المنفذ المستخدم:
+| نوع الجهاز | مثال | الاستخدام |
+|-----------|------|----------|
+| ZTE Diagnostics Interface | `ZTE Diagnostics Interface (COM5)` | ✅ أوامر AT/USSD/SMS |
+
+### المنافذ المستبعدة:
+| نوع الجهاز | السبب |
 |-----------|------|
-| ZTE Diagnostics Interface | `ZTE Diagnostics Interface (COM5)` |
-| ZTE NMEA Device | `ZTE NMEA Device (COM6)` |
-| ZTE Application Interface | `ZTE Application Interface (COM7)` |
-| ZTE USB Serial | `ZTE USB Serial (COM8)` |
-| أي جهاز Modem | `USB Modem (COM9)` |
-| Mobile Broadband | `Mobile Broadband Device (COM10)` |
+| ZTE NMEA Device | للـ GPS فقط، لا يقبل أوامر AT |
+| ZTE Application Interface | منفذ تطبيقات، لا يقبل أوامر AT |
 
 ## طريقة التشغيل
 ```bash
