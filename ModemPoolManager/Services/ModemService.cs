@@ -453,24 +453,12 @@ public class ModemService : IDisposable
         {
             modem.IsBusy = true;
             
-            var number = await GetPhoneNumberFastAsync(modem.PortName);
-            if (number == "غير معروف")
+            if (string.IsNullOrEmpty(modem.Operator))
             {
-                if (string.IsNullOrEmpty(modem.Operator))
-                {
-                    modem.Operator = await GetOperatorAsync(modem.PortName);
-                }
-                
-                string ussdCode = GetPhoneNumberUssdCode(modem.Operator);
-                Console.WriteLine($"[{modem.PortName}] جاري جلب الرقم باستخدام USSD: {ussdCode}");
-                var ussdResponse = await SendUssdCommandAsync(modem.PortName, $"AT+CUSD=1,\"{ussdCode}\",15", 5);
-                
-                var extractedNumber = ExtractPhoneNumberFromUssd(ussdResponse);
-                if (!string.IsNullOrEmpty(extractedNumber))
-                {
-                    number = extractedNumber;
-                }
+                modem.Operator = await GetOperatorAsync(modem.PortName);
             }
+            
+            var number = await GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
             
             modem.PhoneNumber = number;
             modem.LastActivity = DateTime.Now;
@@ -1246,23 +1234,18 @@ public class ModemService : IDisposable
             ModemUpdated?.Invoke(this, modem);
             
             var operatorTask = GetOperatorAsync(modem.PortName);
-            var phoneTask = GetPhoneNumberFastAsync(modem.PortName);
             var signalTask = GetSignalStrengthWithLevelAsync(modem.PortName);
             
-            await Task.WhenAll(operatorTask, phoneTask, signalTask);
+            await Task.WhenAll(operatorTask, signalTask);
             
             modem.Operator = await operatorTask;
-            modem.PhoneNumber = await phoneTask;
             var (strength, level) = await signalTask;
             modem.SignalStrength = strength;
             modem.SignalLevel = level;
             
-            if (modem.PhoneNumber == "غير معروف" || string.IsNullOrEmpty(modem.PhoneNumber))
-            {
-                modem.Status = "جاري جلب الرقم عبر USSD...";
-                ModemUpdated?.Invoke(this, modem);
-                modem.PhoneNumber = await GetPhoneNumberWithUssdFallbackAsync(modem.PortName, modem.Operator);
-            }
+            ModemUpdated?.Invoke(this, modem);
+            
+            modem.PhoneNumber = await GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
             
             _ = Task.Run(async () =>
             {
@@ -1290,6 +1273,113 @@ public class ModemService : IDisposable
             modem.Status = "خطأ في التحميل";
             ModemUpdated?.Invoke(this, modem);
         }
+    }
+    
+    public async Task<string> GetPhoneNumberViaUssdDirectAsync(string portName, string? operatorName = null)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(operatorName))
+            {
+                operatorName = await GetOperatorAsync(portName);
+            }
+            
+            string ussdCode = GetPhoneNumberUssdCodeDirect(operatorName);
+            if (string.IsNullOrEmpty(ussdCode))
+            {
+                return "غير معروف";
+            }
+            
+            Console.WriteLine($"[{portName}] جاري جلب الرقم مباشرة عبر USSD: {ussdCode}");
+            
+            var portLock = GetPortLock(portName);
+            await portLock.WaitAsync();
+            
+            try
+            {
+                var port = GetOrCreatePort(portName);
+                port.ReadTimeout = 10000;
+                EnsurePortOpen(port);
+                
+                port.DiscardInBuffer();
+                port.DiscardOutBuffer();
+                
+                var encodedUssd = EncodeUssd(ussdCode);
+                var command = $"AT+CUSD=1,\"{encodedUssd}\",15";
+                
+                await Task.Run(() => port.Write(command + "\r"));
+                
+                var response = new StringBuilder();
+                var startTime = DateTime.Now;
+                var timeout = 6000;
+                
+                while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
+                {
+                    await Task.Delay(300);
+                    
+                    if (port.BytesToRead > 0)
+                    {
+                        var data = await Task.Run(() => port.ReadExisting());
+                        response.Append(data);
+                        
+                        if (response.ToString().Contains("+CUSD:"))
+                        {
+                            await Task.Delay(500);
+                            if (port.BytesToRead > 0)
+                            {
+                                response.Append(await Task.Run(() => port.ReadExisting()));
+                            }
+                            break;
+                        }
+                    }
+                }
+                
+                var fullResponse = response.ToString();
+                Console.WriteLine($"[{portName}] USSD Response: {fullResponse}");
+                
+                var decodedResponse = DecodeUssdResponse(fullResponse);
+                var extractedNumber = ExtractPhoneNumberFromUssd(decodedResponse);
+                
+                if (!string.IsNullOrEmpty(extractedNumber))
+                {
+                    Console.WriteLine($"[{portName}] تم جلب الرقم: {extractedNumber}");
+                    return extractedNumber;
+                }
+                
+                return "غير معروف";
+            }
+            finally
+            {
+                portLock.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في جلب الرقم عبر USSD: {ex.Message}");
+            return "غير معروف";
+        }
+    }
+    
+    private string GetPhoneNumberUssdCodeDirect(string? operatorName)
+    {
+        if (string.IsNullOrEmpty(operatorName))
+            return "*878#";
+
+        var opLower = operatorName.ToLowerInvariant();
+        
+        if (opLower.Contains("vodafone") || opLower.Contains("فودافون"))
+            return "*878#";
+        
+        if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل"))
+            return "*100*6*1*2#";
+        
+        if (opLower.Contains("etisalat") || opLower.Contains("اتصالات"))
+            return "*947#";
+        
+        if (opLower.Contains("we") || opLower.Contains("وي") || opLower.Contains("المصرية"))
+            return "*999#";
+        
+        return "*878#";
     }
     
     public async Task<string> GetPhoneNumberFastAsync(string portName)
