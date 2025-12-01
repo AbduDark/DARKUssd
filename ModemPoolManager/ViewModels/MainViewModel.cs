@@ -814,4 +814,71 @@ public partial class MainViewModel : ObservableObject
         Settings.Save();
         StatusMessage = "تم إعادة تعيين الإعدادات";
     }
+
+    [RelayCommand]
+    private async Task StartListeningSmsAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected) return;
+
+        if (modem.IsListeningSms)
+        {
+            // إيقاف الاستماع
+            modem.IsListeningSms = false;
+            modem.Status = "جاهز";
+            StatusMessage = $"تم إيقاف الاستماع للرسائل على {modem.PortName}";
+            return;
+        }
+
+        // بدء الاستماع
+        modem.IsListeningSms = true;
+        modem.Status = "يستمع للرسائل...";
+        StatusMessage = $"بدء الاستماع للرسائل على {modem.PortName}";
+
+        _ = Task.Run(async () =>
+        {
+            while (modem.IsListeningSms && modem.IsConnected)
+            {
+                try
+                {
+                    // جلب الرسائل الجديدة
+                    var newMessages = await _smsService.GetUnreadMessagesAsync(modem.PortName, modem.Index);
+                    
+                    if (newMessages.Count > 0)
+                    {
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            foreach (var msg in newMessages)
+                            {
+                                SmsMessages.Insert(0, msg);
+                            }
+                            
+                            modem.UnreadSmsCount = newMessages.Count;
+                            modem.LastResponse = $"📨 استلام {newMessages.Count} رسالة جديدة\n{newMessages[0].Message}";
+                            modem.LastActivity = DateTime.Now;
+                            TotalSmsCount += newMessages.Count;
+                            
+                            StatusMessage = $"📨 استلام {newMessages.Count} رسالة من {modem.PortName}";
+                        });
+                    }
+
+                    // الانتظار 5 ثوانٍ قبل الفحص التالي
+                    await Task.Delay(5000);
+                }
+                catch (Exception ex)
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        modem.LastError = ex.Message;
+                        modem.Status = "خطأ في الاستماع";
+                    });
+                    await Task.Delay(10000); // انتظار أطول في حالة الخطأ
+                }
+            }
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                modem.Status = "جاهز";
+            });
+        });
+    }
 }

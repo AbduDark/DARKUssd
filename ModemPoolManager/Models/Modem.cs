@@ -89,6 +89,9 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private DateTime _lastResponseTime;
 
+    [ObservableProperty]
+    private bool _isListeningSms;
+
     public double SuccessRate => SuccessfulCommands + FailedCommands > 0 
         ? (double)SuccessfulCommands / (SuccessfulCommands + FailedCommands) * 100 
         : 0;

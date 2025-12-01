@@ -428,7 +428,12 @@
                                             </Border>
 
                                             <Grid Grid.Row="1" Background="#0D1117">
-                                                <Grid Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <Grid Grid.Row="0" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"
                                                       HorizontalAlignment="Center" VerticalAlignment="Center">
                                                     <Viewbox Width="40" Height="40">
                                                         <Grid>
@@ -453,7 +458,7 @@
                                                     </Viewbox>
                                                 </Grid>
 
-                                                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,6">
+                                                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="8,6">
                                                     <ScrollViewer.Style>
                                                         <Style TargetType="ScrollViewer">
                                                             <Style.Triggers>
@@ -479,6 +484,28 @@
                                                         </TextBlock.Style>
                                                     </TextBlock>
                                                 </ScrollViewer>
+
+                                                <!-- زر استماع للرسائل -->
+                                                <Button Grid.Row="1" Margin="4" Padding="8,6"
+                                                        Command="{Binding DataContext.StartListeningSmsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                        CommandParameter="{Binding}"
+                                                        ToolTip="بدء الاستماع للرسائل الواردة">
+                                                    <Button.Style>
+                                                        <Style TargetType="Button" BasedOn="{StaticResource ModernButton}">
+                                                            <Setter Property="Background" Value="#1F6FEB"/>
+                                                            <Setter Property="Content" Value="📥 استماع للرسائل"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsListeningSms}" Value="True">
+                                                                    <Setter Property="Background" Value="#DA3633"/>
+                                                                    <Setter Property="Content" Value="⏹ إيقاف الاستماع"/>
+                                                                </DataTrigger>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="Opacity" Value="0.9"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Button.Style>
+                                                </Button>
                                             </Grid>
                                         </Grid>
                                     </Border>
