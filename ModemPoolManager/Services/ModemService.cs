@@ -425,6 +425,149 @@ public class ModemService : IDisposable
         }
     }
 
+    public async Task<string> SendATCommandPublicAsync(string portName, string command, int timeout = 5000)
+    {
+        return await SendATCommandAsync(portName, command, timeout);
+    }
+
+    public async Task<ModemInfo> GetModemInfoAsync(string portName)
+    {
+        var info = new ModemInfo { LastUpdated = DateTime.Now };
+
+        try
+        {
+            var imeiResponse = await SendATCommandAsync(portName, "AT+CGSN", 3000);
+            var imeiMatch = Regex.Match(imeiResponse, @"(\d{15})");
+            if (imeiMatch.Success) info.Imei = imeiMatch.Groups[1].Value;
+
+            var imsiResponse = await SendATCommandAsync(portName, "AT+CIMI", 3000);
+            var imsiMatch = Regex.Match(imsiResponse, @"(\d{15})");
+            if (imsiMatch.Success) info.Imsi = imsiMatch.Groups[1].Value;
+
+            var iccidResponse = await SendATCommandAsync(portName, "AT+CCID", 3000);
+            var iccidMatch = Regex.Match(iccidResponse, @"(\d{19,20})");
+            if (iccidMatch.Success) info.Iccid = iccidMatch.Groups[1].Value;
+
+            var manufacturerResponse = await SendATCommandAsync(portName, "AT+CGMI", 3000);
+            if (!manufacturerResponse.Contains("ERROR"))
+            {
+                info.Manufacturer = manufacturerResponse.Replace("OK", "").Replace("AT+CGMI", "").Trim();
+            }
+
+            var modelResponse = await SendATCommandAsync(portName, "AT+CGMM", 3000);
+            if (!modelResponse.Contains("ERROR"))
+            {
+                info.Model = modelResponse.Replace("OK", "").Replace("AT+CGMM", "").Trim();
+            }
+
+            var firmwareResponse = await SendATCommandAsync(portName, "AT+CGMR", 3000);
+            if (!firmwareResponse.Contains("ERROR"))
+            {
+                info.FirmwareVersion = firmwareResponse.Replace("OK", "").Replace("AT+CGMR", "").Trim();
+            }
+
+            var simResponse = await SendATCommandAsync(portName, "AT+CPIN?", 3000);
+            var simMatch = Regex.Match(simResponse, @"\+CPIN:\s*(.+?)[\r\n]");
+            if (simMatch.Success) info.SimStatus = simMatch.Groups[1].Value.Trim();
+
+            var regResponse = await SendATCommandAsync(portName, "AT+CREG?", 3000);
+            var regMatch = Regex.Match(regResponse, @"\+CREG:\s*\d+,(\d+)");
+            if (regMatch.Success)
+            {
+                var regStatus = regMatch.Groups[1].Value;
+                info.NetworkStatus = regStatus switch
+                {
+                    "0" => "غير مسجل",
+                    "1" => "مسجل (محلي)",
+                    "2" => "جاري البحث",
+                    "3" => "مرفوض",
+                    "4" => "غير معروف",
+                    "5" => "مسجل (تجوال)",
+                    _ => regStatus
+                };
+                info.IsRoaming = regStatus == "5";
+            }
+
+            var signalResponse = await SendATCommandAsync(portName, "AT+CSQ", 3000);
+            var signalMatch = Regex.Match(signalResponse, @"\+CSQ:\s*(\d+),(\d+)");
+            if (signalMatch.Success)
+            {
+                var rssi = int.Parse(signalMatch.Groups[1].Value);
+                if (rssi <= 31)
+                {
+                    info.SignalDbm = -113 + (rssi * 2);
+                    info.SignalPercent = Math.Min(100, rssi * 100.0 / 31);
+                    info.SignalBars = rssi switch
+                    {
+                        <= 5 => 1,
+                        <= 10 => 2,
+                        <= 15 => 3,
+                        <= 20 => 4,
+                        _ => 5
+                    };
+                }
+            }
+
+            var operatorResponse = await SendATCommandAsync(portName, "AT+COPS?", 3000);
+            var operatorMatch = Regex.Match(operatorResponse, @"\+COPS:\s*(\d+),(\d+),""([^""]+)""(?:,(\d+))?");
+            if (operatorMatch.Success)
+            {
+                info.OperatorName = operatorMatch.Groups[3].Value;
+                if (operatorMatch.Groups[4].Success)
+                {
+                    var accessTech = operatorMatch.Groups[4].Value;
+                    info.NetworkType = accessTech switch
+                    {
+                        "0" => "GSM",
+                        "1" => "GSM Compact",
+                        "2" => "UTRAN (3G)",
+                        "3" => "EDGE",
+                        "4" => "HSDPA",
+                        "5" => "HSUPA",
+                        "6" => "HSPA",
+                        "7" => "LTE",
+                        _ => accessTech
+                    };
+                }
+            }
+        }
+        catch { }
+
+        return info;
+    }
+
+    public async Task<(bool Success, string Error)> ResetModemAsync(string portName)
+    {
+        try
+        {
+            var response = await SendATCommandAsync(portName, "AT+CFUN=1,1", 10000);
+            return (response.Contains("OK"), response.Contains("ERROR") ? "فشل في إعادة التشغيل" : string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    public async Task<(bool Success, string Error)> SetAirplaneModeAsync(string portName, bool enable)
+    {
+        try
+        {
+            var command = enable ? "AT+CFUN=0" : "AT+CFUN=1";
+            var response = await SendATCommandAsync(portName, command, 5000);
+            return (response.Contains("OK"), response.Contains("ERROR") ? "فشل في تغيير الوضع" : string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    public async Task<string> ExecuteRawCommandAsync(string portName, string command, int timeout = 5000)
+    {
+        return await SendATCommandAsync(portName, command, timeout);
+    }
+
     public void CloseAllPorts()
     {
         foreach (var kvp in _persistentPorts)
