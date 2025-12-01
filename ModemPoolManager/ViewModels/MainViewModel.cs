@@ -66,6 +66,30 @@ public partial class MainViewModel : ObservableObject
     private string _aiResponse = "مرحباً! أنا المساعد الذكي لإدارة المودمات.\n\nيمكنني مساعدتك في:\n• تحليل ردود USSD\n• اقتراح أوامر مناسبة\n• تشخيص مشاكل المودمات\n• فهم رسائل SMS\n\nاكتب سؤالك أو اختر أحد الأزرار للبدء.";
 
     [ObservableProperty]
+    private string _orangeCashPassword = "";
+
+    [ObservableProperty]
+    private int _transferAmount = 100;
+
+    [ObservableProperty]
+    private bool _isTransferRunning;
+
+    [ObservableProperty]
+    private string _transferLog = "";
+
+    [ObservableProperty]
+    private int _successfulTransfers;
+
+    [ObservableProperty]
+    private int _failedTransfers;
+
+    [ObservableProperty]
+    private int _cooldownSeconds;
+
+    [ObservableProperty]
+    private bool _isCooldownActive;
+
+    [ObservableProperty]
     private AppSettings _settings;
 
     [ObservableProperty]
@@ -881,4 +905,301 @@ public partial class MainViewModel : ObservableObject
             });
         });
     }
+
+    #region Orange Cash Commands
+
+    [RelayCommand]
+    private async Task QueryOrangeCashBalancesAsync()
+    {
+        if (string.IsNullOrEmpty(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة سر أورانج كاش";
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            StatusMessage = "جاري استعلام أرصدة أورانج كاش...";
+            TransferLog = "";
+
+            var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected).ToList();
+            
+            if (selectedModems.Count == 0)
+            {
+                StatusMessage = "الرجاء تحديد المودمات للاستعلام";
+                return;
+            }
+
+            var results = await _modemService.QueryAllOrangeCashBalancesAsync(selectedModems, OrangeCashPassword);
+            
+            TransferLog = "📊 نتائج استعلام الأرصدة:\n" + string.Join("\n", results);
+            StatusMessage = $"تم استعلام {results.Count} مودم";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExecuteParallelTransfersAsync()
+    {
+        if (string.IsNullOrEmpty(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة سر أورانج كاش";
+            return;
+        }
+
+        if (TransferAmount <= 0)
+        {
+            StatusMessage = "الرجاء إدخال مبلغ صحيح";
+            return;
+        }
+
+        var connectedModems = Modems.Where(m => m.IsConnected).OrderBy(m => m.Index).ToList();
+        
+        if (connectedModems.Count < 2)
+        {
+            StatusMessage = "يجب توصيل مودمين على الأقل للتحويل";
+            return;
+        }
+
+        try
+        {
+            IsTransferRunning = true;
+            IsProcessing = true;
+            SuccessfulTransfers = 0;
+            FailedTransfers = 0;
+            TransferLog = "🚀 بدء التحويل المتوازي...\n";
+
+            var senderModems = connectedModems.Take(6).ToList();
+            var receiverModems = connectedModems.Skip(6).Take(6).ToList();
+
+            for (int i = 0; i < senderModems.Count; i++)
+            {
+                senderModems[i].IsSenderLine = true;
+                senderModems[i].IsReceiverLine = false;
+                senderModems[i].TransferStatus = "مرسل";
+                
+                if (i < receiverModems.Count)
+                {
+                    senderModems[i].PairedModemIndex = receiverModems[i].Index;
+                }
+            }
+
+            foreach (var receiver in receiverModems)
+            {
+                receiver.IsReceiverLine = true;
+                receiver.IsSenderLine = false;
+                receiver.TransferStatus = "مستلم";
+            }
+
+            var transferPairs = new List<(Modem Sender, Modem Receiver)>();
+            for (int i = 0; i < Math.Min(senderModems.Count, receiverModems.Count); i++)
+            {
+                transferPairs.Add((senderModems[i], receiverModems[i]));
+                TransferLog += $"📍 زوج {i + 1}: {senderModems[i].PhoneNumber} → {receiverModems[i].PhoneNumber}\n";
+            }
+
+            if (transferPairs.Count == 0)
+            {
+                StatusMessage = "لا توجد أزواج للتحويل";
+                return;
+            }
+
+            TransferLog += $"\n💰 المبلغ: {TransferAmount} ج.م لكل تحويل\n";
+            TransferLog += $"⏳ جاري تنفيذ {transferPairs.Count} تحويل متوازي...\n\n";
+
+            var results = await _modemService.ExecuteParallelOrangeCashTransfersAsync(
+                transferPairs,
+                OrangeCashPassword,
+                TransferAmount,
+                onSenderStatusUpdate: (modem, status) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TransferLog += $"📤 {modem.PhoneNumber}: {status}\n";
+                    });
+                },
+                onReceiverStatusUpdate: (modem, status) =>
+                {
+                    Application.Current.Dispatcher.Invoke(() =>
+                    {
+                        TransferLog += $"📥 {modem.PhoneNumber}: {status}\n";
+                    });
+                });
+
+            SuccessfulTransfers = results.Count(r => r.Success);
+            FailedTransfers = results.Count(r => !r.Success);
+
+            TransferLog += $"\n━━━━━━━━━━━━━━━━━━━━━━\n";
+            TransferLog += $"✅ نجح: {SuccessfulTransfers}\n";
+            TransferLog += $"❌ فشل: {FailedTransfers}\n";
+
+            if (SuccessfulTransfers > 0)
+            {
+                await StartCooldownAsync(8);
+            }
+
+            StatusMessage = $"اكتمل: {SuccessfulTransfers} نجح، {FailedTransfers} فشل";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+            TransferLog += $"\n❌ خطأ: {ex.Message}\n";
+        }
+        finally
+        {
+            IsTransferRunning = false;
+            IsProcessing = false;
+        }
+    }
+
+    private async Task StartCooldownAsync(int seconds)
+    {
+        IsCooldownActive = true;
+        CooldownSeconds = seconds;
+        TransferLog += $"\n⏱️ انتظار {seconds} ثانية قبل التحويل التالي...\n";
+
+        while (CooldownSeconds > 0)
+        {
+            await Task.Delay(1000);
+            CooldownSeconds--;
+        }
+
+        IsCooldownActive = false;
+        TransferLog += "✓ انتهى وقت الانتظار\n";
+    }
+
+    [RelayCommand]
+    private async Task RestartModemAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected) return;
+
+        try
+        {
+            modem.Status = "جاري إعادة التشغيل...";
+            StatusMessage = $"جاري إعادة تشغيل {modem.PortName}...";
+
+            await _modemService.RestartModemAsync(modem.PortName);
+
+            modem.Status = "جاهز";
+            StatusMessage = $"تم إعادة تشغيل {modem.PortName}";
+        }
+        catch (Exception ex)
+        {
+            modem.Status = "خطأ";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void CopyPhoneNumber(Modem modem)
+    {
+        if (modem == null || string.IsNullOrEmpty(modem.PhoneNumber)) return;
+
+        try
+        {
+            Clipboard.SetText(modem.PhoneNumber);
+            StatusMessage = $"تم نسخ الرقم: {modem.PhoneNumber}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ في النسخ: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void StopTransfers()
+    {
+        IsTransferRunning = false;
+        TransferLog += "\n⛔ تم إيقاف التحويل\n";
+        StatusMessage = "تم إيقاف التحويل";
+    }
+
+    [RelayCommand]
+    private void ClearTransferLog()
+    {
+        TransferLog = "";
+        SuccessfulTransfers = 0;
+        FailedTransfers = 0;
+    }
+
+    [RelayCommand]
+    private void SetupSenderReceiverPairs()
+    {
+        var connectedModems = Modems.Where(m => m.IsConnected).OrderBy(m => m.Index).ToList();
+        
+        if (connectedModems.Count < 2)
+        {
+            StatusMessage = "يجب توصيل مودمين على الأقل للتحويل";
+            TransferLog = "⚠️ لا يوجد عدد كافي من المودمات المتصلة.\nيجب توصيل مودمين على الأقل.";
+            return;
+        }
+
+        foreach (var modem in Modems)
+        {
+            modem.IsSenderLine = false;
+            modem.IsReceiverLine = false;
+            modem.TransferStatus = "";
+            modem.ConfirmationMessage = "";
+            modem.PairedModemIndex = 0;
+        }
+
+        var half = connectedModems.Count / 2;
+        
+        if (half == 0)
+        {
+            StatusMessage = "يجب توصيل مودمين على الأقل";
+            return;
+        }
+
+        var senderCount = Math.Min(half, 6);
+        var receiverCount = Math.Min(connectedModems.Count - half, 6);
+        var pairCount = Math.Min(senderCount, receiverCount);
+
+        for (int i = 0; i < pairCount; i++)
+        {
+            var sender = connectedModems[i];
+            var receiver = connectedModems[half + i];
+            
+            sender.IsSenderLine = true;
+            sender.TransferStatus = $"📤 مرسل → #{receiver.Index}";
+            sender.PairedModemIndex = receiver.Index;
+            
+            receiver.IsReceiverLine = true;
+            receiver.TransferStatus = $"📥 مستلم ← #{sender.Index}";
+            receiver.PairedModemIndex = sender.Index;
+        }
+
+        TransferLog = "📋 تم إعداد الأزواج:\n";
+        TransferLog += $"━━━━━━━━━━━━━━━━━━━━━━\n";
+        for (int i = 0; i < pairCount; i++)
+        {
+            var sender = connectedModems[i];
+            var receiver = connectedModems[half + i];
+            var senderPhone = !string.IsNullOrEmpty(sender.PhoneNumber) && sender.PhoneNumber != "غير معروف" 
+                ? sender.PhoneNumber : $"مودم {sender.Index}";
+            var receiverPhone = !string.IsNullOrEmpty(receiver.PhoneNumber) && receiver.PhoneNumber != "غير معروف" 
+                ? receiver.PhoneNumber : $"مودم {receiver.Index}";
+            TransferLog += $"  #{sender.Index} → #{receiver.Index}\n";
+            TransferLog += $"  {senderPhone} → {receiverPhone}\n\n";
+        }
+        TransferLog += $"━━━━━━━━━━━━━━━━━━━━━━\n";
+        TransferLog += $"إجمالي الأزواج: {pairCount}\n";
+
+        if (connectedModems.Count < 12)
+        {
+            TransferLog += $"\n⚠️ متصل {connectedModems.Count} مودم من أصل 12\n";
+        }
+
+        StatusMessage = $"تم إعداد {pairCount} زوج للتحويل ({connectedModems.Count} مودم متصل)";
+    }
+
+    #endregion
 }

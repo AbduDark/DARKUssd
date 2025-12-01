@@ -92,6 +92,24 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private bool _isListeningSms;
 
+    [ObservableProperty]
+    private string _cashBalance = "";
+
+    [ObservableProperty]
+    private string _transferStatus = "";
+
+    [ObservableProperty]
+    private string _confirmationMessage = "";
+
+    [ObservableProperty]
+    private int _pairedModemIndex;
+
+    [ObservableProperty]
+    private bool _isSenderLine;
+
+    [ObservableProperty]
+    private bool _isReceiverLine;
+
     public double SuccessRate => SuccessfulCommands + FailedCommands > 0 
         ? (double)SuccessfulCommands / (SuccessfulCommands + FailedCommands) * 100 
         : 0;
@@ -99,4 +117,12 @@ public partial class Modem : ObservableObject
     public string ResponseDurationText => LastResponseDuration.TotalMilliseconds > 0 
         ? $"{LastResponseDuration.TotalSeconds:F1}s" 
         : "";
+
+    public string DisplayName => !string.IsNullOrEmpty(PhoneNumber) && PhoneNumber != "غير معروف" 
+        ? PhoneNumber 
+        : $"مودم {Index}";
+
+    public string DisplayBalance => !string.IsNullOrEmpty(CashBalance) 
+        ? $"💰 {CashBalance}" 
+        : PortName;
 }

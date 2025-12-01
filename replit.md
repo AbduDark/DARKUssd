@@ -54,6 +54,19 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 -   Detailed modem information retrieval (IMEI, IMSI, ICCID, Signal, Operator).
 -   AI-powered USSD response analysis, command suggestions, modem diagnostics, and message analysis.
 -   Comprehensive statistics dashboard and command logging.
+-   **Orange Cash Parallel Transfer System (NEW):**
+    -   Dedicated tab for Orange Cash operations with 6 sender → 6 receiver parallel transfer pattern.
+    -   Balance inquiry for all modems using USSD code `#7115*81*{password}#`.
+    -   Parallel money transfers using USSD code `#7115*31*{password}*2*{phone}*{amount}*1*1#`.
+    -   Automatic pairing: modems 1-6 as senders, modems 7-12 as receivers (1→7, 2→8, 3→9, 4→10, 5→11, 6→12).
+    -   Real-time status display: "تم التحويل" for senders, "تم الاستلام" for receivers.
+    -   8-second cooldown between transfer batches to prevent carrier blocking.
+    -   Visual indicators: orange border for senders, green border for receivers.
+    -   Transfer log with detailed operation history.
+-   **Right-click Context Menu on Modem Cards:**
+    -   Restart Modem (AT+CFUN=0/1 sequence).
+    -   Copy Phone Number to clipboard.
+    -   Refresh Signal and Phone Number.
 
 ### Project Structure
 -   **Models:** Data structures for Modems, ModemInfo, UssdResult, SmsMessage, CommandHistory, AppSettings.

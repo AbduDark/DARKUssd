@@ -1544,6 +1544,274 @@ public class ModemService : IDisposable
 
     public IEnumerable<Modem> GetActiveModems() => _activeModems.Values;
 
+    #region Orange Cash Methods
+
+    public async Task<string> GetOrangeCashBalanceAsync(string portName, string password)
+    {
+        try
+        {
+            var ussdCode = $"#7115*81*{password}#";
+            var command = $"AT+CUSD=1,\"{EncodeUssd(ussdCode)}\",15";
+            
+            var response = await SendUssdCommandAsync(portName, command, 10);
+            var decoded = DecodeUssdResponse(response);
+            
+            var match = Regex.Match(decoded, @"(\d+(?:\.\d+)?)\s*(?:جنيه|EGP|ج\.م|LE)", RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                return match.Groups[1].Value + " ج.م";
+            }
+            
+            match = Regex.Match(decoded, @"رصيد[^:]*:\s*(\d+(?:\.\d+)?)", RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                return match.Groups[1].Value + " ج.م";
+            }
+            
+            match = Regex.Match(decoded, @"balance[^:]*:\s*(\d+(?:\.\d+)?)", RegexOptions.IgnoreCase);
+            if (match.Success)
+            {
+                return match.Groups[1].Value + " ج.م";
+            }
+            
+            if (decoded.Contains("رقم سري خاطئ") || decoded.Contains("Wrong"))
+            {
+                return "كلمة سر خاطئة";
+            }
+            
+            if (decoded.Contains("not subscribed"))
+            {
+                return "غير مشترك";
+            }
+            
+            return decoded.Length > 50 ? decoded.Substring(0, 50) + "..." : decoded;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في استعلام رصيد أورانج كاش: {ex.Message}");
+            return $"خطأ: {ex.Message}";
+        }
+    }
+
+    public async Task<(bool Success, string Message)> ExecuteOrangeCashTransferAsync(
+        string portName, 
+        string password, 
+        string recipientNumber, 
+        int amount)
+    {
+        try
+        {
+            var normalizedNumber = recipientNumber.Replace(" ", "").Trim();
+            if (normalizedNumber.StartsWith("+20"))
+            {
+                normalizedNumber = "0" + normalizedNumber.Substring(3);
+            }
+            else if (normalizedNumber.StartsWith("20"))
+            {
+                normalizedNumber = "0" + normalizedNumber.Substring(2);
+            }
+            
+            var ussdCode = $"#7115*31*{password}*2*{normalizedNumber}*{amount}*1*1#";
+            var command = $"AT+CUSD=1,\"{EncodeUssd(ussdCode)}\",15";
+            
+            Console.WriteLine($"[{portName}] تحويل أورانج كاش: {amount} ج.م إلى {normalizedNumber}");
+            
+            var response = await SendUssdCommandAsync(portName, command, 15);
+            var decoded = DecodeUssdResponse(response);
+            
+            Console.WriteLine($"[{portName}] الرد: {decoded}");
+            
+            if (decoded.Contains("تم شحن") || decoded.Contains("تم التحويل") || 
+                decoded.Contains("successfully") || decoded.Contains("Success"))
+            {
+                return (true, "تم التحويل بنجاح ✓");
+            }
+            
+            if (decoded.Contains("رقم سري خاطئ") || decoded.Contains("Wrong"))
+            {
+                return (false, "كلمة سر خاطئة");
+            }
+            
+            if (decoded.Contains("غير كاف") || decoded.Contains("insufficient"))
+            {
+                return (false, "الرصيد غير كافي");
+            }
+            
+            if (decoded.Contains("not subscribed"))
+            {
+                return (false, "غير مشترك في أورانج كاش");
+            }
+            
+            if (decoded.Contains("suspended") || decoded.Contains("محظور"))
+            {
+                return (false, "الخط محظور");
+            }
+            
+            if (decoded.Contains("5 دقائق") || decoded.Contains("wait"))
+            {
+                return (false, "انتظر 5 دقائق");
+            }
+            
+            return (false, decoded.Length > 100 ? decoded.Substring(0, 100) : decoded);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في تحويل أورانج كاش: {ex.Message}");
+            return (false, $"خطأ: {ex.Message}");
+        }
+    }
+
+    public async Task<List<(Modem Sender, Modem Receiver, bool Success, string Message)>> ExecuteParallelOrangeCashTransfersAsync(
+        List<(Modem Sender, Modem Receiver)> transferPairs,
+        string password,
+        int amount,
+        Action<Modem, string>? onSenderStatusUpdate = null,
+        Action<Modem, string>? onReceiverStatusUpdate = null)
+    {
+        var results = new List<(Modem Sender, Modem Receiver, bool Success, string Message)>();
+        
+        var tasks = transferPairs.Select(async pair =>
+        {
+            try
+            {
+                pair.Sender.IsBusy = true;
+                pair.Sender.TransferStatus = "جاري التحويل...";
+                onSenderStatusUpdate?.Invoke(pair.Sender, "جاري التحويل...");
+                
+                pair.Receiver.TransferStatus = "في انتظار الاستلام...";
+                onReceiverStatusUpdate?.Invoke(pair.Receiver, "في انتظار الاستلام...");
+                
+                var (success, message) = await ExecuteOrangeCashTransferAsync(
+                    pair.Sender.PortName,
+                    password,
+                    pair.Receiver.PhoneNumber,
+                    amount);
+                
+                pair.Sender.TransferStatus = success ? "تم التحويل ✓" : $"فشل: {message}";
+                onSenderStatusUpdate?.Invoke(pair.Sender, pair.Sender.TransferStatus);
+                
+                if (success)
+                {
+                    pair.Receiver.TransferStatus = "تم الاستلام ✓";
+                    pair.Receiver.ConfirmationMessage = $"تم استلام {amount} ج.م";
+                    onReceiverStatusUpdate?.Invoke(pair.Receiver, pair.Receiver.TransferStatus);
+                }
+                else
+                {
+                    pair.Receiver.TransferStatus = "لم يتم الاستلام";
+                    onReceiverStatusUpdate?.Invoke(pair.Receiver, pair.Receiver.TransferStatus);
+                }
+                
+                return (pair.Sender, pair.Receiver, success, message);
+            }
+            catch (Exception ex)
+            {
+                pair.Sender.TransferStatus = $"خطأ: {ex.Message}";
+                onSenderStatusUpdate?.Invoke(pair.Sender, pair.Sender.TransferStatus);
+                return (pair.Sender, pair.Receiver, false, ex.Message);
+            }
+            finally
+            {
+                pair.Sender.IsBusy = false;
+            }
+        });
+        
+        var taskResults = await Task.WhenAll(tasks);
+        results.AddRange(taskResults);
+        
+        return results;
+    }
+
+    public async Task<string> ReadIncomingSmsAsync(string portName, int timeoutSeconds = 10)
+    {
+        try
+        {
+            await SendATCommandAsync(portName, "AT+CMGF=1", 2000);
+            await Task.Delay(100);
+            
+            await SendATCommandAsync(portName, "AT+CNMI=2,1,0,0,0", 2000);
+            await Task.Delay(100);
+            
+            var response = await SendATCommandAsync(portName, "AT+CMGL=\"ALL\"", timeoutSeconds * 1000);
+            
+            var decoded = DecodeUssdResponse(response);
+            
+            if (decoded.Contains("تم استلام") || decoded.Contains("received"))
+            {
+                var match = Regex.Match(decoded, @"(\d+(?:\.\d+)?)\s*(?:جنيه|EGP|ج\.م|LE)");
+                if (match.Success)
+                {
+                    return $"تم استلام {match.Groups[1].Value} ج.م ✓";
+                }
+            }
+            
+            return decoded;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في قراءة الرسائل: {ex.Message}");
+            return $"خطأ: {ex.Message}";
+        }
+    }
+
+    public async Task RestartModemAsync(string portName)
+    {
+        try
+        {
+            Console.WriteLine($"[{portName}] جاري إعادة تشغيل المودم...");
+            
+            await SendATCommandAsync(portName, "AT+CFUN=0", 3000);
+            await Task.Delay(2000);
+            
+            await SendATCommandAsync(portName, "AT+CFUN=1", 3000);
+            await Task.Delay(3000);
+            
+            Console.WriteLine($"[{portName}] تم إعادة تشغيل المودم");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في إعادة تشغيل المودم: {ex.Message}");
+            throw;
+        }
+    }
+
+    public async Task<List<string>> QueryAllOrangeCashBalancesAsync(List<Modem> modems, string password)
+    {
+        var results = new List<string>();
+        
+        var tasks = modems.Where(m => m.IsConnected && m.IsSelected).Select(async modem =>
+        {
+            try
+            {
+                modem.IsBusy = true;
+                modem.CashBalance = "جاري...";
+                
+                var balance = await GetOrangeCashBalanceAsync(modem.PortName, password);
+                modem.CashBalance = balance;
+                
+                ModemUpdated?.Invoke(this, modem);
+                
+                return $"{modem.PhoneNumber}: {balance}";
+            }
+            catch (Exception ex)
+            {
+                modem.CashBalance = "خطأ";
+                return $"{modem.PhoneNumber}: خطأ - {ex.Message}";
+            }
+            finally
+            {
+                modem.IsBusy = false;
+            }
+        });
+        
+        var taskResults = await Task.WhenAll(tasks);
+        results.AddRange(taskResults);
+        
+        return results;
+    }
+
+    #endregion
+
     public void Dispose()
     {
         StopMonitoring();
