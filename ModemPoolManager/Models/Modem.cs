@@ -26,10 +26,37 @@ public partial class Modem : ObservableObject
     private bool _isSelected = true;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SignalBars))]
+    [NotifyPropertyChangedFor(nameof(SignalColor))]
     private string _signalStrength = "N/A";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SignalBars))]
+    [NotifyPropertyChangedFor(nameof(SignalColor))]
+    private int _signalLevel;
+
+    [ObservableProperty]
     private string _operator = "N/A";
+
+    public int SignalBars => SignalLevel switch
+    {
+        >= 20 => 5,
+        >= 15 => 4,
+        >= 10 => 3,
+        >= 5 => 2,
+        >= 1 => 1,
+        _ => 0
+    };
+
+    public string SignalColor => SignalBars switch
+    {
+        5 => "#3FB950",
+        4 => "#56D364",
+        3 => "#D29922",
+        2 => "#F0883E",
+        1 => "#DA3633",
+        _ => "#484F58"
+    };
 
     [ObservableProperty]
     private ModemInfo _info = new();

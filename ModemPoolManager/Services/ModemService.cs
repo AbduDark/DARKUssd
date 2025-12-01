@@ -241,22 +241,74 @@ public class ModemService : IDisposable
     {
         try
         {
-            var response = await SendATCommandAsync(portName, "AT+CNUM", 3000);
+            var response = await SendATCommandAsync(portName, "AT+CNUM", 2000);
             
-            var match = Regex.Match(response, @"\+CNUM:.*?""([^""]+)"".*?""(\+?\d+)""");
-            if (match.Success)
+            if (response.Contains("ERROR"))
             {
-                return match.Groups[2].Value;
+                return "غير معروف";
+            }
+            
+            var patterns = new[]
+            {
+                @"\+CNUM:\s*""[^""]*""\s*,\s*""(\+?\d{10,15})""",
+                @"\+CNUM:\s*,\s*""(\+?\d{10,15})""",
+                @"\+CNUM:\s*""(\+?\d{10,15})""",
+                @"""(\+?\d{10,15})"""
+            };
+            
+            foreach (var pattern in patterns)
+            {
+                var match = Regex.Match(response, pattern);
+                if (match.Success)
+                {
+                    var number = match.Groups[1].Value;
+                    if (!string.IsNullOrEmpty(number) && number.Length >= 10)
+                    {
+                        return number;
+                    }
+                }
             }
 
-            response = await SendUssdCommandAsync(portName, "AT+CUSD=1,\"*100#\",15", 10);
-            match = Regex.Match(response, @"(\+?\d{10,15})");
+            return "غير معروف";
+        }
+        catch
+        {
+            return "غير معروف";
+        }
+    }
+
+    public async Task<string> GetPhoneNumberViaUssdAsync(string portName, string ussdCode = "*100#")
+    {
+        try
+        {
+            var response = await SendUssdCommandAsync(portName, $"AT+CUSD=1,\"{ussdCode}\",15", 10);
+            
+            var match = Regex.Match(response, @"(\+?\d{10,15})");
             if (match.Success)
             {
                 return match.Groups[1].Value;
             }
 
             return "غير معروف";
+        }
+        catch (Exception ex)
+        {
+            return $"خطأ: {ex.Message}";
+        }
+    }
+
+    public async Task<string> GetPhoneNumberSmartAsync(string portName)
+    {
+        try
+        {
+            var number = await GetPhoneNumberAsync(portName);
+            if (number != "غير معروف" && !number.StartsWith("خطأ"))
+            {
+                return number;
+            }
+
+            number = await GetPhoneNumberViaUssdAsync(portName);
+            return number;
         }
         catch (Exception ex)
         {
@@ -358,7 +410,7 @@ public class ModemService : IDisposable
             var startTime = DateTime.Now;
             while ((DateTime.Now - startTime).TotalMilliseconds < timeout)
             {
-                await Task.Delay(100);
+                await Task.Delay(50);
                 
                 if (port.BytesToRead > 0)
                 {
@@ -366,11 +418,9 @@ public class ModemService : IDisposable
                     response.Append(data);
                     
                     var currentResponse = response.ToString();
-                    if (currentResponse.Contains("OK") || 
-                        currentResponse.Contains("ERROR") ||
-                        currentResponse.Contains("+CUSD:"))
+                    if (currentResponse.Contains("OK") || currentResponse.Contains("ERROR"))
                     {
-                        await Task.Delay(300);
+                        await Task.Delay(100);
                         if (port.BytesToRead > 0)
                         {
                             response.Append(await Task.Run(() => port.ReadExisting()));
@@ -542,6 +592,30 @@ public class ModemService : IDisposable
         catch
         {
             return "N/A";
+        }
+    }
+
+    public async Task<(string Strength, int Level)> GetSignalStrengthWithLevelAsync(string portName)
+    {
+        try
+        {
+            var response = await SendATCommandAsync(portName, "AT+CSQ", 2000);
+            var match = Regex.Match(response, @"\+CSQ:\s*(\d+),");
+            if (match.Success)
+            {
+                var rssi = int.Parse(match.Groups[1].Value);
+                if (rssi == 99)
+                {
+                    return ("N/A", 0);
+                }
+                var percent = Math.Min(100, rssi * 100 / 31);
+                return ($"{percent}%", rssi);
+            }
+            return ("N/A", 0);
+        }
+        catch
+        {
+            return ("N/A", 0);
         }
     }
 
@@ -878,9 +952,20 @@ public class ModemService : IDisposable
     {
         try
         {
-            modem.PhoneNumber = await GetPhoneNumberAsync(modem.PortName);
-            modem.SignalStrength = await GetSignalStrengthAsync(modem.PortName);
-            modem.Operator = await GetOperatorAsync(modem.PortName);
+            var tasks = new Task[]
+            {
+                Task.Run(async () => modem.PhoneNumber = await GetPhoneNumberAsync(modem.PortName)),
+                Task.Run(async () => 
+                {
+                    var (strength, level) = await GetSignalStrengthWithLevelAsync(modem.PortName);
+                    modem.SignalStrength = strength;
+                    modem.SignalLevel = level;
+                }),
+                Task.Run(async () => modem.Operator = await GetOperatorAsync(modem.PortName))
+            };
+            
+            await Task.WhenAll(tasks);
+            
             modem.Status = "متصل";
             modem.LastActivity = DateTime.Now;
             
@@ -909,10 +994,11 @@ public class ModemService : IDisposable
                     var isStillConnected = await TestPortConnectionAsync(modem.PortName);
                     if (isStillConnected)
                     {
-                        var newSignal = await GetSignalStrengthAsync(modem.PortName);
-                        if (modem.SignalStrength != newSignal)
+                        var (newSignal, newLevel) = await GetSignalStrengthWithLevelAsync(modem.PortName);
+                        if (modem.SignalStrength != newSignal || modem.SignalLevel != newLevel)
                         {
                             modem.SignalStrength = newSignal;
+                            modem.SignalLevel = newLevel;
                             modem.LastActivity = DateTime.Now;
                             ModemUpdated?.Invoke(this, modem);
                         }
