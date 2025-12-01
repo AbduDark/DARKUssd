@@ -1,4 +1,4 @@
-modules = ["dotnet-8.0"]
+modules = ["dotnet-7.0", "dotnet-8.0"]
 [agent]
 expertMode = true
 
@@ -23,7 +23,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "dotnet run --project ModemPoolManager.Console/ModemPoolManager.Console.csproj"
+args = "cd ModemPoolManager.Console && dotnet run"
 
 [nix]
 channel = "stable-25_05"
