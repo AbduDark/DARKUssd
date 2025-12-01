@@ -298,16 +298,12 @@
                         <ItemsControl ItemsSource="{Binding Modems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
+                                    <UniformGrid Columns="4" Rows="3"/>
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Width="320" Height="280" Margin="8" CornerRadius="12" 
-                                            BorderThickness="1" Background="#161B22">
-                                        <Border.BorderBrush>
-                                            <SolidColorBrush Color="#30363D"/>
-                                        </Border.BorderBrush>
+                                    <Border Margin="4" Background="#0D1117" BorderBrush="#30363D" BorderThickness="1">
                                         <Border.Style>
                                             <Style TargetType="Border">
                                                 <Style.Triggers>
@@ -317,9 +313,6 @@
                                                     <DataTrigger Binding="{Binding Status}" Value="فشل">
                                                         <Setter Property="BorderBrush" Value="#DA3633"/>
                                                     </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsBusy}" Value="True">
-                                                        <Setter Property="BorderBrush" Value="#D29922"/>
-                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </Border.Style>
@@ -327,70 +320,46 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="*"/>
-                                                <RowDefinition Height="Auto"/>
                                             </Grid.RowDefinitions>
 
-                                            <Border Grid.Row="0" Background="#21262D" CornerRadius="12,12,0,0" Padding="12,10">
+                                            <Border Grid.Row="0" Background="#161B22" Padding="6,4">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
                                                     </Grid.ColumnDefinitions>
 
                                                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" 
-                                                              Style="{StaticResource ModernCheckBox}" Margin="0,0,10,0"/>
+                                                              Margin="0,0,6,0"/>
 
-                                                    <StackPanel Grid.Column="1">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="{Binding Index, StringFormat='مودم {0}'}" 
-                                                                       FontSize="14" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                                            <Border Background="#0D419D" CornerRadius="4" Padding="6,2" Margin="8,0,0,0">
-                                                                <TextBlock Text="{Binding PortName}" FontSize="10" Foreground="#58A6FF"/>
-                                                            </Border>
-                                                        </StackPanel>
-                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="18" FontWeight="Bold" Margin="0,4,0,0"
-                                                                   Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"/>
-                                                        <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
-                                                            <TextBlock Text="{Binding Operator}" FontSize="11" Foreground="#8B949E"/>
-                                                            <TextBlock Text=" | " FontSize="11" Foreground="#484F58"/>
-                                                            <TextBlock Text="{Binding SignalStrength, StringFormat='📶 {0}'}" 
-                                                                       FontSize="11" Foreground="#8B949E"/>
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <Border Grid.Column="2" CornerRadius="6" Padding="8,4" VerticalAlignment="Top">
-                                                        <Border.Style>
-                                                            <Style TargetType="Border">
-                                                                <Setter Property="Background" Value="#1F6FEB"/>
-                                                                <Style.Triggers>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="نجح">
-                                                                        <Setter Property="Background" Value="#238636"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="فشل">
-                                                                        <Setter Property="Background" Value="#DA3633"/>
-                                                                    </DataTrigger>
-                                                                    <DataTrigger Binding="{Binding Status}" Value="جاري التنفيذ...">
-                                                                        <Setter Property="Background" Value="#D29922"/>
-                                                                    </DataTrigger>
-                                                                </Style.Triggers>
-                                                            </Style>
-                                                        </Border.Style>
-                                                        <TextBlock Text="{Binding Status}" FontSize="10" Foreground="White" FontWeight="SemiBold"/>
+                                                    <Border Grid.Column="1" Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
+                                                            Padding="8,3" Margin="0,0,4,0">
+                                                        <TextBlock Text="{Binding PortName}" FontSize="11" Foreground="#C9D1D9" 
+                                                                   FontFamily="Consolas"/>
                                                     </Border>
+
+                                                    <Border Grid.Column="2" Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
+                                                            Padding="8,3">
+                                                        <TextBlock Text="{Binding Index, StringFormat='Modem {0}'}" FontSize="11" 
+                                                                   Foreground="#C9D1D9" FontFamily="Consolas"/>
+                                                    </Border>
+
+                                                    <TextBlock Grid.Column="3" Text="{Binding PhoneNumber}" FontSize="12" FontWeight="Bold"
+                                                               Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
+                                                               HorizontalAlignment="Right" VerticalAlignment="Center" Margin="8,0,4,0"
+                                                               FontFamily="Consolas"/>
                                                 </Grid>
                                             </Border>
 
-                                            <Grid Grid.Row="1" Margin="12,8">
-                                                <Grid Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="*"/>
-                                                        <RowDefinition Height="Auto"/>
-                                                    </Grid.RowDefinitions>
-                                                    <Viewbox Width="60" Height="60" VerticalAlignment="Center">
+                                            <Grid Grid.Row="1" Background="#0D1117">
+                                                <Grid Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}"
+                                                      HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                    <Viewbox Width="40" Height="40">
                                                         <Grid>
-                                                            <Ellipse Width="50" Height="50" Stroke="#30363D" StrokeThickness="4"/>
-                                                            <Ellipse Width="50" Height="50" Stroke="#D29922" StrokeThickness="4"
+                                                            <Ellipse Width="36" Height="36" Stroke="#30363D" StrokeThickness="3"/>
+                                                            <Ellipse Width="36" Height="36" Stroke="#D29922" StrokeThickness="3"
                                                                      StrokeDashArray="2,2" RenderTransformOrigin="0.5,0.5">
                                                                 <Ellipse.RenderTransform>
                                                                     <RotateTransform Angle="0"/>
@@ -408,13 +377,9 @@
                                                             </Ellipse>
                                                         </Grid>
                                                     </Viewbox>
-                                                    <TextBlock Grid.Row="1" Text="جاري التنفيذ..." 
-                                                               HorizontalAlignment="Center" 
-                                                               Foreground="#D29922" FontSize="13" Margin="0,8,0,0"/>
                                                 </Grid>
 
-                                                <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                                                              Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}, ConverterParameter=Inverse}">
+                                                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="8,6">
                                                     <ScrollViewer.Style>
                                                         <Style TargetType="ScrollViewer">
                                                             <Style.Triggers>
@@ -425,8 +390,9 @@
                                                         </Style>
                                                     </ScrollViewer.Style>
                                                     <TextBlock Text="{Binding LastResponse}" 
-                                                               FontSize="13" Foreground="#3FB950" 
-                                                               TextWrapping="Wrap" FlowDirection="LeftToRight">
+                                                               FontSize="12" Foreground="#3FB950" 
+                                                               TextWrapping="Wrap" FlowDirection="LeftToRight"
+                                                               FontFamily="Consolas">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Foreground" Value="#3FB950"/>
@@ -440,33 +406,6 @@
                                                     </TextBlock>
                                                 </ScrollViewer>
                                             </Grid>
-
-                                            <Border Grid.Row="2" Background="#21262D" CornerRadius="0,0,12,12" Padding="12,8">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                    </Grid.ColumnDefinitions>
-                                                    
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="⏱" FontSize="12" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding LastResponseDuration.TotalSeconds, StringFormat='{}{0:F1}s'}" 
-                                                                   FontSize="12" Foreground="#58A6FF" Margin="4,0,0,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text=" | " FontSize="12" Foreground="#484F58" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding LastActivity, StringFormat='hh:mm:ss'}" 
-                                                                   FontSize="11" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-
-                                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
-                                                        <TextBlock Text="✓" FontSize="11" Foreground="#3FB950" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding SuccessfulCommands}" FontSize="11" Foreground="#3FB950" 
-                                                                   Margin="2,0,8,0" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="✗" FontSize="11" Foreground="#F85149" VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding FailedCommands}" FontSize="11" Foreground="#F85149" 
-                                                                   Margin="2,0,0,0" VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

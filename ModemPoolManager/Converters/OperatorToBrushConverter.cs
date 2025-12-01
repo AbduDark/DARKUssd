@@ -25,7 +25,6 @@ public class OperatorToBrushConverter : IValueConverter
         { "Telecom Egypt", new SolidColorBrush(Color.FromRgb(118, 45, 148)) },
         
         { "STC", new SolidColorBrush(Color.FromRgb(79, 40, 125)) },
-        { "stc", new SolidColorBrush(Color.FromRgb(79, 40, 125)) },
         
         { "Mobily", new SolidColorBrush(Color.FromRgb(0, 163, 224)) },
         { "موبايلي", new SolidColorBrush(Color.FromRgb(0, 163, 224)) },
