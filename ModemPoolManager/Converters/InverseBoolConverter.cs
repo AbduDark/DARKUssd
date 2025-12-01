@@ -1,3 +1,5 @@
+
+using System;
 using System.Globalization;
 using System.Windows.Data;
 
@@ -11,7 +13,7 @@ public class InverseBoolConverter : IValueConverter
         {
             return !boolValue;
         }
-        return value;
+        return false;
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
@@ -20,6 +22,6 @@ public class InverseBoolConverter : IValueConverter
         {
             return !boolValue;
         }
-        return value;
+        return false;
     }
 }
