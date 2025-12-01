@@ -99,21 +99,30 @@ ModemPoolManager/
 هذا البرنامج يعمل فقط على Windows لأن WPF خاص بـ Windows.
 
 ## طريقة البحث عن المودمات
-يبحث البرنامج عن المودمات مباشرة في قسم "Ports (COM & LPT)" في Device Manager باستخدام:
-- ClassGuid: `{4D36E978-E325-11CE-BFC1-08002BE10318}` (معرف قسم Ports)
-- يستخرج رقم البورت من `(COMx)` في اسم الجهاز
-- يبحث فقط عن `ZTE Diagnostics Interface` لأنه المنفذ الوحيد الذي يقبل أوامر AT
+يبحث البرنامج عن المودمات باستخدام WMI Query مثل الكود القديم:
+- **Query**: `SELECT * FROM Win32_PnPEntity` من `root\CIMV2`
+- يبحث عن الأجهزة التي تحتوي على اسم معين
+- يستخرج رقم البورت من اسم الجهاز (مثل: `ZTE NMEA Device (COM5)` → `COM5`)
 
-### المنفذ المستخدم:
-| نوع الجهاز | مثال | الاستخدام |
+### المنافذ المدعومة:
+| نوع الجهاز | مثال | الأولوية |
 |-----------|------|----------|
-| ZTE Diagnostics Interface | `ZTE Diagnostics Interface (COM5)` | ✅ أوامر AT/USSD/SMS |
+| ZTE NMEA Device | `ZTE NMEA Device (COM5)` | ✅ أولوية أولى (متوافق مع الكود القديم) |
+| ZTE Diagnostics Interface | `ZTE Diagnostics Interface (COM5)` | ✅ أولوية ثانية |
+
+### طريقة استخراج البورت:
+```
+Device Name: "ZTE NMEA Device (COM5)"
+1. إزالة اسم الجهاز: "ZTE NMEA Device"
+2. إزالة الأقواس: "()" 
+3. إزالة المسافات
+4. النتيجة: "COM5"
+```
 
 ### المنافذ المستبعدة:
 | نوع الجهاز | السبب |
 |-----------|------|
-| ZTE NMEA Device | للـ GPS فقط، لا يقبل أوامر AT |
-| ZTE Application Interface | منفذ تطبيقات، لا يقبل أوامر AT |
+| ZTE Application Interface | منفذ تطبيقات فقط |
 
 ## طريقة التشغيل
 ```bash
@@ -142,6 +151,13 @@ dotnet run
 ### كيف يعمل:
 1. عند بدء البرنامج تبدأ المراقبة التلقائية
 2. يراقب قسم Ports (COM & LPT) لاكتشاف الأجهزة الجديدة
-3. يبحث عن "ZTE Diagnostics Interface" فقط
+3. يبحث عن "ZTE NMEA Device" أو "ZTE Diagnostics Interface"
 4. يجلب المعلومات (رقم الخط، الإشارة، المشغل) تلقائياً
 5. عند فصل المودم يكتشف ذلك ويحدث الواجهة
+6. عند إعادة توصيل المودم يحدث المعلومات تلقائياً
+
+## التحديثات (آخر تحديث)
+- تحديث طريقة البحث لتتوافق مع الكود القديم VB.NET
+- دعم "ZTE NMEA Device" بالإضافة لـ "ZTE Diagnostics Interface"
+- استخدام WMI Query: `SELECT * FROM Win32_PnPEntity`
+- إصلاح مشكلة إعادة التوصيل (تحديث IsConnected)

@@ -83,22 +83,26 @@ public class ModemService : IDisposable
         try
         {
             using var searcher = new ManagementObjectSearcher(
-                "SELECT * FROM Win32_PnPEntity WHERE ClassGuid = '{4D36E978-E325-11CE-BFC1-08002BE10318}'");
+                "root\\CIMV2", "SELECT * FROM Win32_PnPEntity");
             
             foreach (ManagementObject obj in searcher.Get())
             {
-                var caption = obj["Caption"]?.ToString() ?? "";
+                var name = obj["Name"]?.ToString() ?? "";
                 
-                var comMatch = Regex.Match(caption, @"\(COM(\d+)\)");
-                if (!comMatch.Success)
+                if (string.IsNullOrEmpty(name))
                     continue;
                 
-                string portName = $"COM{comMatch.Groups[1].Value}";
-                
-                if (caption.Contains("ZTE", StringComparison.OrdinalIgnoreCase) &&
-                    caption.Contains("Diagnostics Interface", StringComparison.OrdinalIgnoreCase))
+                if (name.Contains("ZTE NMEA Device", StringComparison.OrdinalIgnoreCase))
                 {
-                    ports.Add(portName);
+                    var portName = ExtractPortFromName(name, "ZTE NMEA Device");
+                    if (!string.IsNullOrEmpty(portName))
+                        ports.Add(portName);
+                }
+                else if (name.Contains("ZTE Diagnostics Interface", StringComparison.OrdinalIgnoreCase))
+                {
+                    var portName = ExtractPortFromName(name, "ZTE Diagnostics Interface");
+                    if (!string.IsNullOrEmpty(portName))
+                        ports.Add(portName);
                 }
             }
         }
@@ -109,6 +113,23 @@ public class ModemService : IDisposable
         }
 
         return ports.Distinct().OrderBy(p => int.Parse(p.Replace("COM", ""))).ToList();
+    }
+    
+    private string ExtractPortFromName(string deviceName, string deviceType)
+    {
+        var cleaned = deviceName.Replace(deviceType, "")
+                                .Replace("(", "")
+                                .Replace(")", "")
+                                .Replace(" ", "")
+                                .Trim();
+        
+        if (cleaned.StartsWith("COM", StringComparison.OrdinalIgnoreCase) && 
+            int.TryParse(cleaned.Substring(3), out _))
+        {
+            return cleaned.ToUpper();
+        }
+        
+        return string.Empty;
     }
 
     public async Task<List<Modem>> DetectModemsAsync(int maxModems = 12)
