@@ -52,7 +52,17 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private int _failedCommands;
 
+    [ObservableProperty]
+    private TimeSpan _lastResponseDuration;
+
+    [ObservableProperty]
+    private DateTime _lastResponseTime;
+
     public double SuccessRate => SuccessfulCommands + FailedCommands > 0 
         ? (double)SuccessfulCommands / (SuccessfulCommands + FailedCommands) * 100 
         : 0;
+
+    public string ResponseDurationText => LastResponseDuration.TotalMilliseconds > 0 
+        ? $"{LastResponseDuration.TotalSeconds:F1}s" 
+        : "";
 }

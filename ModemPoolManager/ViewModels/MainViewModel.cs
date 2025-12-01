@@ -323,9 +323,12 @@ public partial class MainViewModel : ObservableObject
             {
                 modem.Status = "جاري التنفيذ...";
                 modem.IsBusy = true;
+                modem.LastResponse = string.Empty;
+                modem.LastResponseDuration = TimeSpan.Zero;
             }
 
             var startTime = DateTime.Now;
+            var modemStartTimes = selectedModems.ToDictionary(m => m.PortName, m => DateTime.Now);
             var results = await _modemService.ExecuteUssdOnAllAsync(selectedModems, ussdCode);
             var executionTime = DateTime.Now - startTime;
 
@@ -336,7 +339,10 @@ public partial class MainViewModel : ObservableObject
                 var modem = Modems.FirstOrDefault(m => m.PortName == result.PortName);
                 if (modem != null)
                 {
+                    var modemDuration = DateTime.Now - modemStartTimes[modem.PortName];
                     modem.LastResponse = result.Response;
+                    modem.LastResponseDuration = modemDuration;
+                    modem.LastResponseTime = DateTime.Now;
                     modem.Status = result.IsSuccess ? "نجح" : "فشل";
                     modem.IsBusy = false;
                     modem.LastActivity = DateTime.Now;
