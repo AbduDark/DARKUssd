@@ -1433,7 +1433,7 @@ public partial class MainViewModel : ObservableObject
             {
                 if (result.IsSuccess)
                 {
-                    BalanceLog += $"  {result.PhoneNumber}: {result.MainBalance:F2} ج.م\n";
+                    BalanceLog += $"  {result.PhoneNumber}: {result.MainBalance} ج.م\n";
                 }
                 else
                 {
