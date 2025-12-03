@@ -30,6 +30,63 @@ public class ModemService : IDisposable
         return _portLocks.GetOrAdd(portName, _ => new SemaphoreSlim(1, 1));
     }
 
+    public async Task<TResult> ExecuteWithExclusiveAccessAsync<TResult>(
+        string portName, 
+        Func<Task<TResult>> operation,
+        int timeoutMs = 30000,
+        CancellationToken cancellationToken = default)
+    {
+        var portLock = GetPortLock(portName);
+        
+        if (!await portLock.WaitAsync(timeoutMs, cancellationToken))
+        {
+            throw new TimeoutException($"تعذر الوصول إلى المنفذ {portName} - المودم مشغول");
+        }
+        
+        try
+        {
+            return await operation();
+        }
+        finally
+        {
+            portLock.Release();
+        }
+    }
+
+    public async Task ExecuteWithExclusiveAccessAsync(
+        string portName, 
+        Func<Task> operation,
+        int timeoutMs = 30000,
+        CancellationToken cancellationToken = default)
+    {
+        var portLock = GetPortLock(portName);
+        
+        if (!await portLock.WaitAsync(timeoutMs, cancellationToken))
+        {
+            throw new TimeoutException($"تعذر الوصول إلى المنفذ {portName} - المودم مشغول");
+        }
+        
+        try
+        {
+            await operation();
+        }
+        finally
+        {
+            portLock.Release();
+        }
+    }
+
+    public bool IsModemBusy(string portName)
+    {
+        var portLock = GetPortLock(portName);
+        if (portLock.Wait(0))
+        {
+            portLock.Release();
+            return false;
+        }
+        return true;
+    }
+
     private SerialPort GetOrCreatePort(string portName)
     {
         return _persistentPorts.GetOrAdd(portName, name =>

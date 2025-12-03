@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using ModemPoolManager.Models;
 
@@ -51,6 +52,13 @@ public class BalanceQueryService
 
         try
         {
+            if (_modemService.IsModemBusy(modem.PortName))
+            {
+                result.IsSuccess = false;
+                result.ErrorMessage = "المودم مشغول - حاول لاحقاً";
+                return result;
+            }
+            
             var balanceCode = GetBalanceCode(modem.Operator);
             var ussdResult = await _modemService.ExecuteUssdAsync(modem, balanceCode);
             
@@ -78,42 +86,50 @@ public class BalanceQueryService
         return result;
     }
 
-    public async Task<List<BalanceResult>> QueryAllBalancesAsync(List<Modem> modems, Action<Modem, string>? onStatusUpdate = null)
+    public async Task<List<BalanceResult>> QueryAllBalancesAsync(
+        List<Modem> modems, 
+        Action<Modem, string>? onStatusUpdate = null,
+        Action<Modem, BalanceResult>? onBalanceResult = null,
+        Action<Modem, bool>? onBusyStateChanged = null)
     {
-        var selectedModems = modems.Where(m => m.IsConnected && m.IsSelected).ToList();
+        var selectedModems = modems.Where(m => m.IsConnected && m.IsSelected && !m.IsBusy).ToList();
+        var results = new ConcurrentBag<BalanceResult>();
         
         var tasks = selectedModems.Select(async modem =>
         {
             try
             {
-                modem.IsBusy = true;
+                onBusyStateChanged?.Invoke(modem, true);
                 onStatusUpdate?.Invoke(modem, "جاري الاستعلام...");
                 
                 var result = await QueryBalanceAsync(modem);
                 
-                modem.Balance = result.IsSuccess ? result.MainBalance : "خطأ";
-                modem.Status = result.IsSuccess ? "تم الاستعلام" : "فشل";
-                onStatusUpdate?.Invoke(modem, modem.Status);
+                var status = result.IsSuccess ? "تم الاستعلام ✓" : $"فشل: {result.ErrorMessage}";
+                onStatusUpdate?.Invoke(modem, status);
+                onBalanceResult?.Invoke(modem, result);
                 
-                return result;
+                results.Add(result);
             }
             catch (Exception ex)
             {
-                return new BalanceResult
+                var errorResult = new BalanceResult
                 {
                     PortName = modem.PortName,
                     PhoneNumber = modem.PhoneNumber,
                     IsSuccess = false,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = $"خطأ: {ex.Message}"
                 };
+                results.Add(errorResult);
+                onStatusUpdate?.Invoke(modem, $"خطأ: {ex.Message}");
+                onBalanceResult?.Invoke(modem, errorResult);
             }
             finally
             {
-                modem.IsBusy = false;
+                onBusyStateChanged?.Invoke(modem, false);
             }
         });
 
-        var results = await Task.WhenAll(tasks);
+        await Task.WhenAll(tasks);
         return results.ToList();
     }
 

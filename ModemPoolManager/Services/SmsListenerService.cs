@@ -13,8 +13,10 @@ public class SmsListenerService : IDisposable
     private readonly SmsService _smsService;
     private readonly ConcurrentDictionary<string, DateTime> _lastCheckedTimes = new();
     private readonly ConcurrentDictionary<string, int> _lastSmsCount = new();
+    private readonly SemaphoreSlim _pollingSemaphore = new(1, 1);
     private System.Timers.Timer? _pollingTimer;
-    private bool _isListening;
+    private volatile bool _isListening;
+    private volatile bool _isPolling;
     private int _pollingIntervalMs = 3000;
 
     public event EventHandler<SmsMessage>? NewSmsReceived;
@@ -40,7 +42,7 @@ public class SmsListenerService : IDisposable
         _isListening = true;
 
         _pollingTimer = new System.Timers.Timer(_pollingIntervalMs);
-        _pollingTimer.Elapsed += async (s, e) => await PollForNewMessagesAsync();
+        _pollingTimer.Elapsed += OnPollingTimerElapsed;
         _pollingTimer.AutoReset = true;
         _pollingTimer.Start();
 
@@ -58,6 +60,25 @@ public class SmsListenerService : IDisposable
                 Console.WriteLine($"[SmsListener] خطأ في تفعيل الإشعارات: {ex.Message}");
             }
         });
+    }
+
+    private async void OnPollingTimerElapsed(object? sender, ElapsedEventArgs e)
+    {
+        if (_isPolling || !_isListening) return;
+        
+        if (!await _pollingSemaphore.WaitAsync(0))
+            return;
+        
+        try
+        {
+            _isPolling = true;
+            await PollForNewMessagesAsync();
+        }
+        finally
+        {
+            _isPolling = false;
+            _pollingSemaphore.Release();
+        }
     }
 
     public void StopListening()
@@ -127,7 +148,6 @@ public class SmsListenerService : IDisposable
                 if (messages.Count != lastCount)
                 {
                     _lastSmsCount[modem.PortName] = messages.Count;
-                    modem.UnreadSmsCount = messages.Count;
                     SmsCountChanged?.Invoke(this, (modem.PortName, messages.Count));
                 }
             }
@@ -195,5 +215,6 @@ public class SmsListenerService : IDisposable
     public void Dispose()
     {
         StopListening();
+        _pollingSemaphore.Dispose();
     }
 }

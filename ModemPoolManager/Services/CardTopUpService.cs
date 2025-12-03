@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 using ModemPoolManager.Models;
 
@@ -76,6 +77,13 @@ public class CardTopUpService
 
         try
         {
+            if (_modemService.IsModemBusy(modem.PortName))
+            {
+                result.IsSuccess = false;
+                result.ErrorMessage = "المودم مشغول - حاول لاحقاً";
+                return result;
+            }
+            
             var topUpCode = GetTopUpCode(modem.Operator, cardNumber);
             var ussdResult = await _modemService.ExecuteUssdAsync(modem, topUpCode);
             
@@ -104,53 +112,63 @@ public class CardTopUpService
     public async Task<List<CardTopUpResult>> TopUpAllCardsAsync(
         List<Modem> modems, 
         List<string> cardNumbers,
-        Action<Modem, string>? onStatusUpdate = null)
+        Action<Modem, string>? onStatusUpdate = null,
+        Action<Modem, bool>? onBusyStateChanged = null)
     {
-        var selectedModems = modems.Where(m => m.IsConnected && m.IsSelected).ToList();
-        var results = new List<CardTopUpResult>();
+        var selectedModems = modems.Where(m => m.IsConnected && m.IsSelected && !m.IsBusy).ToList();
+        var results = new ConcurrentBag<CardTopUpResult>();
         
-        int cardIndex = 0;
+        if (selectedModems.Count == 0 || cardNumbers.Count == 0)
+        {
+            return new List<CardTopUpResult>();
+        }
+        
+        var cardQueue = new ConcurrentQueue<string>(cardNumbers);
+        
         var tasks = selectedModems.Select(async modem =>
         {
-            var currentCardIndex = Interlocked.Increment(ref cardIndex) - 1;
-            if (currentCardIndex >= cardNumbers.Count)
-                return null;
-                
-            var cardNumber = cardNumbers[currentCardIndex];
-            
-            try
+            while (cardQueue.TryDequeue(out var cardNumber))
             {
-                modem.IsBusy = true;
-                onStatusUpdate?.Invoke(modem, "جاري الشحن...");
-                
-                var result = await TopUpCardAsync(modem, cardNumber);
-                
-                modem.Status = result.IsSuccess ? "تم الشحن ✓" : "فشل الشحن";
-                onStatusUpdate?.Invoke(modem, modem.Status);
-                
-                return result;
-            }
-            catch (Exception ex)
-            {
-                return new CardTopUpResult
+                try
                 {
-                    PortName = modem.PortName,
-                    PhoneNumber = modem.PhoneNumber,
-                    CardNumber = cardNumber,
-                    IsSuccess = false,
-                    ErrorMessage = ex.Message
-                };
-            }
-            finally
-            {
-                modem.IsBusy = false;
+                    onBusyStateChanged?.Invoke(modem, true);
+                    onStatusUpdate?.Invoke(modem, $"جاري شحن الكارت: {cardNumber.Substring(0, Math.Min(4, cardNumber.Length))}...");
+                    
+                    var result = await TopUpCardAsync(modem, cardNumber);
+                    
+                    var status = result.IsSuccess ? "تم الشحن ✓" : $"فشل: {result.ErrorMessage}";
+                    onStatusUpdate?.Invoke(modem, status);
+                    
+                    results.Add(result);
+                    
+                    if (!cardQueue.IsEmpty)
+                    {
+                        await Task.Delay(500);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var errorResult = new CardTopUpResult
+                    {
+                        PortName = modem.PortName,
+                        PhoneNumber = modem.PhoneNumber,
+                        CardNumber = cardNumber,
+                        IsSuccess = false,
+                        ErrorMessage = $"خطأ: {ex.Message}"
+                    };
+                    results.Add(errorResult);
+                    onStatusUpdate?.Invoke(modem, $"خطأ: {ex.Message}");
+                }
+                finally
+                {
+                    onBusyStateChanged?.Invoke(modem, false);
+                }
             }
         });
 
-        var taskResults = await Task.WhenAll(tasks);
-        results.AddRange(taskResults.Where(r => r != null).Cast<CardTopUpResult>());
+        await Task.WhenAll(tasks);
         
-        return results;
+        return results.ToList();
     }
 
     public async Task<TransferResult> TransferBalanceAsync(Modem sourceModem, string targetNumber, int amount)
