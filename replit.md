@@ -34,6 +34,8 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   **Improved reconnection handling:** When modem is unplugged and replugged, old port resources are cleaned up and new connection is established automatically via WMI event watchers.
     -   **Robust refresh button:** ForceRescanAsync now properly cleans all port resources (persistent ports, locks) before rescanning.
 -   **Fast phone number retrieval:** Uses the same USSD-direct approach as the old VB.NET system - sends operator-specific USSD codes (*878# for Vodafone, *100*6*1*2# for Orange, *947# for Etisalat) directly without trying AT+CNUM first. Operator and signal are fetched in parallel, then phone number is retrieved via USSD with 6-second timeout.
+-   **MF626 Modem Support:** Added explicit detection patterns for ZTE MF626 modems in GetZTEDiagnosticsPorts.
+-   **Improved Modem Restart:** RestartModemAsync now properly acquires port locks, disposes cached ports, uses AT+CFUN=0/1 sequence with AT^RESET fallback, and verifies reconnection via polling.
 -   **Network Mode Management:**
     -   Automatic network mode setting based on operator: Vodafone = 2G only, all other operators = 3G only.
     -   Uses AT+ZSNT command with fallback to AT^SYSCFG for broader modem compatibility.

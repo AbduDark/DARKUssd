@@ -8,10 +8,14 @@ namespace ModemPoolManager.Models;
 
 public class AppSettings
 {
+    public const int CurrentVersion = 2;
+    
+    public int SettingsVersion { get; set; } = CurrentVersion;
     public ModemSettings Modem { get; set; } = new();
     public UiSettings Ui { get; set; } = new();
     public AiSettings Ai { get; set; } = new();
     public GeneralSettings General { get; set; } = new();
+    public FeatureFlags Features { get; set; } = new();
 
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -25,12 +29,61 @@ public class AppSettings
             if (File.Exists(SettingsPath))
             {
                 var json = File.ReadAllText(SettingsPath);
-                return JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                var settings = JsonSerializer.Deserialize<AppSettings>(json);
+                
+                if (settings != null)
+                {
+                    if (settings.SettingsVersion < CurrentVersion)
+                    {
+                        settings = MigrateSettings(settings);
+                        settings.Save();
+                    }
+                    return settings;
+                }
             }
         }
         catch { }
 
-        return new AppSettings();
+        var newSettings = new AppSettings();
+        newSettings.Save();
+        return newSettings;
+    }
+    
+    private static AppSettings MigrateSettings(AppSettings settings)
+    {
+        var previousVersion = settings.SettingsVersion;
+        
+        settings.Modem ??= new ModemSettings();
+        settings.Ui ??= new UiSettings();
+        settings.Ai ??= new AiSettings();
+        settings.General ??= new GeneralSettings();
+        
+        if (settings.Features == null)
+        {
+            settings.Features = new FeatureFlags();
+        }
+        else
+        {
+            var defaultFeatures = new FeatureFlags();
+            settings.Features.EnableOrangeCash = settings.Features.EnableOrangeCash || defaultFeatures.EnableOrangeCash;
+            settings.Features.EnableSmsListener = settings.Features.EnableSmsListener || defaultFeatures.EnableSmsListener;
+            settings.Features.EnableBalanceQuery = settings.Features.EnableBalanceQuery || defaultFeatures.EnableBalanceQuery;
+            settings.Features.EnableCardTopUp = settings.Features.EnableCardTopUp || defaultFeatures.EnableCardTopUp;
+            settings.Features.EnableOperatorServices = settings.Features.EnableOperatorServices || defaultFeatures.EnableOperatorServices;
+            settings.Features.EnableVodafoneServices = settings.Features.EnableVodafoneServices || defaultFeatures.EnableVodafoneServices;
+            settings.Features.EnableOrangeServices = settings.Features.EnableOrangeServices || defaultFeatures.EnableOrangeServices;
+            settings.Features.EnableEtisalatServices = settings.Features.EnableEtisalatServices || defaultFeatures.EnableEtisalatServices;
+            settings.Features.EnableAiAssistant = settings.Features.EnableAiAssistant || defaultFeatures.EnableAiAssistant;
+            settings.Features.EnableContextMenu = settings.Features.EnableContextMenu || defaultFeatures.EnableContextMenu;
+            settings.Features.EnableModemRestart = settings.Features.EnableModemRestart || defaultFeatures.EnableModemRestart;
+            settings.Features.EnableParallelTransfers = settings.Features.EnableParallelTransfers || defaultFeatures.EnableParallelTransfers;
+        }
+        
+        settings.SettingsVersion = CurrentVersion;
+        
+        Console.WriteLine($"[Settings] تم ترقية الإعدادات من الإصدار {previousVersion} إلى {CurrentVersion}");
+        
+        return settings;
     }
 
     public void Save()
@@ -115,4 +168,20 @@ public class GeneralSettings
         "*121#",
         "*123#"
     };
+}
+
+public class FeatureFlags
+{
+    public bool EnableOrangeCash { get; set; } = true;
+    public bool EnableSmsListener { get; set; } = true;
+    public bool EnableBalanceQuery { get; set; } = true;
+    public bool EnableCardTopUp { get; set; } = true;
+    public bool EnableOperatorServices { get; set; } = true;
+    public bool EnableVodafoneServices { get; set; } = true;
+    public bool EnableOrangeServices { get; set; } = true;
+    public bool EnableEtisalatServices { get; set; } = true;
+    public bool EnableAiAssistant { get; set; } = true;
+    public bool EnableContextMenu { get; set; } = true;
+    public bool EnableModemRestart { get; set; } = true;
+    public bool EnableParallelTransfers { get; set; } = true;
 }

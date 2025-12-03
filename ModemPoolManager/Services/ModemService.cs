@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.IO;
 using System.IO.Ports;
 using System.Management;
 using System.Text;
@@ -160,6 +161,20 @@ public class ModemService : IDisposable
                     var portName = ExtractPortFromName(name, "ZTE Diagnostics Interface");
                     if (!string.IsNullOrEmpty(portName))
                         ports.Add(portName);
+                }
+                else if (name.Contains("ZTE MF626", StringComparison.OrdinalIgnoreCase) && 
+                         name.Contains("COM", StringComparison.OrdinalIgnoreCase))
+                {
+                    var match = Regex.Match(name, @"(COM\d+)", RegexOptions.IgnoreCase);
+                    if (match.Success)
+                        ports.Add(match.Groups[1].Value.ToUpper());
+                }
+                else if (name.Contains("ZTE MF", StringComparison.OrdinalIgnoreCase) && 
+                         name.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
+                {
+                    var match = Regex.Match(name, @"(COM\d+)", RegexOptions.IgnoreCase);
+                    if (match.Success)
+                        ports.Add(match.Groups[1].Value.ToUpper());
                 }
             }
         }
@@ -1813,22 +1828,117 @@ public class ModemService : IDisposable
 
     public async Task RestartModemAsync(string portName)
     {
+        Console.WriteLine($"[{portName}] جاري إعادة تشغيل المودم...");
+        
+        bool commandSent = false;
+        bool reconnected = false;
+        
+        if (_persistentPorts.TryRemove(portName, out var cachedPort))
+        {
+            try { if (cachedPort.IsOpen) cachedPort.Close(); } catch { }
+            try { cachedPort.Dispose(); } catch { }
+        }
+        
+        if (_portLocks.TryRemove(portName, out var oldLock))
+        {
+            try { oldLock.Dispose(); } catch { }
+        }
+        
+        if (_activeModems.TryRemove(portName, out var modem))
+        {
+            modem.IsConnected = false;
+            modem.Status = "جاري إعادة التشغيل...";
+            ModemUpdated?.Invoke(this, modem);
+        }
+        
+        await Task.Delay(300);
+        
         try
         {
-            Console.WriteLine($"[{portName}] جاري إعادة تشغيل المودم...");
+            using var tempPort = new SerialPort(portName, _baudRate, Parity.None, 8, StopBits.One)
+            {
+                ReadTimeout = 3000,
+                WriteTimeout = 2000
+            };
             
-            await SendATCommandAsync(portName, "AT+CFUN=0", 3000);
-            await Task.Delay(2000);
-            
-            await SendATCommandAsync(portName, "AT+CFUN=1", 3000);
-            await Task.Delay(3000);
-            
-            Console.WriteLine($"[{portName}] تم إعادة تشغيل المودم");
+            try
+            {
+                tempPort.Open();
+                await Task.Delay(100);
+                
+                try
+                {
+                    tempPort.WriteLine("AT+CFUN=0\r");
+                    await Task.Delay(1500);
+                    commandSent = true;
+                }
+                catch { }
+                
+                try
+                {
+                    tempPort.WriteLine("AT+CFUN=1\r");
+                    await Task.Delay(300);
+                }
+                catch (IOException) { commandSent = true; }
+                catch (TimeoutException) { commandSent = true; }
+                catch
+                {
+                    try
+                    {
+                        tempPort.WriteLine("AT^RESET\r");
+                        await Task.Delay(300);
+                        commandSent = true;
+                    }
+                    catch { commandSent = true; }
+                }
+            }
+            catch (IOException) { commandSent = true; }
+            catch (UnauthorizedAccessException) { commandSent = true; }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[{portName}] خطأ في إعادة تشغيل المودم: {ex.Message}");
-            throw;
+            Console.WriteLine($"[{portName}] خطأ في فتح المنفذ: {ex.Message}");
+        }
+        
+        Console.WriteLine($"[{portName}] انتظار إعادة تعريف المودم...");
+        await Task.Delay(6000);
+        
+        for (int retry = 0; retry < 5; retry++)
+        {
+            var ports = GetZTEDiagnosticsPorts();
+            if (ports.Contains(portName))
+            {
+                try
+                {
+                    var isConnected = await TestPortConnectionAsync(portName);
+                    if (isConnected)
+                    {
+                        reconnected = true;
+                        Console.WriteLine($"[{portName}] تم إعادة الاتصال بنجاح ✓");
+                        break;
+                    }
+                }
+                catch { }
+            }
+            await Task.Delay(2000);
+        }
+        
+        if (reconnected)
+        {
+            try
+            {
+                await ScanForModemsAsync();
+            }
+            catch { }
+            Console.WriteLine($"[{portName}] تم إعادة تشغيل المودم بنجاح");
+        }
+        else if (commandSent)
+        {
+            Console.WriteLine($"[{portName}] تم إرسال أمر إعادة التشغيل - قد يحتاج المودم لإعادة توصيل يدوي");
+        }
+        else
+        {
+            throw new Exception("فشل إعادة تشغيل المودم");
         }
     }
 
