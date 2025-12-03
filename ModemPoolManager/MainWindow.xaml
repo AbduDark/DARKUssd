@@ -640,6 +640,202 @@
                 </Grid>
             </TabItem>
 
+            <!-- TopUp شحن البطاقات -->
+            <TabItem Header="💳 شحن البطاقات" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="💳" FontSize="20" Margin="0,0,8,0"/>
+                                <TextBlock Text="شحن البطاقات" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+                            <TextBlock Text="أدخل أرقام الكروت (كل رقم في سطر جديد أو مفصولة بفاصلة)" 
+                                       Foreground="#8B949E" FontSize="13" Margin="0,0,0,8"/>
+                            <TextBox Text="{Binding CardNumbers, UpdateSourceTrigger=PropertyChanged}" 
+                                     Style="{StaticResource ModernTextBox}"
+                                     AcceptsReturn="True" TextWrapping="Wrap" Height="100"
+                                     FlowDirection="LeftToRight"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Content="▶ شحن الكروت" Command="{Binding TopUpCardsCommand}" 
+                                        Style="{StaticResource OrangeButton}"
+                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                <Button Content="🗑 مسح" Command="{Binding ClearTopUpLogCommand}" 
+                                        Style="{StaticResource RedButton}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="📋" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="نتائج الشحن" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                <Border Background="#238636" CornerRadius="4" Padding="6,2" Margin="12,0,0,0">
+                                    <TextBlock Text="{Binding SuccessfulTopUps, StringFormat='✓ {0}'}" FontSize="11" Foreground="White"/>
+                                </Border>
+                                <Border Background="#DA3633" CornerRadius="4" Padding="6,2" Margin="6,0,0,0">
+                                    <TextBlock Text="{Binding FailedTopUps, StringFormat='✗ {0}'}" FontSize="11" Foreground="White"/>
+                                </Border>
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Text="{Binding TopUpLog}" FontSize="13" Foreground="#C9D1D9" 
+                                           TextWrapping="Wrap" FontFamily="Consolas"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- BalQry استعلام الرصيد -->
+            <TabItem Header="💰 استعلام الرصيد" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="💰" FontSize="20" Margin="0,0,8,0"/>
+                                <TextBlock Text="استعلام الرصيد" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+                            <TextBlock Text="استعلام رصيد جميع الخطوط المحددة بشكل متوازي" 
+                                       Foreground="#8B949E" FontSize="13" Margin="0,0,0,12"/>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="▶ استعلام الأرصدة" Command="{Binding QueryAllBalancesCommand}" 
+                                        Style="{StaticResource BlueButton}"
+                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                <Button Content="🗑 مسح" Command="{Binding ClearBalanceLogCommand}" 
+                                        Style="{StaticResource RedButton}" Margin="8,0,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="📊" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="نتائج الاستعلام" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Text="{Binding BalanceLog}" FontSize="13" Foreground="#C9D1D9" 
+                                           TextWrapping="Wrap" FontFamily="Consolas"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- GrpBalQry استعلام جماعي -->
+            <TabItem Header="📊 استعلام جماعي" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="📊" FontSize="20" Margin="0,0,8,0"/>
+                                <TextBlock Text="استعلام جماعي حسب المشغل" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+                            
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <TextBlock Text="فلتر المشغل:" Foreground="#8B949E" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                <ComboBox Grid.Column="1" SelectedValue="{Binding SelectedOperatorFilter}" Width="200"
+                                          Background="#21262D" Foreground="#C9D1D9" BorderBrush="#30363D">
+                                    <ComboBoxItem Content="الكل" IsSelected="True" Tag="all"/>
+                                    <ComboBoxItem Content="فودافون" Tag="vodafone"/>
+                                    <ComboBoxItem Content="أورانج" Tag="orange"/>
+                                    <ComboBoxItem Content="اتصالات" Tag="etisalat"/>
+                                    <ComboBoxItem Content="وي" Tag="we"/>
+                                </ComboBox>
+                            </Grid>
+
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="▶ استعلام جماعي" Command="{Binding QueryGroupBalancesCommand}" 
+                                        Style="{StaticResource OrangeButton}"
+                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                <Button Content="🗑 مسح" Command="{Binding ClearGroupBalanceLogCommand}" 
+                                        Style="{StaticResource RedButton}" Margin="8,0,0,0"/>
+                            </StackPanel>
+
+                            <Border Background="#21262D" CornerRadius="8" Padding="16" Margin="0,12,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="إجمالي الأرصدة" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TotalGroupBalance, StringFormat='{}{0:F2} ج.م'}" 
+                                                   FontSize="24" FontWeight="Bold" Foreground="#58A6FF" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="نجح" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding GroupQuerySuccessCount}" 
+                                                   FontSize="24" FontWeight="Bold" Foreground="#238636" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                    
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="فشل" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding GroupQueryFailCount}" 
+                                                   FontSize="24" FontWeight="Bold" Foreground="#DA3633" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="📋" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="تفاصيل الاستعلام" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Text="{Binding BalanceLog}" FontSize="13" Foreground="#C9D1D9" 
+                                           TextWrapping="Wrap" FontFamily="Consolas"/>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="🤖 المساعد الذكي" Style="{StaticResource TabItemStyle}">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>

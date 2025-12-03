@@ -13,6 +13,8 @@ public partial class MainViewModel : ObservableObject
     private readonly ModemService _modemService;
     private readonly SmsService _smsService;
     private readonly AiAssistantService _aiService;
+    private readonly BalanceQueryService _balanceQueryService;
+    private readonly CardTopUpService _cardTopUpService;
 
     [ObservableProperty]
     private ObservableCollection<Modem> _modems = new();
@@ -101,18 +103,50 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _totalSmsCount;
 
+    [ObservableProperty]
+    private string _cardNumbers = "";
+
+    [ObservableProperty]
+    private string _topUpLog = "";
+
+    [ObservableProperty]
+    private int _successfulTopUps;
+
+    [ObservableProperty]
+    private int _failedTopUps;
+
+    [ObservableProperty]
+    private ObservableCollection<BalanceResult> _balanceResults = new();
+
+    [ObservableProperty]
+    private string _balanceLog = "";
+
+    [ObservableProperty]
+    private string _selectedOperatorFilter = "all";
+
+    [ObservableProperty]
+    private decimal _totalGroupBalance;
+
+    [ObservableProperty]
+    private int _groupQuerySuccessCount;
+
+    [ObservableProperty]
+    private int _groupQueryFailCount;
+
     private int _commandId = 0;
 
     public MainViewModel()
     {
-        _settings = AppSettings.Load();
+        Settings = AppSettings.Load();
         _modemService = new ModemService();
         _smsService = new SmsService(_modemService);
-        _aiService = new AiAssistantService(_settings);
+        _aiService = new AiAssistantService(Settings);
+        _balanceQueryService = new BalanceQueryService(_modemService);
+        _cardTopUpService = new CardTopUpService(_modemService);
 
-        CustomUssd1 = _settings.General.QuickUssdCommands.ElementAtOrDefault(0) ?? "*100#";
-        CustomUssd2 = _settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
-        CustomUssd3 = _settings.General.QuickUssdCommands.ElementAtOrDefault(2) ?? "*102#";
+        CustomUssd1 = Settings.General.QuickUssdCommands.ElementAtOrDefault(0) ?? "*100#";
+        CustomUssd2 = Settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
+        CustomUssd3 = Settings.General.QuickUssdCommands.ElementAtOrDefault(2) ?? "*102#";
         
         _modemService.ModemConnected += OnModemConnected;
         _modemService.ModemDisconnected += OnModemDisconnected;
@@ -493,7 +527,7 @@ public partial class MainViewModel : ObservableObject
             var successCount = results.Count(r => r.IsSuccess);
             StatusMessage = $"تم التنفيذ: {successCount}/{results.Count} نجح في {executionTime.TotalSeconds:F1} ثانية";
 
-            if (_settings.Ai.Enabled && _settings.Ai.AutoAnalyzeResponses && results.Any(r => r.IsSuccess))
+            if (Settings.Ai.Enabled && Settings.Ai.AutoAnalyzeResponses && results.Any(r => r.IsSuccess))
             {
                 await AutoAnalyzeResponsesAsync(results.Where(r => r.IsSuccess).ToList());
             }
@@ -531,7 +565,7 @@ public partial class MainViewModel : ObservableObject
         System.Windows.Application.Current.Dispatcher.Invoke(() =>
         {
             CommandHistory.Insert(0, history);
-            if (CommandHistory.Count > _settings.Ui.MaxHistoryItems)
+            if (CommandHistory.Count > Settings.Ui.MaxHistoryItems)
             {
                 CommandHistory.RemoveAt(CommandHistory.Count - 1);
             }
@@ -708,7 +742,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (!_settings.Ai.Enabled || string.IsNullOrEmpty(_settings.Ai.ApiKey))
+        if (!Settings.Ai.Enabled || string.IsNullOrEmpty(Settings.Ai.ApiKey))
         {
             AiResponse = "⚠️ المساعد الذكي غير مفعل.\n\nلتفعيله:\n1. اذهب إلى الإعدادات\n2. فعّل خيار 'تفعيل المساعد الذكي'\n3. أدخل مفتاح OpenAI API";
             return;
@@ -745,7 +779,7 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
-        if (!_settings.Ai.Enabled || string.IsNullOrEmpty(_settings.Ai.ApiKey))
+        if (!Settings.Ai.Enabled || string.IsNullOrEmpty(Settings.Ai.ApiKey))
         {
             AiResponse = "⚠️ المساعد الذكي غير مفعل. فعّله من الإعدادات.";
             return;
@@ -781,7 +815,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task GetSuggestionsAsync()
     {
-        if (!_settings.Ai.Enabled || string.IsNullOrEmpty(_settings.Ai.ApiKey))
+        if (!Settings.Ai.Enabled || string.IsNullOrEmpty(Settings.Ai.ApiKey))
         {
             AiResponse = "⚠️ المساعد الذكي غير مفعل. فعّله من الإعدادات.";
             return;
@@ -821,8 +855,8 @@ public partial class MainViewModel : ObservableObject
     {
         try
         {
-            _settings.General.QuickUssdCommands = new List<string> { CustomUssd1, CustomUssd2, CustomUssd3 };
-            _settings.Save();
+            Settings.General.QuickUssdCommands = new List<string> { CustomUssd1, CustomUssd2, CustomUssd3 };
+            Settings.Save();
             StatusMessage = "تم حفظ الإعدادات بنجاح";
         }
         catch (Exception ex)
@@ -1199,6 +1233,233 @@ public partial class MainViewModel : ObservableObject
         }
 
         StatusMessage = $"تم إعداد {pairCount} زوج للتحويل ({connectedModems.Count} مودم متصل)";
+    }
+
+    #endregion
+
+    #region TopUp Commands
+
+    [RelayCommand]
+    private async Task TopUpCardsAsync()
+    {
+        if (string.IsNullOrWhiteSpace(CardNumbers))
+        {
+            StatusMessage = "الرجاء إدخال أرقام الكروت";
+            return;
+        }
+
+        var cards = CardNumbers.Split(new[] { '\n', '\r', ',', ';' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(c => c.Trim())
+            .Where(c => !string.IsNullOrEmpty(c))
+            .ToList();
+
+        if (cards.Count == 0)
+        {
+            StatusMessage = "الرجاء إدخال أرقام كروت صحيحة";
+            return;
+        }
+
+        var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected && !m.IsBusy).ToList();
+        if (selectedModems.Count == 0)
+        {
+            StatusMessage = "الرجاء تحديد مودمات للشحن";
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            SuccessfulTopUps = 0;
+            FailedTopUps = 0;
+            TopUpLog = $"🔄 جاري شحن {cards.Count} كارت على {selectedModems.Count} مودم...\n";
+            StatusMessage = "جاري الشحن...";
+
+            var results = await _cardTopUpService.TopUpAllCardsAsync(
+                selectedModems.ToList(),
+                cards,
+                (modem, status) => Application.Current.Dispatcher.Invoke(() => modem.Status = status),
+                (modem, busy) => Application.Current.Dispatcher.Invoke(() => modem.IsBusy = busy)
+            );
+
+            foreach (var result in results)
+            {
+                if (result.IsSuccess)
+                {
+                    SuccessfulTopUps++;
+                    TopUpLog += $"✅ {result.PhoneNumber}: تم الشحن - الرصيد الجديد: {result.NewBalance}\n";
+                }
+                else
+                {
+                    FailedTopUps++;
+                    TopUpLog += $"❌ {result.PhoneNumber}: فشل - {result.ErrorMessage}\n";
+                }
+            }
+
+            StatusMessage = $"تم الشحن: {SuccessfulTopUps} نجح، {FailedTopUps} فشل";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearTopUpLog()
+    {
+        TopUpLog = "";
+        CardNumbers = "";
+        SuccessfulTopUps = 0;
+        FailedTopUps = 0;
+    }
+
+    #endregion
+
+    #region Balance Query Commands
+
+    [RelayCommand]
+    private async Task QueryAllBalancesAsync()
+    {
+        var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected && !m.IsBusy).ToList();
+        if (selectedModems.Count == 0)
+        {
+            StatusMessage = "الرجاء تحديد مودمات للاستعلام";
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            BalanceResults.Clear();
+            BalanceLog = $"🔄 جاري استعلام رصيد {selectedModems.Count} خط...\n";
+            StatusMessage = "جاري استعلام الأرصدة...";
+
+            var results = await _balanceQueryService.QueryAllBalancesAsync(
+                selectedModems.ToList(),
+                (modem, status) => Application.Current.Dispatcher.Invoke(() => modem.Status = status),
+                (modem, result) => Application.Current.Dispatcher.Invoke(() => BalanceResults.Add(result)),
+                (modem, busy) => Application.Current.Dispatcher.Invoke(() => modem.IsBusy = busy)
+            );
+
+            var successCount = results.Count(r => r.IsSuccess);
+            var failCount = results.Count - successCount;
+            
+            BalanceLog = "📊 نتائج الاستعلام:\n━━━━━━━━━━━━━━━━━━━━━━\n";
+            foreach (var result in results)
+            {
+                if (result.IsSuccess)
+                {
+                    BalanceLog += $"✅ {result.PhoneNumber} ({result.Operator}):\n";
+                    BalanceLog += $"   الرصيد: {result.MainBalance} ج.م\n";
+                    if (!string.IsNullOrEmpty(result.BonusBalance)) BalanceLog += $"   البونص: {result.BonusBalance} ج.م\n";
+                    if (!string.IsNullOrEmpty(result.DataBalance)) BalanceLog += $"   البيانات: {result.DataBalance}\n";
+                    if (!string.IsNullOrEmpty(result.ExpiryDate)) BalanceLog += $"   الصلاحية: {result.ExpiryDate}\n";
+                }
+                else
+                {
+                    BalanceLog += $"❌ {result.PhoneNumber}: {result.ErrorMessage}\n";
+                }
+            }
+
+            StatusMessage = $"تم الاستعلام: {successCount} نجح، {failCount} فشل";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearBalanceLog()
+    {
+        BalanceLog = "";
+        BalanceResults.Clear();
+    }
+
+    #endregion
+
+    #region Group Balance Query Commands
+
+    [RelayCommand]
+    private async Task QueryGroupBalancesAsync()
+    {
+        var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected && !m.IsBusy).ToList();
+        if (selectedModems.Count == 0)
+        {
+            StatusMessage = "الرجاء تحديد مودمات للاستعلام الجماعي";
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            GroupQuerySuccessCount = 0;
+            GroupQueryFailCount = 0;
+            TotalGroupBalance = 0;
+            BalanceLog = $"🔄 جاري الاستعلام الجماعي عن {selectedModems.Count} خط";
+            if (SelectedOperatorFilter != "all")
+                BalanceLog += $" (فلتر: {SelectedOperatorFilter})";
+            BalanceLog += "...\n";
+            StatusMessage = "جاري الاستعلام الجماعي...";
+
+            var groupResult = await _balanceQueryService.QueryGroupBalancesAsync(
+                selectedModems.ToList(),
+                SelectedOperatorFilter
+            );
+
+            TotalGroupBalance = groupResult.TotalBalance;
+            GroupQuerySuccessCount = groupResult.SuccessfulQueries;
+            GroupQueryFailCount = groupResult.TotalModems - groupResult.SuccessfulQueries;
+
+            BalanceLog = "📊 نتائج الاستعلام الجماعي:\n";
+            BalanceLog += "━━━━━━━━━━━━━━━━━━━━━━\n";
+            BalanceLog += $"📱 إجمالي الخطوط: {groupResult.TotalModems}\n";
+            BalanceLog += $"✅ نجح: {groupResult.SuccessfulQueries}\n";
+            BalanceLog += $"❌ فشل: {groupResult.TotalModems - groupResult.SuccessfulQueries}\n";
+            BalanceLog += "━━━━━━━━━━━━━━━━━━━━━━\n";
+            BalanceLog += $"💰 إجمالي الأرصدة: {groupResult.TotalBalance:F2} ج.م\n";
+            BalanceLog += $"📊 متوسط الرصيد: {groupResult.AverageBalance:F2} ج.م\n";
+            BalanceLog += "━━━━━━━━━━━━━━━━━━━━━━\n\n";
+            
+            BalanceLog += "📋 التفاصيل:\n";
+            foreach (var result in groupResult.BalanceResults)
+            {
+                if (result.IsSuccess)
+                {
+                    BalanceLog += $"  {result.PhoneNumber}: {result.MainBalance:F2} ج.م\n";
+                }
+                else
+                {
+                    BalanceLog += $"  {result.PhoneNumber}: ❌ {result.ErrorMessage}\n";
+                }
+            }
+
+            StatusMessage = $"إجمالي الأرصدة: {groupResult.TotalBalance:F2} ج.م ({groupResult.SuccessfulQueries}/{groupResult.TotalModems} نجح)";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearGroupBalanceLog()
+    {
+        BalanceLog = "";
+        TotalGroupBalance = 0;
+        GroupQuerySuccessCount = 0;
+        GroupQueryFailCount = 0;
     }
 
     #endregion
