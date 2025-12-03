@@ -53,6 +53,13 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 -   **Configuration:** Settings are saved in JSON format.
 
 ### Core Features
+-   **Wave 1 Features (All Visible in UI)**:
+    -   Main Dashboard - modem management with USSD execution
+    -   SMS - real-time message listening and management
+    -   TopUp - parallel card charging across modems
+    -   BalQry - balance query for all lines
+    -   GrpBalQry - group balance query by operator with statistics
+    -   Orange Cash - parallel transfers between sender/receiver pairs
 -   Detailed modem information retrieval (IMEI, IMSI, ICCID, Signal, Operator).
 -   AI-powered USSD response analysis, command suggestions, modem diagnostics, and message analysis.
 -   Comprehensive statistics dashboard and command logging.
