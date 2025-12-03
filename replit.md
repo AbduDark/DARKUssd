@@ -68,12 +68,34 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Copy Phone Number to clipboard.
     -   Refresh Signal and Phone Number.
 
+### New Services (Wave 1-3 Implementation)
+-   **SmsListenerService (NEW):**
+    -   Real-time SMS monitoring using CNMI (AT+CNMI=2,1,0,0,0).
+    -   Polling-based fallback for older modems.
+    -   Events for new message notifications.
+    -   Automatic unread count tracking per modem.
+-   **BalanceQueryService (NEW):**
+    -   Parallel balance queries for all modems.
+    -   Operator-specific balance codes (Vodafone *868#, Orange *100#, Etisalat *102#, WE *550#).
+    -   Extraction of main balance, bonus, data, and expiry date.
+    -   Group balance statistics (total, average, success/failure counts).
+-   **CardTopUpService (NEW):**
+    -   Parallel card charging across all modems.
+    -   Operator-specific top-up codes (Vodafone *858*, Orange *110*, Etisalat *556*).
+    -   Balance transfer between lines.
+    -   Success/failure detection with error messages.
+-   **OperatorServicesManager (NEW):**
+    -   Vodafone services: Flex balance, data remaining, power menu, master menu.
+    -   Orange services: Internet bundles, Orange Cash operations, data remaining.
+    -   Etisalat services: Internet bundles, call bundles, data remaining.
+    -   Saved services management for custom USSD operations.
+
 ### Project Structure
--   **Models:** Data structures for Modems, ModemInfo, UssdResult, SmsMessage, CommandHistory, AppSettings.
--   **Services:** Business logic for ModemService, SmsService, AiAssistantService.
+-   **Models:** Data structures for Modems, ModemInfo, UssdResult, SmsMessage, BalanceResult, CardTopUpResult, TransferResult, CommandHistory, AppSettings.
+-   **Services:** Business logic for ModemService, SmsService, SmsListenerService, BalanceQueryService, CardTopUpService, OperatorServicesManager, AiAssistantService.
 -   **ViewModels:** MainViewModel for UI logic.
 -   **Converters:** UI utility converters (e.g., `InverseBoolConverter`, `OperatorToBrushConverter`, `SignalBarsToOpacityConverter`).
--   **Views:** `MainWindow.xaml` for the main user interface.
+-   **Views:** `MainWindow.xaml` for the main user interface (all 17 tabs).
 
 ## External Dependencies
 -   **.NET 8.0:** Application Framework.
