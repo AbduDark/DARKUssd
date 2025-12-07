@@ -33,7 +33,12 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   **Auto-fetch phone number on connection:** Phone number is retrieved automatically using USSD codes when modem is connected.
     -   **Improved reconnection handling:** When modem is unplugged and replugged, old port resources are cleaned up and new connection is established automatically via WMI event watchers.
     -   **Robust refresh button:** ForceRescanAsync now properly cleans all port resources (persistent ports, locks) before rescanning.
--   **Fast phone number retrieval:** Uses the same USSD-direct approach as the old VB.NET system - sends operator-specific USSD codes (*878# for Vodafone, *100*6*1*2# for Orange, *947# for Etisalat) directly without trying AT+CNUM first. Operator and signal are fetched in parallel, then phone number is retrieved via USSD with 6-second timeout.
+-   **Fast phone number retrieval:** Uses the same USSD-direct approach as the old VB.NET system - sends operator-specific USSD codes (*878# for Vodafone, #119*1# for Orange, *947# for Etisalat) directly without trying AT+CNUM first. Operator and signal are fetched in parallel, then phone number is retrieved via USSD with 6-second timeout.
+-   **Auto-retry phone number retrieval:** When a phone number is unknown ("غير معروف"), the system automatically retries fetching it every 5 seconds using operator-specific USSD codes:
+    -   Vodafone: `*878#`
+    -   Orange: `#119*1#`
+    -   Etisalat: `*947#`
+    -   WE: `*999#`
 -   **MF626 Modem Support:** Added explicit detection patterns for ZTE MF626 modems in GetZTEDiagnosticsPorts.
 -   **Improved Modem Restart:** RestartModemAsync now properly acquires port locks, disposes cached ports, uses AT+CFUN=0/1 sequence with AT^RESET fallback, and verifies reconnection via polling.
 -   **Network Mode Management:**

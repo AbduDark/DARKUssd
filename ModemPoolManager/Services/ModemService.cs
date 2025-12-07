@@ -20,6 +20,8 @@ public class ModemService : IDisposable
     private ManagementEventWatcher? _removeWatcher;
     private System.Timers.Timer? _statusTimer;
     private bool _isMonitoring;
+    private int _isUpdatingStatus;
+    private readonly ConcurrentDictionary<string, bool> _phoneNumberFetchInProgress = new();
     
     public event EventHandler<Modem>? ModemConnected;
     public event EventHandler<Modem>? ModemDisconnected;
@@ -1556,39 +1558,89 @@ public class ModemService : IDisposable
     {
         if (!_isMonitoring) return;
         
-        await CheckForDisconnectedModemsAsync();
-        await ScanForModemsAsync();
+        if (Interlocked.CompareExchange(ref _isUpdatingStatus, 1, 0) != 0)
+            return;
         
-        foreach (var modem in _activeModems.Values.ToList())
+        try
         {
-            if (modem.IsConnected && !modem.IsBusy)
+            await CheckForDisconnectedModemsAsync();
+            await ScanForModemsAsync();
+            
+            foreach (var modem in _activeModems.Values.ToList())
             {
-                try
+                if (modem.IsConnected && !modem.IsBusy)
                 {
-                    var isStillConnected = await TestPortConnectionAsync(modem.PortName);
-                    if (isStillConnected)
+                    try
                     {
-                        var (newSignal, newLevel) = await GetSignalStrengthWithLevelAsync(modem.PortName);
-                        if (modem.SignalStrength != newSignal || modem.SignalLevel != newLevel)
+                        var isStillConnected = await TestPortConnectionAsync(modem.PortName);
+                        if (isStillConnected)
                         {
-                            modem.SignalStrength = newSignal;
-                            modem.SignalLevel = newLevel;
-                            modem.LastActivity = DateTime.Now;
-                            ModemUpdated?.Invoke(this, modem);
+                            var (newSignal, newLevel) = await GetSignalStrengthWithLevelAsync(modem.PortName);
+                            if (modem.SignalStrength != newSignal || modem.SignalLevel != newLevel)
+                            {
+                                modem.SignalStrength = newSignal;
+                                modem.SignalLevel = newLevel;
+                                modem.LastActivity = DateTime.Now;
+                                ModemUpdated?.Invoke(this, modem);
+                            }
+                            
+                            if (IsPhoneNumberUnknown(modem.PhoneNumber) && 
+                                !_phoneNumberFetchInProgress.GetOrAdd(modem.PortName, false))
+                            {
+                                _phoneNumberFetchInProgress[modem.PortName] = true;
+                                try
+                                {
+                                    Console.WriteLine($"[{modem.PortName}] رقم الهاتف غير معروف، جاري إعادة المحاولة...");
+                                    modem.Status = "جاري جلب الرقم...";
+                                    ModemUpdated?.Invoke(this, modem);
+                                    
+                                    var newNumber = await GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
+                                    if (!IsPhoneNumberUnknown(newNumber))
+                                    {
+                                        modem.PhoneNumber = newNumber;
+                                        modem.Status = "متصل ✓";
+                                        Console.WriteLine($"[{modem.PortName}] تم جلب الرقم: {newNumber}");
+                                    }
+                                    else
+                                    {
+                                        modem.Status = "متصل - الرقم غير معروف";
+                                    }
+                                    modem.LastActivity = DateTime.Now;
+                                    ModemUpdated?.Invoke(this, modem);
+                                }
+                                finally
+                                {
+                                    _phoneNumberFetchInProgress[modem.PortName] = false;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            modem.IsConnected = false;
+                            modem.Status = "تم الفصل ❌";
+                            _activeModems.TryRemove(modem.PortName, out _);
+                            _phoneNumberFetchInProgress.TryRemove(modem.PortName, out _);
+                            CleanupPort(modem.PortName);
+                            ModemDisconnected?.Invoke(this, modem);
                         }
                     }
-                    else
-                    {
-                        modem.IsConnected = false;
-                        modem.Status = "تم الفصل ❌";
-                        _activeModems.TryRemove(modem.PortName, out _);
-                        CleanupPort(modem.PortName);
-                        ModemDisconnected?.Invoke(this, modem);
-                    }
+                    catch { }
                 }
-                catch { }
             }
         }
+        finally
+        {
+            Interlocked.Exchange(ref _isUpdatingStatus, 0);
+        }
+    }
+    
+    private bool IsPhoneNumberUnknown(string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return true;
+        
+        var unknownValues = new[] { "غير معروف", "Unknown", "N/A", "خطأ", "Error" };
+        return unknownValues.Any(v => phoneNumber.Contains(v, StringComparison.OrdinalIgnoreCase));
     }
     
     public async Task ForceRescanAsync()
