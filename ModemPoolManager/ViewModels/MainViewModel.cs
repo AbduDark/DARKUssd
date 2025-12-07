@@ -71,7 +71,7 @@ public partial class MainViewModel : ObservableObject
     private string _orangeCashPassword = "";
 
     [ObservableProperty]
-    private string _primaryReceiverPhone = "";
+    private string _primarySenderPhone = "";
 
     [ObservableProperty]
     private int _transferAmount = 100;
@@ -1078,11 +1078,34 @@ public partial class MainViewModel : ObservableObject
 
         var connectedModems = Modems.Where(m => m.IsConnected).OrderBy(m => m.Index).ToList();
         
-        var hasPrimaryReceiver = !string.IsNullOrWhiteSpace(PrimaryReceiverPhone);
+        var hasPrimarySender = !string.IsNullOrWhiteSpace(PrimarySenderPhone);
+        Modem? primarySenderModem = null;
         
-        if (!hasPrimaryReceiver && connectedModems.Count < 2)
+        if (hasPrimarySender)
         {
-            StatusMessage = "يجب توصيل مودمين على الأقل للتحويل أو إدخال رقم المستلم الأساسي";
+            var normalizedPrimary = PrimarySenderPhone.Replace(" ", "").Replace("-", "");
+            primarySenderModem = connectedModems.FirstOrDefault(m => 
+                !string.IsNullOrEmpty(m.PhoneNumber) && (
+                    m.PhoneNumber == normalizedPrimary || 
+                    m.PhoneNumber.EndsWith(normalizedPrimary.Length >= 10 ? normalizedPrimary.Substring(normalizedPrimary.Length - 10) : normalizedPrimary) ||
+                    normalizedPrimary.EndsWith(m.PhoneNumber.Length >= 10 ? m.PhoneNumber.Substring(m.PhoneNumber.Length - 10) : m.PhoneNumber)));
+            
+            if (primarySenderModem == null)
+            {
+                StatusMessage = $"لم يتم العثور على مودم برقم {PrimarySenderPhone}";
+                return;
+            }
+            
+            if (primarySenderModem.IsBusy)
+            {
+                StatusMessage = $"المودم {primarySenderModem.PortName} مشغول حالياً";
+                return;
+            }
+        }
+        
+        if (!hasPrimarySender && connectedModems.Count < 2)
+        {
+            StatusMessage = "يجب توصيل مودمين على الأقل للتحويل أو إدخال رقم المرسل الأساسي";
             return;
         }
 
@@ -1094,52 +1117,68 @@ public partial class MainViewModel : ObservableObject
             FailedTransfers = 0;
             TransferLog = "🚀 بدء التحويل المتوازي...\n";
 
-            if (hasPrimaryReceiver)
+            if (hasPrimarySender && primarySenderModem != null)
             {
-                TransferLog += $"📱 الرقم الأساسي للاستلام: {PrimaryReceiverPhone}\n\n";
+                TransferLog += $"📱 المرسل الأساسي: {primarySenderModem.PhoneNumber} ({primarySenderModem.PortName})\n\n";
                 
-                var senderModems = connectedModems.ToList();
-                foreach (var sender in senderModems)
+                primarySenderModem.IsSenderLine = true;
+                primarySenderModem.IsReceiverLine = false;
+                primarySenderModem.TransferStatus = "مرسل أساسي";
+                
+                var receiverModems = connectedModems.Where(m => m.PortName != primarySenderModem.PortName).ToList();
+                
+                if (receiverModems.Count == 0)
                 {
-                    sender.IsSenderLine = true;
-                    sender.IsReceiverLine = false;
-                    sender.TransferStatus = "مرسل";
+                    StatusMessage = "لا توجد مودمات أخرى للاستلام";
+                    IsTransferRunning = false;
+                    IsProcessing = false;
+                    return;
+                }
+                
+                foreach (var receiver in receiverModems)
+                {
+                    receiver.IsReceiverLine = true;
+                    receiver.IsSenderLine = false;
+                    receiver.TransferStatus = "مستلم";
                 }
 
                 TransferLog += $"💰 المبلغ: {TransferAmount} ج.م لكل تحويل\n";
-                TransferLog += $"⏳ جاري تنفيذ {senderModems.Count} تحويل للرقم الأساسي...\n\n";
+                TransferLog += $"⏳ جاري تنفيذ {receiverModems.Count} تحويل من المرسل الأساسي...\n\n";
 
-                var tasks = senderModems.Select(async sender =>
+                var tasks = receiverModems.Select(async receiver =>
                 {
                     try
                     {
-                        sender.TransferStatus = "جاري التحويل...";
-                        var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
-                            sender.PortName, OrangeCashPassword, PrimaryReceiverPhone, TransferAmount);
+                        receiver.TransferStatus = "جاري الاستلام...";
+                        primarySenderModem.TransferStatus = $"جاري التحويل إلى {receiver.PhoneNumber}...";
                         
-                        sender.TransferStatus = success ? "تم التحويل ✓" : $"فشل: {message}";
+                        var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
+                            primarySenderModem.PortName, OrangeCashPassword, receiver.PhoneNumber!, TransferAmount);
+                        
+                        receiver.TransferStatus = success ? "تم الاستلام ✓" : $"فشل: {message}";
                         
                         Application.Current.Dispatcher.Invoke(() =>
                         {
-                            TransferLog += $"📤 {sender.PhoneNumber}: {sender.TransferStatus}\n";
+                            TransferLog += $"📤 {primarySenderModem.PhoneNumber} → {receiver.PhoneNumber}: {(success ? "تم ✓" : $"فشل: {message}")}\n";
                         });
                         
                         return success;
                     }
                     catch (Exception ex)
                     {
-                        sender.TransferStatus = $"خطأ: {ex.Message}";
+                        receiver.TransferStatus = $"خطأ: {ex.Message}";
                         return false;
                     }
                     finally
                     {
-                        sender.IsBusy = false;
+                        receiver.IsBusy = false;
                     }
                 });
 
                 var results = await Task.WhenAll(tasks);
                 SuccessfulTransfers = results.Count(r => r);
                 FailedTransfers = results.Count(r => !r);
+                primarySenderModem.TransferStatus = $"تم التحويل: {SuccessfulTransfers} نجاح، {FailedTransfers} فشل";
             }
             else
             {
@@ -1612,13 +1651,11 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task StartOcSeriesAsync()
     {
-        var targetPhone = !string.IsNullOrWhiteSpace(OcSeriesTargetPhone) 
-            ? OcSeriesTargetPhone 
-            : PrimaryReceiverPhone;
+        var targetPhone = OcSeriesTargetPhone;
             
         if (string.IsNullOrWhiteSpace(targetPhone))
         {
-            StatusMessage = "الرجاء إدخال رقم الهاتف المستهدف أو الرقم الأساسي";
+            StatusMessage = "الرجاء إدخال رقم الهاتف المستهدف";
             return;
         }
 
