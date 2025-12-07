@@ -1810,7 +1810,7 @@ public partial class MainViewModel : ObservableObject
             MainLineModem.Status = "جاري الاستعلام...";
             OcSeriesLog += $"\n🔍 جاري استعلام رصيد الخط الأساسي...\n";
             
-            var balanceResult = await _modemService.QueryOrangeCashBalanceAsync(
+            var balanceResult = await _modemService.GetOrangeCashBalanceAsync(
                 MainLineModem.PortName, 
                 OrangeCashPassword);
             
