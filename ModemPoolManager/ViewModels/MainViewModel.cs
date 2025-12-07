@@ -133,6 +133,46 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private int _groupQueryFailCount;
 
+    [ObservableProperty]
+    private string _ocSeriesTargetPhone = "";
+
+    [ObservableProperty]
+    private int _ocSeriesAmount = 100;
+
+    [ObservableProperty]
+    private int _ocSeriesDelay = 12;
+
+    [ObservableProperty]
+    private bool _isOcSeriesRunning;
+
+    [ObservableProperty]
+    private string _ocSeriesLog = "";
+
+    [ObservableProperty]
+    private int _ocSeriesCountdown;
+
+    [ObservableProperty]
+    private ObservableCollection<ExcelTransferItem> _excelTransferItems = new();
+
+    [ObservableProperty]
+    private string _customTransferLog = "";
+
+    [ObservableProperty]
+    private bool _isCustomTransferRunning;
+
+    [ObservableProperty]
+    private int _customTransferDelay = 12;
+
+    [ObservableProperty]
+    private int _customTransferCountdown;
+
+    [ObservableProperty]
+    private Modem? _selectedSenderModem;
+
+    private OcSeriesService? _ocSeriesService;
+    private CancellationTokenSource? _ocSeriesCts;
+    private CancellationTokenSource? _customTransferCts;
+
     private int _commandId = 0;
 
     public MainViewModel()
@@ -143,6 +183,7 @@ public partial class MainViewModel : ObservableObject
         _aiService = new AiAssistantService(Settings);
         _balanceQueryService = new BalanceQueryService(_modemService);
         _cardTopUpService = new CardTopUpService(_modemService);
+        _ocSeriesService = new OcSeriesService(_modemService);
 
         CustomUssd1 = Settings.General.QuickUssdCommands.ElementAtOrDefault(0) ?? "*100#";
         CustomUssd2 = Settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
@@ -392,6 +433,43 @@ public partial class MainViewModel : ObservableObject
         {
             modem.Status = "خطأ";
             StatusMessage = $"خطأ في جلب الرقم: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task FullResetModemAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected || modem.IsBusy) return;
+        
+        try
+        {
+            var previousStatus = modem.Status;
+            modem.Status = "جاري إعادة التشغيل...";
+            modem.IsBusy = true;
+            
+            var success = await _modemService.FullResetModemAsync(modem.PortName);
+            
+            if (success)
+            {
+                modem.Status = "تم إعادة التشغيل";
+                StatusMessage = $"تم إعادة تشغيل المودم {modem.PortName} بنجاح";
+                await Task.Delay(3000);
+                modem.Status = "جاهز";
+            }
+            else
+            {
+                modem.Status = previousStatus;
+                StatusMessage = $"فشل إعادة تشغيل المودم {modem.PortName}";
+            }
+        }
+        catch (Exception ex)
+        {
+            modem.Status = "خطأ";
+            StatusMessage = $"خطأ في إعادة تشغيل المودم: {ex.Message}";
+        }
+        finally
+        {
+            modem.IsBusy = false;
         }
     }
 
@@ -1460,6 +1538,302 @@ public partial class MainViewModel : ObservableObject
         TotalGroupBalance = 0;
         GroupQuerySuccessCount = 0;
         GroupQueryFailCount = 0;
+    }
+
+    #endregion
+
+    #region OC Series Commands
+
+    private void OnOcSeriesLogUpdated(object? sender, string log)
+    {
+        Application.Current.Dispatcher.Invoke(() => OcSeriesLog += log + "\n");
+    }
+
+    private void OnOcSeriesCountdownTick(object? sender, int seconds)
+    {
+        Application.Current.Dispatcher.Invoke(() => OcSeriesCountdown = seconds);
+    }
+
+    [RelayCommand]
+    private async Task StartOcSeriesAsync()
+    {
+        if (string.IsNullOrWhiteSpace(OcSeriesTargetPhone))
+        {
+            StatusMessage = "الرجاء إدخال رقم الهاتف المستهدف";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة المرور";
+            return;
+        }
+
+        if (OcSeriesAmount <= 0)
+        {
+            StatusMessage = "الرجاء إدخال مبلغ صحيح";
+            return;
+        }
+
+        var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected && !m.IsBusy).ToList();
+        if (selectedModems.Count == 0)
+        {
+            StatusMessage = "الرجاء تحديد مودمات للتحويل";
+            return;
+        }
+
+        try
+        {
+            IsOcSeriesRunning = true;
+            _ocSeriesCts = new CancellationTokenSource();
+            OcSeriesLog = $"🚀 بدء التحويل المتسلسل إلى {OcSeriesTargetPhone}\n";
+            OcSeriesLog += $"📱 عدد المودمات: {selectedModems.Count}\n";
+            OcSeriesLog += $"💰 المبلغ لكل تحويل: {OcSeriesAmount} ج.م\n";
+            OcSeriesLog += $"⏱ التأخير بين التحويلات: {OcSeriesDelay} ثانية\n\n";
+
+            var transferItems = selectedModems.Select((m, idx) => new OcSeriesTransferItem
+            {
+                SenderModem = m,
+                ReceiverPhone = OcSeriesTargetPhone,
+                Amount = OcSeriesAmount,
+                Order = idx + 1
+            }).ToList();
+
+            _ocSeriesService!.LogUpdated += OnOcSeriesLogUpdated;
+            _ocSeriesService.CountdownTick += OnOcSeriesCountdownTick;
+
+            try
+            {
+                var results = await _ocSeriesService.ExecuteSeriesTransfersAsync(
+                    transferItems,
+                    OrangeCashPassword,
+                    OcSeriesDelay,
+                    _ocSeriesCts.Token);
+
+                var successCount = results.Count(r => r.Success);
+                StatusMessage = $"تم التحويل المتسلسل: {successCount}/{results.Count} نجح";
+            }
+            finally
+            {
+                _ocSeriesService.LogUpdated -= OnOcSeriesLogUpdated;
+                _ocSeriesService.CountdownTick -= OnOcSeriesCountdownTick;
+            }
+        }
+        catch (Exception ex)
+        {
+            OcSeriesLog += $"\n❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsOcSeriesRunning = false;
+            OcSeriesCountdown = 0;
+        }
+    }
+
+    [RelayCommand]
+    private void StopOcSeries()
+    {
+        _ocSeriesCts?.Cancel();
+        _ocSeriesService?.Stop();
+        IsOcSeriesRunning = false;
+        OcSeriesLog += "\n⏹ تم إيقاف التحويل المتسلسل\n";
+        StatusMessage = "تم إيقاف التحويل المتسلسل";
+    }
+
+    [RelayCommand]
+    private void ClearOcSeriesLog()
+    {
+        OcSeriesLog = "";
+        OcSeriesCountdown = 0;
+    }
+
+    #endregion
+
+    #region Custom Transfer Commands
+
+    [RelayCommand]
+    private void ImportExcel()
+    {
+        try
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "CSV Files|*.csv|Text Files|*.txt|All Files|*.*",
+                Title = "اختر ملف التحويلات (CSV)"
+            };
+
+            if (dialog.ShowDialog() == true)
+            {
+                var extension = System.IO.Path.GetExtension(dialog.FileName).ToLowerInvariant();
+                
+                if (extension != ".csv" && extension != ".txt")
+                {
+                    CustomTransferLog = $"❌ صيغة الملف غير مدعومة. يرجى استخدام ملفات CSV أو TXT\n";
+                    StatusMessage = "صيغة الملف غير مدعومة";
+                    return;
+                }
+
+                ExcelTransferItems.Clear();
+                var lines = System.IO.File.ReadAllLines(dialog.FileName);
+                int importedCount = 0;
+                int skippedCount = 0;
+                
+                foreach (var line in lines.Skip(1))
+                {
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    
+                    var parts = line.Split(new[] { ',', '\t', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        var phone = parts[0].Trim().Replace("\"", "");
+                        var amountStr = parts[1].Trim().Replace("\"", "");
+                        
+                        if (int.TryParse(amountStr, out int amount) && amount > 0 && !string.IsNullOrEmpty(phone))
+                        {
+                            ExcelTransferItems.Add(new ExcelTransferItem
+                            {
+                                PhoneNumber = phone,
+                                Amount = amount,
+                                Status = "في الانتظار"
+                            });
+                            importedCount++;
+                        }
+                        else
+                        {
+                            skippedCount++;
+                        }
+                    }
+                    else
+                    {
+                        skippedCount++;
+                    }
+                }
+
+                CustomTransferLog = $"✅ تم استيراد {importedCount} عملية تحويل\n";
+                if (skippedCount > 0)
+                {
+                    CustomTransferLog += $"⚠ تم تخطي {skippedCount} سطر غير صالح\n";
+                }
+                StatusMessage = $"تم استيراد {importedCount} تحويل من الملف";
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomTransferLog = $"❌ خطأ في استيراد الملف: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void ClearExcelTransfers()
+    {
+        ExcelTransferItems.Clear();
+        CustomTransferLog = "";
+        StatusMessage = "تم مسح قائمة التحويلات";
+    }
+
+    [RelayCommand]
+    private async Task StartCustomTransferAsync()
+    {
+        if (SelectedSenderModem == null)
+        {
+            StatusMessage = "الرجاء اختيار مودم المرسل";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة المرور";
+            return;
+        }
+
+        if (ExcelTransferItems.Count == 0)
+        {
+            StatusMessage = "الرجاء استيراد ملف التحويلات أولاً";
+            return;
+        }
+
+        try
+        {
+            IsCustomTransferRunning = true;
+            _customTransferCts = new CancellationTokenSource();
+            CustomTransferLog = $"🚀 بدء التحويل المخصص من {SelectedSenderModem.PhoneNumber}\n";
+            CustomTransferLog += $"📋 عدد التحويلات: {ExcelTransferItems.Count}\n\n";
+
+            int successCount = 0;
+            int failCount = 0;
+
+            for (int i = 0; i < ExcelTransferItems.Count; i++)
+            {
+                if (_customTransferCts.Token.IsCancellationRequested) break;
+
+                var item = ExcelTransferItems[i];
+                item.Status = "جاري التحويل...";
+                CustomTransferLog += $"━━━━━━━━━━━━━━━━━━━━\n";
+                CustomTransferLog += $"📤 تحويل {i + 1}/{ExcelTransferItems.Count}\n";
+                CustomTransferLog += $"   إلى: {item.PhoneNumber}\n";
+                CustomTransferLog += $"   المبلغ: {item.Amount} ج.م\n";
+
+                var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
+                    SelectedSenderModem.PortName,
+                    OrangeCashPassword,
+                    item.PhoneNumber,
+                    item.Amount);
+
+                item.Result = message;
+                if (success)
+                {
+                    item.Status = "تم ✓";
+                    successCount++;
+                    CustomTransferLog += $"   ✅ نجح: {message}\n";
+                }
+                else
+                {
+                    item.Status = "فشل ✗";
+                    failCount++;
+                    CustomTransferLog += $"   ❌ فشل: {message}\n";
+                }
+
+                if (i < ExcelTransferItems.Count - 1 && !_customTransferCts.Token.IsCancellationRequested)
+                {
+                    CustomTransferLog += $"\n⏳ انتظار {CustomTransferDelay} ثانية...\n";
+                    for (int sec = CustomTransferDelay; sec > 0; sec--)
+                    {
+                        if (_customTransferCts.Token.IsCancellationRequested) break;
+                        CustomTransferCountdown = sec;
+                        await Task.Delay(1000);
+                    }
+                    CustomTransferCountdown = 0;
+                }
+            }
+
+            CustomTransferLog += $"\n━━━━━━━━━━━━━━━━━━━━\n";
+            CustomTransferLog += $"📊 النتيجة النهائية:\n";
+            CustomTransferLog += $"   ✅ نجح: {successCount}\n";
+            CustomTransferLog += $"   ❌ فشل: {failCount}\n";
+
+            StatusMessage = $"تم التحويل المخصص: {successCount}/{ExcelTransferItems.Count} نجح";
+        }
+        catch (Exception ex)
+        {
+            CustomTransferLog += $"\n❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsCustomTransferRunning = false;
+            CustomTransferCountdown = 0;
+        }
+    }
+
+    [RelayCommand]
+    private void StopCustomTransfer()
+    {
+        _customTransferCts?.Cancel();
+        IsCustomTransferRunning = false;
+        CustomTransferLog += "\n⏹ تم إيقاف التحويل المخصص\n";
+        StatusMessage = "تم إيقاف التحويل المخصص";
     }
 
     #endregion

@@ -439,7 +439,7 @@ public class ModemService : IDisposable
             return "*878#";
         
         if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل"))
-            return "*100*6*1*2#";
+            return "#119*1#";
         
         if (opLower.Contains("etisalat") || opLower.Contains("اتصالات"))
             return "*947#";
@@ -1486,7 +1486,7 @@ public class ModemService : IDisposable
             return "*878#";
         
         if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل"))
-            return "*100*6*1*2#";
+            return "#119*1#";
         
         if (opLower.Contains("etisalat") || opLower.Contains("اتصالات"))
             return "*947#";
@@ -1495,6 +1495,40 @@ public class ModemService : IDisposable
             return "*999#";
         
         return "*878#";
+    }
+    
+    public async Task<bool> FullResetModemAsync(string portName)
+    {
+        var portLock = GetPortLock(portName);
+        await portLock.WaitAsync();
+        
+        try
+        {
+            var port = GetOrCreatePort(portName);
+            EnsurePortOpen(port);
+            
+            Console.WriteLine($"[{portName}] جاري إعادة تشغيل المودم...");
+            
+            port.DiscardInBuffer();
+            port.DiscardOutBuffer();
+            
+            await Task.Run(() => port.Write("AT+CFUN=1,1\r"));
+            await Task.Delay(2000);
+            
+            var response = await Task.Run(() => port.ReadExisting());
+            Console.WriteLine($"[{portName}] Reset response: {response}");
+            
+            return response.Contains("OK") || !response.Contains("ERROR");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في إعادة تشغيل المودم: {ex.Message}");
+            return false;
+        }
+        finally
+        {
+            portLock.Release();
+        }
     }
     
     public async Task<string> GetPhoneNumberFastAsync(string portName)

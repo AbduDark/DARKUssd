@@ -80,11 +80,11 @@ public class OperatorServicesManager
     public static class OrangeCodes
     {
         public const string Balance = "*100#";
-        public const string PhoneNumber = "*100*6*1*2#";
+        public const string PhoneNumber = "#119*1#";
         public const string InternetBundle = "*111#";
         public const string OrangeCash = "#7115#";
         public const string OrangeCashBalance = "#7115*81*{pin}#";
-        public const string OrangeCashTransfer = "#7115*31*{pin}*2*{number}*{amount}*1*1#";
+        public const string OrangeCashTransfer = "#7115*1*1*{number}*{amount}*{pin}#";
         public const string TransferBalance = "*100*1*{number}*{amount}#";
         public const string DataRemaining = "*100*1*2#";
         public const string StopPromo = "*100*5*0#";

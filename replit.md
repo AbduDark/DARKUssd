@@ -63,15 +63,33 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 -   Detailed modem information retrieval (IMEI, IMSI, ICCID, Signal, Operator).
 -   AI-powered USSD response analysis, command suggestions, modem diagnostics, and message analysis.
 -   Comprehensive statistics dashboard and command logging.
--   **Orange Cash Parallel Transfer System (NEW):**
+-   **Orange Cash Parallel Transfer System:**
     -   Dedicated tab for Orange Cash operations with 6 sender → 6 receiver parallel transfer pattern.
     -   Balance inquiry for all modems using USSD code `#7115*81*{password}#`.
-    -   Parallel money transfers using USSD code `#7115*31*{password}*2*{phone}*{amount}*1*1#`.
+    -   Parallel money transfers using USSD code `#7115*1*1*{phone}*{amount}*{password}#`.
     -   Automatic pairing: modems 1-6 as senders, modems 7-12 as receivers (1→7, 2→8, 3→9, 4→10, 5→11, 6→12).
     -   Real-time status display: "تم التحويل" for senders, "تم الاستلام" for receivers.
     -   8-second cooldown between transfer batches to prevent carrier blocking.
     -   Visual indicators: orange border for senders, green border for receivers.
     -   Transfer log with detailed operation history.
+-   **OC Series Tab (تحويل متسلسل) - NEW:**
+    -   Sequential Orange Cash transfers from multiple modems to a single target phone.
+    -   Uses USSD code `#7115*1*1*{phone}*{amount}*{password}#` for transfers.
+    -   Phone number retrieval via `#119*1#` USSD code.
+    -   Configurable delay between transfers (default 12 seconds).
+    -   Real-time countdown display during delays.
+    -   Start/Stop controls with cancellation support.
+    -   Detailed transfer log with success/failure tracking.
+-   **Custom Transfer Tab (تحويل مخصص) - NEW:**
+    -   Import transfer list from CSV files (phone,amount format).
+    -   Single sender modem to multiple recipients.
+    -   DataGrid display of pending transfers with status.
+    -   Configurable delay between transfers.
+    -   Progress tracking with countdown display.
+    -   Start/Stop controls for batch processing.
+-   **Modem Card Improvements:**
+    -   Increased phone number font size to 18 for better visibility.
+    -   Added Reset button next to phone refresh button for full modem reset (AT+CFUN=0/1).
 -   **Right-click Context Menu on Modem Cards:**
     -   Restart Modem (AT+CFUN=0/1 sequence).
     -   Copy Phone Number to clipboard.

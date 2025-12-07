@@ -417,9 +417,9 @@
                                                                    Foreground="#C9D1D9" FontFamily="Consolas"/>
                                                     </Border>
 
-                                                    <!-- Phone Number with Refresh Button -->
+                                                    <!-- Phone Number with Refresh Button and Reset Button -->
                                                     <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
-                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="12" FontWeight="Bold"
+                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="18" FontWeight="Bold"
                                                                    Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
                                                                    VerticalAlignment="Center" Margin="8,0,4,0"
                                                                    FontFamily="Consolas"/>
@@ -436,6 +436,24 @@
                                                                     <ControlTemplate.Triggers>
                                                                         <Trigger Property="IsMouseOver" Value="True">
                                                                             <Setter TargetName="border" Property="Background" Value="#30363D"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
+                                                        <!-- Full Reset Modem Button -->
+                                                        <Button ToolTip="إعادة تشغيل كاملة للمودم (Reset)" Cursor="Hand" Margin="4,0,0,0"
+                                                                Command="{Binding DataContext.FullResetModemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="#DA3633" BorderBrush="#F85149" BorderThickness="1" 
+                                                                            CornerRadius="4" Padding="6,2" x:Name="border">
+                                                                        <TextBlock Text="Reset" FontSize="10" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#F85149"/>
                                                                         </Trigger>
                                                                     </ControlTemplate.Triggers>
                                                                 </ControlTemplate>
@@ -1176,6 +1194,284 @@
                                         <TextBlock Text="{Binding TransferLog}" FontSize="11" 
                                                    Foreground="#3FB950" FontFamily="Consolas"
                                                    TextWrapping="Wrap"/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- OC Series Tab - تحويل متسلسل -->
+            <TabItem Header="🔄 OC متسلسل" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="350"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Panel - Modem Selection -->
+                    <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="📱" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="اختر المودمات للتحويل المتسلسل" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                <ItemsControl ItemsSource="{Binding Modems}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Margin="4" Background="#0D1117" BorderBrush="#30363D" BorderThickness="1" 
+                                                    CornerRadius="6" Padding="12,8" MinWidth="180">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                                    <StackPanel Grid.Column="1">
+                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="14" FontWeight="Bold"
+                                                                   Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
+                                                                   FontFamily="Consolas" FlowDirection="LeftToRight"/>
+                                                        <TextBlock Text="{Binding PortName}" FontSize="11" Foreground="#8B949E"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right Panel - Settings & Log -->
+                    <Border Grid.Column="1" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <TextBlock Text="🔄" FontSize="24" Margin="0,0,10,0"/>
+                                <TextBlock Text="تحويل متسلسل" FontSize="20" FontWeight="Bold" Foreground="#58A6FF"/>
+                            </StackPanel>
+
+                            <!-- Settings -->
+                            <StackPanel Grid.Row="1">
+                                <TextBlock Text="رقم المستلم:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding OcSeriesTargetPhone, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="16"
+                                         FlowDirection="LeftToRight" Margin="0,0,0,12"/>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Margin="0,0,6,0">
+                                        <TextBlock Text="المبلغ:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding OcSeriesAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                                 Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
+                                                 FlowDirection="LeftToRight"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                                        <TextBlock Text="تأخير (ثانية):" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding OcSeriesDelay, UpdateSourceTrigger=PropertyChanged}" 
+                                                 Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
+                                                 FlowDirection="LeftToRight"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <TextBlock Text="كلمة السر:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding OrangeCashPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
+                                         FlowDirection="LeftToRight" Margin="0,0,0,16"/>
+
+                                <!-- Countdown Display -->
+                                <Border Background="#21262D" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                                        Visibility="{Binding IsOcSeriesRunning, Converter={StaticResource BoolToVisibility}}">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="⏱️ انتظار" FontSize="14" Foreground="#D29922" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding OcSeriesCountdown, StringFormat='{}{0} ثانية'}" 
+                                                   FontSize="24" FontWeight="Bold" Foreground="#58A6FF" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Button Content="🚀 بدء التحويل المتسلسل" 
+                                        Command="{Binding StartOcSeriesCommand}" 
+                                        FontSize="16" Padding="20,14" HorizontalAlignment="Stretch"
+                                        IsEnabled="{Binding IsOcSeriesRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource BlueButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsOcSeriesRunning}" Value="True">
+                                                    <Setter Property="Background" Value="#484F58"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Content="⛔ إيقاف" Command="{Binding StopOcSeriesCommand}" 
+                                        Style="{StaticResource RedButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"
+                                        Visibility="{Binding IsOcSeriesRunning, Converter={StaticResource BoolToVisibility}}"/>
+                            </StackPanel>
+
+                            <!-- Log -->
+                            <Border Grid.Row="2" Background="#0D1117" CornerRadius="8" Margin="0,16,0,0" Padding="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="📋 سجل التحويلات" FontSize="13" Foreground="#8B949E" Margin="0,0,0,8"/>
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <TextBlock Text="{Binding OcSeriesLog}" FontSize="11" 
+                                                   Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap"/>
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- Custom Orange Transfer Tab - تحويل مخصص -->
+            <TabItem Header="📊 تحويل Excel" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="350"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Panel - Transfer List -->
+                    <Border Grid.Column="0" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="📊" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="قائمة التحويلات" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                <Button Content="📂 استيراد Excel" Command="{Binding ImportExcelCommand}" 
+                                        Style="{StaticResource BlueButton}" Margin="20,0,0,0" Padding="12,6"/>
+                                <Button Content="🗑 مسح" Command="{Binding ClearExcelTransfersCommand}" 
+                                        Style="{StaticResource RedButton}" Margin="8,0,0,0" Padding="12,6"/>
+                            </StackPanel>
+
+                            <DataGrid Grid.Row="1" ItemsSource="{Binding ExcelTransferItems}" 
+                                      AutoGenerateColumns="False" Background="Transparent" 
+                                      BorderThickness="0" CanUserAddRows="False" CanUserDeleteRows="False"
+                                      GridLinesVisibility="Horizontal" HeadersVisibility="Column"
+                                      RowBackground="#0D1117" AlternatingRowBackground="#161B22"
+                                      Foreground="#C9D1D9">
+                                <DataGrid.ColumnHeaderStyle>
+                                    <Style TargetType="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#21262D"/>
+                                        <Setter Property="Foreground" Value="#8B949E"/>
+                                        <Setter Property="Padding" Value="12,8"/>
+                                        <Setter Property="FontWeight" Value="Bold"/>
+                                    </Style>
+                                </DataGrid.ColumnHeaderStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="رقم الهاتف" Binding="{Binding PhoneNumber}" Width="180" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount}" Width="100" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="120" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="النتيجة" Binding="{Binding Result}" Width="*" IsReadOnly="True"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </Grid>
+                    </Border>
+
+                    <!-- Right Panel - Settings & Log -->
+                    <Border Grid.Column="1" Style="{StaticResource CardPanel}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <!-- Header -->
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <TextBlock Text="📊" FontSize="24" Margin="0,0,10,0"/>
+                                <TextBlock Text="تحويل من Excel" FontSize="20" FontWeight="Bold" Foreground="#D29922"/>
+                            </StackPanel>
+
+                            <!-- Settings -->
+                            <StackPanel Grid.Row="1">
+                                <TextBlock Text="اختر المودم المرسل:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                <ComboBox ItemsSource="{Binding Modems}" SelectedItem="{Binding SelectedSenderModem}"
+                                          DisplayMemberPath="DisplayName" Margin="0,0,0,12"
+                                          Background="#0D1117" Foreground="#C9D1D9"/>
+
+                                <TextBlock Text="كلمة السر:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding OrangeCashPassword, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
+                                         FlowDirection="LeftToRight" Margin="0,0,0,12"/>
+
+                                <TextBlock Text="تأخير بين التحويلات (ثانية):" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding CustomTransferDelay, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
+                                         FlowDirection="LeftToRight" Margin="0,0,0,16"/>
+
+                                <!-- Countdown Display -->
+                                <Border Background="#21262D" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                                        Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}">
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="⏱️ انتظار" FontSize="14" Foreground="#D29922" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding CustomTransferCountdown, StringFormat='{}{0} ثانية'}" 
+                                                   FontSize="24" FontWeight="Bold" Foreground="#D29922" HorizontalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Button Content="🚀 بدء التحويل" 
+                                        Command="{Binding StartCustomTransferCommand}" 
+                                        FontSize="16" Padding="20,14" HorizontalAlignment="Stretch"
+                                        IsEnabled="{Binding IsCustomTransferRunning, Converter={StaticResource InverseBoolConverter}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource OrangeButton}">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsCustomTransferRunning}" Value="True">
+                                                    <Setter Property="Background" Value="#484F58"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+
+                                <Button Content="⛔ إيقاف" Command="{Binding StopCustomTransferCommand}" 
+                                        Style="{StaticResource RedButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"
+                                        Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}"/>
+                            </StackPanel>
+
+                            <!-- Log -->
+                            <Border Grid.Row="2" Background="#0D1117" CornerRadius="8" Margin="0,16,0,0" Padding="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="📋 سجل التحويلات" FontSize="13" Foreground="#8B949E" Margin="0,0,0,8"/>
+                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                        <TextBlock Text="{Binding CustomTransferLog}" FontSize="11" 
+                                                   Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap"/>
                                     </ScrollViewer>
                                 </Grid>
                             </Border>
