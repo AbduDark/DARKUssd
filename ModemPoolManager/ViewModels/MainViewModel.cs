@@ -1189,7 +1189,7 @@ public partial class MainViewModel : ObservableObject
                         receiver.TransferStatus = "جاري الاستلام...";
                         primarySenderModem.TransferStatus = $"جاري التحويل إلى {receiver.PhoneNumber}...";
                         
-                        var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
+                        var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
                             primarySenderModem.PortName, OrangeCashPassword, receiver.PhoneNumber!, TransferAmount);
                         
                         receiver.TransferStatus = success ? "تم الاستلام ✓" : $"فشل: {message}";
@@ -1197,6 +1197,7 @@ public partial class MainViewModel : ObservableObject
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             TransferLog += $"📤 {primarySenderModem.PhoneNumber} → {receiver.PhoneNumber}: {(success ? "تم ✓" : $"فشل: {message}")}\n";
+                            TransferLog += $"   📨 رد الشبكة: {rawResponse}\n";
                         });
                         
                         return success;
@@ -2118,13 +2119,14 @@ public partial class MainViewModel : ObservableObject
                 CustomTransferLog += $"   إلى: {item.PhoneNumber}\n";
                 CustomTransferLog += $"   المبلغ: {item.Amount} ج.م\n";
 
-                var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
+                var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
                     SelectedSenderModem.PortName,
                     OrangeCashPassword,
                     item.PhoneNumber,
                     item.Amount);
 
                 item.Result = message;
+                CustomTransferLog += $"   📨 رد الشبكة: {rawResponse}\n";
                 if (success)
                 {
                     item.Status = "تم ✓";

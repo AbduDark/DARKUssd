@@ -1731,7 +1731,7 @@ public class ModemService : IDisposable
         }
     }
 
-    public async Task<(bool Success, string Message)> ExecuteOrangeCashTransferAsync(
+    public async Task<(bool Success, string Message, string RawResponse)> ExecuteOrangeCashTransferAsync(
         string portName, 
         string password, 
         string recipientNumber, 
@@ -1762,40 +1762,40 @@ public class ModemService : IDisposable
             if (decoded.Contains("تم شحن") || decoded.Contains("تم التحويل") || 
                 decoded.Contains("successfully") || decoded.Contains("Success"))
             {
-                return (true, "تم التحويل بنجاح ✓");
+                return (true, "تم التحويل بنجاح ✓", decoded);
             }
             
             if (decoded.Contains("رقم سري خاطئ") || decoded.Contains("Wrong"))
             {
-                return (false, "كلمة سر خاطئة");
+                return (false, "كلمة سر خاطئة", decoded);
             }
             
             if (decoded.Contains("غير كاف") || decoded.Contains("insufficient"))
             {
-                return (false, "الرصيد غير كافي");
+                return (false, "الرصيد غير كافي", decoded);
             }
             
             if (decoded.Contains("not subscribed"))
             {
-                return (false, "غير مشترك في أورانج كاش");
+                return (false, "غير مشترك في أورانج كاش", decoded);
             }
             
             if (decoded.Contains("suspended") || decoded.Contains("محظور"))
             {
-                return (false, "الخط محظور");
+                return (false, "الخط محظور", decoded);
             }
             
             if (decoded.Contains("5 دقائق") || decoded.Contains("wait"))
             {
-                return (false, "انتظر 5 دقائق");
+                return (false, "انتظر 5 دقائق", decoded);
             }
             
-            return (false, decoded.Length > 100 ? decoded.Substring(0, 100) : decoded);
+            return (false, decoded.Length > 100 ? decoded.Substring(0, 100) : decoded, decoded);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[{portName}] خطأ في تحويل أورانج كاش: {ex.Message}");
-            return (false, $"خطأ: {ex.Message}");
+            return (false, $"خطأ: {ex.Message}", $"خطأ: {ex.Message}");
         }
     }
 
@@ -1819,13 +1819,14 @@ public class ModemService : IDisposable
                 pair.Receiver.TransferStatus = "في انتظار الاستلام...";
                 onReceiverStatusUpdate?.Invoke(pair.Receiver, "في انتظار الاستلام...");
                 
-                var (success, message) = await ExecuteOrangeCashTransferAsync(
+                var (success, message, rawResponse) = await ExecuteOrangeCashTransferAsync(
                     pair.Sender.PortName,
                     password,
                     pair.Receiver.PhoneNumber,
                     amount);
                 
                 pair.Sender.TransferStatus = success ? "تم التحويل ✓" : $"فشل: {message}";
+                pair.Sender.LastResponse = rawResponse;
                 onSenderStatusUpdate?.Invoke(pair.Sender, pair.Sender.TransferStatus);
                 
                 if (success)
@@ -1840,7 +1841,7 @@ public class ModemService : IDisposable
                     onReceiverStatusUpdate?.Invoke(pair.Receiver, pair.Receiver.TransferStatus);
                 }
                 
-                return (pair.Sender, pair.Receiver, success, message);
+                return (pair.Sender, pair.Receiver, success, rawResponse);
             }
             catch (Exception ex)
             {

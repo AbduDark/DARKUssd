@@ -119,7 +119,7 @@ public class OperatorServicesManager
         return await _modemService.GetOrangeCashBalanceAsync(modem.PortName, pin);
     }
 
-    public async Task<(bool Success, string Message)> TransferOrangeCashAsync(
+    public async Task<(bool Success, string Message, string RawResponse)> TransferOrangeCashAsync(
         Modem modem, string pin, string targetNumber, int amount)
     {
         return await _modemService.ExecuteOrangeCashTransferAsync(modem.PortName, pin, targetNumber, amount);

@@ -63,7 +63,7 @@ public class OcSeriesService
             LogUpdated?.Invoke(this, $"   إلى: {firstRecipient.PhoneNumber}");
             LogUpdated?.Invoke(this, $"   المبلغ: {totalToTransfer} ج.م");
             
-            var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
+            var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
                 mainLineModem.PortName,
                 password,
                 firstRecipient.PhoneNumber!,
@@ -76,12 +76,15 @@ public class OcSeriesService
                 Amount = totalToTransfer,
                 Success = success,
                 Message = message,
+                RawResponse = rawResponse,
                 Timestamp = DateTime.Now,
                 IsMainLineTransfer = true
             };
             
             results.Add(mainTransferResult);
             TransferCompleted?.Invoke(this, mainTransferResult);
+            
+            LogUpdated?.Invoke(this, $"   📨 رد الشبكة: {rawResponse}");
             
             if (success)
             {
@@ -131,7 +134,7 @@ public class OcSeriesService
                 
                 sender.TransferStatus = "جاري التحويل...";
                 
-                var (chainSuccess, chainMessage) = await _modemService.ExecuteOrangeCashTransferAsync(
+                var (chainSuccess, chainMessage, chainRawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
                     sender.PortName,
                     password,
                     receiver.PhoneNumber!,
@@ -144,6 +147,7 @@ public class OcSeriesService
                     Amount = amountToForward,
                     Success = chainSuccess,
                     Message = chainMessage,
+                    RawResponse = chainRawResponse,
                     Timestamp = DateTime.Now,
                     KeptAmount = remainingPerModem,
                     ForwardedAmount = amountToForward
@@ -151,6 +155,8 @@ public class OcSeriesService
                 
                 results.Add(chainResult);
                 TransferCompleted?.Invoke(this, chainResult);
+                
+                LogUpdated?.Invoke(this, $"   📨 رد الشبكة: {chainRawResponse}");
                 
                 if (chainSuccess)
                 {
@@ -235,7 +241,7 @@ public class OcSeriesService
                 
                 item.SenderModem.TransferStatus = "جاري التحويل...";
                 
-                var (success, message) = await _modemService.ExecuteOrangeCashTransferAsync(
+                var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
                     item.SenderModem.PortName,
                     password,
                     item.ReceiverPhone,
@@ -248,11 +254,14 @@ public class OcSeriesService
                     Amount = item.Amount,
                     Success = success,
                     Message = message,
+                    RawResponse = rawResponse,
                     Timestamp = DateTime.Now
                 };
                 
                 results.Add(result);
                 TransferCompleted?.Invoke(this, result);
+                
+                LogUpdated?.Invoke(this, $"   📨 رد الشبكة: {rawResponse}");
                 
                 if (success)
                 {
@@ -326,6 +335,7 @@ public class OcTransferResult
     public int Amount { get; set; }
     public bool Success { get; set; }
     public string Message { get; set; } = "";
+    public string RawResponse { get; set; } = "";
     public DateTime Timestamp { get; set; }
     public bool IsMainLineTransfer { get; set; }
     public int KeptAmount { get; set; }
