@@ -156,26 +156,6 @@ public class ModemService : IDisposable
                     if (!string.IsNullOrEmpty(portName))
                         ports.Add(portName);
                 }
-                else if (name.Contains("ZTE Diagnostics Interface", StringComparison.OrdinalIgnoreCase))
-                {
-                    var portName = ExtractPortFromName(name, "ZTE Diagnostics Interface");
-                    if (!string.IsNullOrEmpty(portName))
-                        ports.Add(portName);
-                }
-                else if (name.Contains("ZTE MF626", StringComparison.OrdinalIgnoreCase) && 
-                         name.Contains("COM", StringComparison.OrdinalIgnoreCase))
-                {
-                    var match = Regex.Match(name, @"(COM\d+)", RegexOptions.IgnoreCase);
-                    if (match.Success)
-                        ports.Add(match.Groups[1].Value.ToUpper());
-                }
-                else if (name.Contains("ZTE MF", StringComparison.OrdinalIgnoreCase) && 
-                         name.Contains("Diagnostics", StringComparison.OrdinalIgnoreCase))
-                {
-                    var match = Regex.Match(name, @"(COM\d+)", RegexOptions.IgnoreCase);
-                    if (match.Success)
-                        ports.Add(match.Groups[1].Value.ToUpper());
-                }
             }
         }
         catch

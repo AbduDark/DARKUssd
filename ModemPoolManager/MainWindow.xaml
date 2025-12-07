@@ -1094,6 +1094,13 @@
 
                             <!-- Settings -->
                             <StackPanel Grid.Row="1">
+                                <TextBlock Text="الرقم الأساسي للاستلام:" Foreground="#F78166" FontSize="13" FontWeight="Bold" Margin="0,0,0,4"/>
+                                <TextBox Text="{Binding PrimaryReceiverPhone, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" 
+                                         FontFamily="Consolas" FontSize="16"
+                                         FlowDirection="LeftToRight" Margin="0,0,0,12"/>
+                                <TextBlock Text="(اتركه فارغاً للتحويل بين الأزواج)" Foreground="#6E7681" FontSize="11" Margin="0,-8,0,12"/>
+
                                 <TextBlock Text="كلمة السر:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding OrangeCashPassword, UpdateSourceTrigger=PropertyChanged}" 
                                          Style="{StaticResource ModernTextBox}" 
