@@ -1,0 +1,41 @@
+The name "InverseBoolConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "InverseBoolConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OperatorToBrushConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "SignalColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "SignalBarsToOpacityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "StringToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "InverseBoolToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+Object reference not set to an instance of an object.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+Unresolved reference 'RootWindow'.'' Line number '7' and line position '148'.'' Line number '7'. ...
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "StringToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+'ModemService' does not contain a definition for 'QueryOrangeCashBalanceAsync' and no accessible extension method 'QueryOrangeCashBalanceAsync' accepting a first argument of type 'ModemService' could be found (are you missing a using directive or an assembly reference?)
