@@ -373,17 +373,35 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    private bool IsPhoneNumberUnknown(string? phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return true;
+        
+        var unknownValues = new[] { "غير معروف", "unknown", "N/A", "خطأ", "error", "---" };
+        return unknownValues.Any(v => phoneNumber.Contains(v, StringComparison.OrdinalIgnoreCase)) 
+               || phoneNumber.StartsWith("خطأ");
+    }
+
     [RelayCommand]
     private async Task GetPhoneNumbersAsync()
     {
         try
         {
             IsProcessing = true;
-            StatusMessage = "جاري جلب أرقام الهواتف ومعلومات المودمات...";
-
-            var connectedModems = Modems.Where(m => m.IsConnected).ToList();
             
-            var tasks = connectedModems.Select(async modem =>
+            var connectedModems = Modems.Where(m => m.IsConnected).ToList();
+            var modemsWithUnknownNumbers = connectedModems.Where(m => IsPhoneNumberUnknown(m.PhoneNumber)).ToList();
+            
+            if (modemsWithUnknownNumbers.Count == 0)
+            {
+                StatusMessage = "جميع المودمات لديها أرقام معروفة بالفعل";
+                return;
+            }
+            
+            StatusMessage = $"جاري جلب أرقام {modemsWithUnknownNumbers.Count} مودم (أرقام غير معروفة فقط)...";
+            
+            var tasks = modemsWithUnknownNumbers.Select(async modem =>
             {
                 modem.Operator = await _modemService.GetOperatorAsync(modem.PortName);
                 modem.PhoneNumber = await _modemService.GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
@@ -397,7 +415,8 @@ public partial class MainViewModel : ObservableObject
             await Task.WhenAll(tasks);
             
             OnPropertyChanged(nameof(Modems));
-            StatusMessage = $"تم جلب معلومات {connectedModems.Count} مودم";
+            var successCount = modemsWithUnknownNumbers.Count(m => !IsPhoneNumberUnknown(m.PhoneNumber));
+            StatusMessage = $"تم جلب أرقام {successCount}/{modemsWithUnknownNumbers.Count} مودم (تم تخطي {connectedModems.Count - modemsWithUnknownNumbers.Count} لديهم أرقام معروفة)";
         }
         catch (Exception ex)
         {
