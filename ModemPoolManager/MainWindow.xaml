@@ -18,6 +18,8 @@
         <converters:OperatorToBrushConverter x:Key="OperatorToBrushConverter"/>
         <converters:SignalColorConverter x:Key="SignalColorConverter"/>
         <converters:SignalBarsToOpacityConverter x:Key="SignalBarsToOpacityConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibility"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         
         <Style x:Key="ModernButton" TargetType="Button">
@@ -1214,7 +1216,7 @@
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="400"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Left Panel - Modem Selection -->
@@ -1227,7 +1229,7 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                 <TextBlock Text="📱" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="اختر المودمات للتحويل المتسلسل" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                <TextBlock Text="اختر المودمات المستلمة (غير الأساسي)" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
                             </StackPanel>
 
                             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -1239,20 +1241,44 @@
                                     </ItemsControl.ItemsPanel>
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <Border Margin="4" Background="#0D1117" BorderBrush="#30363D" BorderThickness="1" 
-                                                    CornerRadius="6" Padding="12,8" MinWidth="180">
+                                            <Border Margin="4" Background="#0D1117" CornerRadius="6" Padding="12,8" MinWidth="200">
+                                                <Border.Style>
+                                                    <Style TargetType="Border">
+                                                        <Setter Property="BorderBrush" Value="#30363D"/>
+                                                        <Setter Property="BorderThickness" Value="1"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsMainLine}" Value="True">
+                                                                <Setter Property="BorderBrush" Value="#F0883E"/>
+                                                                <Setter Property="BorderThickness" Value="2"/>
+                                                                <Setter Property="Background" Value="#1C1F24"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Border.Style>
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"/>
                                                     <StackPanel Grid.Column="1">
-                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="14" FontWeight="Bold"
-                                                                   Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
-                                                                   FontFamily="Consolas" FlowDirection="LeftToRight"/>
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock Text="{Binding PhoneNumber}" FontSize="14" FontWeight="Bold"
+                                                                       Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
+                                                                       FontFamily="Consolas" FlowDirection="LeftToRight"/>
+                                                            <TextBlock Text=" ⭐" FontSize="12" Foreground="#F0883E"
+                                                                       Visibility="{Binding IsMainLine, Converter={StaticResource BoolToVisibility}}"/>
+                                                        </StackPanel>
                                                         <TextBlock Text="{Binding PortName}" FontSize="11" Foreground="#8B949E"/>
+                                                        <TextBlock Text="{Binding TransferStatus}" FontSize="10" Foreground="#3FB950" 
+                                                                   Visibility="{Binding TransferStatus, Converter={StaticResource StringToVisibility}}"/>
                                                     </StackPanel>
+                                                    <Button Grid.Column="2" Content="تعيين أساسي" 
+                                                            Command="{Binding DataContext.SetMainLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                            CommandParameter="{Binding}"
+                                                            Style="{StaticResource GhostButton}" FontSize="10" Padding="6,4"
+                                                            Visibility="{Binding IsMainLine, Converter={StaticResource InverseBoolToVisibility}}"/>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>
@@ -1272,26 +1298,76 @@
                             </Grid.RowDefinitions>
 
                             <!-- Header -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                <TextBlock Text="🔄" FontSize="24" Margin="0,0,10,0"/>
-                                <TextBlock Text="تحويل متسلسل" FontSize="20" FontWeight="Bold" Foreground="#58A6FF"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                                <TextBlock Text="🔗" FontSize="24" Margin="0,0,10,0"/>
+                                <TextBlock Text="تحويل متسلسل (Chain)" FontSize="20" FontWeight="Bold" Foreground="#58A6FF"/>
                             </StackPanel>
 
                             <!-- Settings -->
                             <StackPanel Grid.Row="1">
-                                <TextBlock Text="رقم المستلم:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding OcSeriesTargetPhone, UpdateSourceTrigger=PropertyChanged}" 
-                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="16"
-                                         FlowDirection="LeftToRight" Margin="0,0,0,12"/>
+                                <!-- Main Line Section -->
+                                <Border Background="#21262D" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="📱 الخط الأساسي" FontSize="14" FontWeight="Bold" Foreground="#F0883E" Margin="0,0,0,8"/>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel>
+                                                <TextBlock FontSize="16" FontWeight="Bold" Foreground="#F0F6FC" FontFamily="Consolas" FlowDirection="LeftToRight">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Setter Property="Text" Value="لم يتم التعيين"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsMainLineSet}" Value="True">
+                                                                    <Setter Property="Text" Value="{Binding MainLineModem.PhoneNumber}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <TextBlock Text="{Binding MainLineModem.PortName}" FontSize="11" Foreground="#8B949E"
+                                                           Visibility="{Binding IsMainLineSet, Converter={StaticResource BoolToVisibility}}"/>
+                                            </StackPanel>
+                                            <Button Grid.Column="1" Content="❌" Command="{Binding ClearMainLineCommand}" 
+                                                    Style="{StaticResource GhostButton}" Padding="6,4" FontSize="12"
+                                                    Visibility="{Binding IsMainLineSet, Converter={StaticResource BoolToVisibility}}"
+                                                    ToolTip="إلغاء تعيين الأساسي"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
 
+                                <!-- Balance Section -->
+                                <Border Background="#0D1117" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="💰 رصيد الأساسي" FontSize="12" Foreground="#8B949E"/>
+                                            <TextBlock Text="{Binding MainLineBalance, StringFormat='{}{0:N2} ج.م'}" 
+                                                       FontSize="24" FontWeight="Bold" Foreground="#3FB950" FontFamily="Consolas"/>
+                                            <TextBlock Text="{Binding MainLineRemainingBalance, StringFormat='المتبقي: {0:N2} ج.م'}" 
+                                                       FontSize="12" Foreground="#D29922"
+                                                       Visibility="{Binding IsOcSeriesRunning, Converter={StaticResource BoolToVisibility}}"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="🔍 استعلام" Command="{Binding QueryMainLineBalanceCommand}" 
+                                                Style="{StaticResource BlueButton}" Padding="12,8" FontSize="12"
+                                                IsEnabled="{Binding IsMainLineSet}"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Transfer Settings -->
                                 <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel Margin="0,0,6,0">
-                                        <TextBlock Text="المبلغ:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
-                                        <TextBox Text="{Binding OcSeriesAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                        <TextBlock Text="المتبقي لكل مودم:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                        <TextBox Text="{Binding RemainingPerModem, UpdateSourceTrigger=PropertyChanged}" 
                                                  Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
                                                  FlowDirection="LeftToRight"/>
                                     </StackPanel>
@@ -1303,10 +1379,19 @@
                                     </StackPanel>
                                 </Grid>
 
+                                <!-- Total Calculation -->
+                                <Border Background="#161B22" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                    <StackPanel>
+                                        <TextBlock Text="📊 حساب التحويل" FontSize="12" Foreground="#8B949E" Margin="0,0,0,4"/>
+                                        <TextBlock Text="{Binding ChainedTransferTotal, StringFormat='إجمالي التحويل: {0} ج.م'}" 
+                                                   FontSize="16" FontWeight="Bold" Foreground="#58A6FF"/>
+                                    </StackPanel>
+                                </Border>
+
                                 <TextBlock Text="كلمة السر:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding OrangeCashPassword, UpdateSourceTrigger=PropertyChanged}" 
                                          Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
-                                         FlowDirection="LeftToRight" Margin="0,0,0,16"/>
+                                         FlowDirection="LeftToRight" Margin="0,0,0,12"/>
 
                                 <!-- Countdown Display -->
                                 <Border Background="#21262D" CornerRadius="8" Padding="12" Margin="0,0,0,12"
@@ -1318,8 +1403,8 @@
                                     </StackPanel>
                                 </Border>
 
-                                <Button Content="🚀 بدء التحويل المتسلسل" 
-                                        Command="{Binding StartOcSeriesCommand}" 
+                                <Button Content="🔗 بدء التحويل المتسلسل" 
+                                        Command="{Binding StartChainedTransferCommand}" 
                                         FontSize="16" Padding="20,14" HorizontalAlignment="Stretch"
                                         IsEnabled="{Binding IsOcSeriesRunning, Converter={StaticResource InverseBoolConverter}}">
                                     <Button.Style>
@@ -1339,13 +1424,17 @@
                             </StackPanel>
 
                             <!-- Log -->
-                            <Border Grid.Row="2" Background="#0D1117" CornerRadius="8" Margin="0,16,0,0" Padding="8">
+                            <Border Grid.Row="2" Background="#0D1117" CornerRadius="8" Margin="0,12,0,0" Padding="8">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="📋 سجل التحويلات" FontSize="13" Foreground="#8B949E" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="📋 سجل التحويلات" FontSize="13" Foreground="#8B949E"/>
+                                        <Button Content="🗑" Command="{Binding ClearOcSeriesLogCommand}" 
+                                                Style="{StaticResource GhostButton}" Padding="4,2" Margin="8,0,0,0"/>
+                                    </StackPanel>
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                         <TextBlock Text="{Binding OcSeriesLog}" FontSize="11" 
                                                    Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap"/>

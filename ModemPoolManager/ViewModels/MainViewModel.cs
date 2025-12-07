@@ -155,6 +155,24 @@ public partial class MainViewModel : ObservableObject
     private int _ocSeriesCountdown;
 
     [ObservableProperty]
+    private Modem? _mainLineModem;
+
+    [ObservableProperty]
+    private decimal _mainLineBalance;
+
+    [ObservableProperty]
+    private decimal _mainLineRemainingBalance;
+
+    [ObservableProperty]
+    private int _remainingPerModem = 80;
+
+    [ObservableProperty]
+    private int _chainedTransferTotal;
+
+    [ObservableProperty]
+    private bool _isMainLineSet;
+
+    [ObservableProperty]
     private ObservableCollection<ExcelTransferItem> _excelTransferItems = new();
 
     [ObservableProperty]
@@ -1742,6 +1760,216 @@ public partial class MainViewModel : ObservableObject
     {
         OcSeriesLog = "";
         OcSeriesCountdown = 0;
+    }
+
+    [RelayCommand]
+    private void SetMainLine(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected)
+        {
+            StatusMessage = "الرجاء اختيار مودم متصل";
+            return;
+        }
+
+        if (MainLineModem != null)
+        {
+            MainLineModem.IsMainLine = false;
+        }
+
+        MainLineModem = modem;
+        modem.IsMainLine = true;
+        IsMainLineSet = true;
+        MainLineBalance = 0;
+        MainLineRemainingBalance = 0;
+        
+        StatusMessage = $"تم تعيين الخط الأساسي: {modem.PhoneNumber} ({modem.PortName})";
+        OcSeriesLog = $"📱 تم تعيين الخط الأساسي: {modem.PhoneNumber}\n";
+        OcSeriesLog += "💡 اضغط 'استعلام رصيد الأساسي' للحصول على الرصيد\n";
+        
+        UpdateChainedTransferTotal();
+    }
+
+    [RelayCommand]
+    private async Task QueryMainLineBalanceAsync()
+    {
+        if (MainLineModem == null || !MainLineModem.IsConnected)
+        {
+            StatusMessage = "الرجاء تعيين الخط الأساسي أولاً";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة المرور";
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            MainLineModem.Status = "جاري الاستعلام...";
+            OcSeriesLog += $"\n🔍 جاري استعلام رصيد الخط الأساسي...\n";
+            
+            var balanceResult = await _modemService.QueryOrangeCashBalanceAsync(
+                MainLineModem.PortName, 
+                OrangeCashPassword);
+            
+            if (decimal.TryParse(
+                System.Text.RegularExpressions.Regex.Match(balanceResult, @"[\d,]+\.?\d*").Value.Replace(",", ""), 
+                out decimal balance))
+            {
+                MainLineBalance = balance;
+                MainLineRemainingBalance = balance;
+                MainLineModem.Status = $"الرصيد: {balance} ج.م";
+                OcSeriesLog += $"✅ رصيد الأساسي: {balance} ج.م\n";
+                StatusMessage = $"رصيد الخط الأساسي: {balance} ج.م";
+                
+                UpdateChainedTransferTotal();
+            }
+            else
+            {
+                OcSeriesLog += $"⚠️ لم يتم التعرف على الرصيد: {balanceResult}\n";
+                StatusMessage = "لم يتم التعرف على الرصيد";
+                MainLineModem.Status = "خطأ في الاستعلام";
+            }
+        }
+        catch (Exception ex)
+        {
+            OcSeriesLog += $"❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+            MainLineModem.Status = "خطأ";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private void UpdateChainedTransferTotal()
+    {
+        var recipientModems = Modems
+            .Where(m => m.IsConnected && m.IsSelected && m != MainLineModem)
+            .ToList();
+        
+        ChainedTransferTotal = recipientModems.Count * RemainingPerModem;
+        OnPropertyChanged(nameof(ChainedTransferTotal));
+    }
+
+    partial void OnRemainingPerModemChanged(int value)
+    {
+        UpdateChainedTransferTotal();
+    }
+
+    private void OnMainLineBalanceUpdated(object? sender, decimal newBalance)
+    {
+        Application.Current.Dispatcher.Invoke(() => 
+        {
+            MainLineRemainingBalance = newBalance;
+        });
+    }
+
+    [RelayCommand]
+    private async Task StartChainedTransferAsync()
+    {
+        if (MainLineModem == null || !MainLineModem.IsConnected)
+        {
+            StatusMessage = "الرجاء تعيين الخط الأساسي أولاً";
+            return;
+        }
+
+        if (MainLineBalance <= 0)
+        {
+            StatusMessage = "الرجاء استعلام رصيد الخط الأساسي أولاً";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة المرور";
+            return;
+        }
+
+        if (RemainingPerModem <= 0)
+        {
+            StatusMessage = "الرجاء إدخال المبلغ المتبقي لكل مودم";
+            return;
+        }
+
+        var recipientModems = Modems
+            .Where(m => m.IsConnected && m.IsSelected && m != MainLineModem && !m.IsBusy)
+            .OrderBy(m => m.Index)
+            .ToList();
+
+        if (recipientModems.Count == 0)
+        {
+            StatusMessage = "الرجاء تحديد مودمات للاستلام (غير الخط الأساسي)";
+            return;
+        }
+
+        int totalNeeded = recipientModems.Count * RemainingPerModem;
+        if (MainLineBalance < totalNeeded)
+        {
+            StatusMessage = $"رصيد الأساسي ({MainLineBalance}) أقل من المطلوب ({totalNeeded})";
+            return;
+        }
+
+        try
+        {
+            IsOcSeriesRunning = true;
+            _ocSeriesCts = new CancellationTokenSource();
+            OcSeriesLog = "";
+
+            _ocSeriesService!.LogUpdated += OnOcSeriesLogUpdated;
+            _ocSeriesService.CountdownTick += OnOcSeriesCountdownTick;
+            _ocSeriesService.MainLineBalanceUpdated += OnMainLineBalanceUpdated;
+
+            try
+            {
+                var results = await _ocSeriesService.ExecuteChainedTransfersAsync(
+                    MainLineModem,
+                    recipientModems,
+                    OrangeCashPassword,
+                    RemainingPerModem,
+                    MainLineBalance,
+                    OcSeriesDelay,
+                    _ocSeriesCts.Token);
+
+                var successCount = results.Count(r => r.Success);
+                StatusMessage = $"تم التحويل المتسلسل: {successCount}/{results.Count} نجح";
+            }
+            finally
+            {
+                _ocSeriesService.LogUpdated -= OnOcSeriesLogUpdated;
+                _ocSeriesService.CountdownTick -= OnOcSeriesCountdownTick;
+                _ocSeriesService.MainLineBalanceUpdated -= OnMainLineBalanceUpdated;
+            }
+        }
+        catch (Exception ex)
+        {
+            OcSeriesLog += $"\n❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsOcSeriesRunning = false;
+            OcSeriesCountdown = 0;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearMainLine()
+    {
+        if (MainLineModem != null)
+        {
+            MainLineModem.IsMainLine = false;
+        }
+        MainLineModem = null;
+        MainLineBalance = 0;
+        MainLineRemainingBalance = 0;
+        IsMainLineSet = false;
+        ChainedTransferTotal = 0;
+        StatusMessage = "تم إلغاء تعيين الخط الأساسي";
+        OcSeriesLog = "";
     }
 
     #endregion

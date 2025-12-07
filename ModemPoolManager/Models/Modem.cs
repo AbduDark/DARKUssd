@@ -110,6 +110,9 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private bool _isReceiverLine;
 
+    [ObservableProperty]
+    private bool _isMainLine;
+
     public double SuccessRate => SuccessfulCommands + FailedCommands > 0 
         ? (double)SuccessfulCommands / (SuccessfulCommands + FailedCommands) * 100 
         : 0;
