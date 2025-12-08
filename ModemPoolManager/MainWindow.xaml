@@ -20,6 +20,7 @@
         <converters:SignalBarsToOpacityConverter x:Key="SignalBarsToOpacityConverter"/>
         <converters:StringToVisibilityConverter x:Key="StringToVisibility"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
+        <converters:OtpVisibilityConverter x:Key="OtpVisibilityConverter"/>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         
         <Style x:Key="ModernButton" TargetType="Button">
@@ -722,35 +723,95 @@
                                 </ListView.ItemContainerStyle>
                                 <ListView.ItemTemplate>
                                     <DataTemplate>
-                                        <Border Background="#21262D" CornerRadius="8" Padding="14" Margin="0,4"
+                                        <Border CornerRadius="12" Padding="0" Margin="0,6"
                                                 BorderBrush="#30363D" BorderThickness="1">
+                                            <Border.Style>
+                                                <Style TargetType="Border">
+                                                    <Setter Property="Background" Value="#21262D"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding HasOtp}" Value="True">
+                                                            <Setter Property="BorderBrush" Value="#238636"/>
+                                                            <Setter Property="BorderThickness" Value="2"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </Border.Style>
                                             <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal">
-                                                        <TextBlock Text="{Binding PhoneNumber}" FontSize="14" FontWeight="Bold" Foreground="#58A6FF"/>
-                                                        <TextBlock Text="{Binding ModemIndex, StringFormat=' - مودم {0}'}" FontSize="12" Foreground="#8B949E"/>
-                                                    </StackPanel>
-                                                    <TextBlock Text="{Binding Message}" FontSize="13" Foreground="#C9D1D9" 
-                                                               TextWrapping="Wrap" Margin="0,8,0,0"/>
-                                                    <TextBlock Text="{Binding Timestamp, StringFormat='dd/MM/yyyy hh:mm tt'}" 
-                                                               FontSize="10" Foreground="#484F58" Margin="0,6,0,0"/>
-                                                </StackPanel>
-                                                <Border Grid.Column="1" CornerRadius="6" Padding="8,4" VerticalAlignment="Top">
-                                                    <Border.Style>
-                                                        <Style TargetType="Border">
-                                                            <Setter Property="Background" Value="#1F6FEB"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Status}" Value="Unread">
-                                                                    <Setter Property="Background" Value="#238636"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Border.Style>
-                                                    <TextBlock Text="{Binding Status}" FontSize="10" Foreground="White"/>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+                                                
+                                                <!-- OTP Display (Large and Prominent) -->
+                                                <Border Grid.Row="0" Background="#0D2818" CornerRadius="12,12,0,0" Padding="16,12"
+                                                        Visibility="{Binding ExtractedOtp, Converter={StaticResource OtpVisibilityConverter}}">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="🔐" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="رمز التحقق OTP" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="{Binding ExtractedOtp}" FontSize="32" FontWeight="Bold" 
+                                                                       Foreground="#3FB950" FontFamily="Consolas"/>
+                                                        </StackPanel>
+                                                        <Button Grid.Column="2" Content="📋 نسخ" Style="{StaticResource ModernButton}" 
+                                                                Padding="12,8" VerticalAlignment="Center"
+                                                                Tag="{Binding ExtractedOtp}"
+                                                                Click="CopyOtpButton_Click"/>
+                                                    </Grid>
+                                                </Border>
+                                                
+                                                <!-- Message Header -->
+                                                <Border Grid.Row="1" Background="#161B22" Padding="14,10">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="📱" FontSize="14" Margin="0,0,6,0"/>
+                                                                <TextBlock Text="{Binding ModemPhoneNumber}" FontSize="15" FontWeight="Bold" Foreground="#58A6FF"/>
+                                                                <TextBlock Text=" ← " FontSize="12" Foreground="#484F58"/>
+                                                                <TextBlock Text="{Binding PhoneNumber}" FontSize="13" Foreground="#8B949E"/>
+                                                            </StackPanel>
+                                                            <TextBlock Text="{Binding Timestamp, StringFormat='dd/MM/yyyy hh:mm tt'}" 
+                                                                       FontSize="11" Foreground="#484F58" Margin="22,4,0,0"/>
+                                                        </StackPanel>
+                                                        <Border Grid.Column="1" CornerRadius="6" Padding="10,5" VerticalAlignment="Top">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#1F6FEB"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding Status}" Value="Unread">
+                                                                            <Setter Property="Background" Value="#238636"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <TextBlock Text="{Binding Status}" FontSize="11" Foreground="White" FontWeight="SemiBold"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Border>
+                                                
+                                                <!-- Message Content -->
+                                                <Border Grid.Row="2" Background="#21262D" Padding="14,12" CornerRadius="0,0,12,12">
+                                                    <TextBlock FontSize="14" Foreground="#C9D1D9" TextWrapping="Wrap" LineHeight="22">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding Message}"/>
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding HasOtp}" Value="True">
+                                                                        <Setter Property="Text" Value="{Binding MessageWithoutOtp}"/>
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
                                                 </Border>
                                             </Grid>
                                         </Border>

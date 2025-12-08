@@ -761,11 +761,16 @@ public partial class MainViewModel : ObservableObject
             
             var messages = await _smsService.GetAllMessagesAsync(modem.PortName, modem.Index);
             
+            var modemPhoneNumber = !string.IsNullOrEmpty(modem.PhoneNumber) && modem.PhoneNumber != "غير معروف" 
+                ? modem.PhoneNumber 
+                : $"مودم {modem.Index}";
+            
             Application.Current.Dispatcher.Invoke(() =>
             {
                 modem.SmsMessages.Clear();
                 foreach (var msg in messages.OrderByDescending(m => m.Timestamp))
                 {
+                    msg.ModemPhoneNumber = modemPhoneNumber;
                     modem.SmsMessages.Add(msg);
                 }
                 modem.UnreadSmsCount = messages.Count(m => m.Status == SmsStatus.Unread);
@@ -788,9 +793,14 @@ public partial class MainViewModel : ObservableObject
     {
         if (message == null) return;
         
-        var detailText = $"📱 من: {message.PhoneNumber}\n" +
-                        $"📅 الوقت: {message.Timestamp:yyyy/MM/dd HH:mm:ss}\n" +
-                        $"━━━━━━━━━━━━━━━━━━━━\n" +
+        var otpSection = message.HasOtp 
+            ? $"\n🔐 رمز التحقق OTP: {message.ExtractedOtp}\n━━━━━━━━━━━━━━━━━━━━\n" 
+            : "\n━━━━━━━━━━━━━━━━━━━━\n";
+        
+        var detailText = $"📱 إلى: {message.ModemPhoneNumber}\n" +
+                        $"📨 من: {message.PhoneNumber}\n" +
+                        $"📅 الوقت: {message.Timestamp:yyyy/MM/dd HH:mm:ss}" +
+                        otpSection +
                         $"{message.Message}";
         
         MessageBox.Show(detailText, "تفاصيل الرسالة", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -862,6 +872,9 @@ public partial class MainViewModel : ObservableObject
                 var messages = await _smsService.GetAllMessagesAsync(modem.PortName, modem.Index);
                 foreach (var msg in messages)
                 {
+                    msg.ModemPhoneNumber = !string.IsNullOrEmpty(modem.PhoneNumber) && modem.PhoneNumber != "غير معروف" 
+                        ? modem.PhoneNumber 
+                        : $"مودم {modem.Index}";
                     SmsMessages.Add(msg);
                 }
             }
@@ -1067,13 +1080,16 @@ public partial class MainViewModel : ObservableObject
         modem.Status = "يستمع للرسائل...";
         StatusMessage = $"بدء الاستماع للرسائل على {modem.PortName}";
 
+        var modemPhoneNumber = !string.IsNullOrEmpty(modem.PhoneNumber) && modem.PhoneNumber != "غير معروف" 
+            ? modem.PhoneNumber 
+            : $"مودم {modem.Index}";
+
         _ = Task.Run(async () =>
         {
             while (modem.IsListeningSms && modem.IsConnected)
             {
                 try
                 {
-                    // جلب الرسائل الجديدة
                     var newMessages = await _smsService.GetUnreadMessagesAsync(modem.PortName, modem.Index);
                     
                     if (newMessages.Count > 0)
@@ -1082,19 +1098,22 @@ public partial class MainViewModel : ObservableObject
                         {
                             foreach (var msg in newMessages)
                             {
+                                msg.ModemPhoneNumber = modemPhoneNumber;
                                 SmsMessages.Insert(0, msg);
                             }
                             
                             modem.UnreadSmsCount = newMessages.Count;
-                            modem.LastResponse = $"📨 استلام {newMessages.Count} رسالة جديدة\n{newMessages[0].Message}";
+                            
+                            var firstMsg = newMessages[0];
+                            var otpDisplay = firstMsg.HasOtp ? $" 🔐 OTP: {firstMsg.ExtractedOtp}" : "";
+                            modem.LastResponse = $"📨 استلام {newMessages.Count} رسالة جديدة{otpDisplay}\n{firstMsg.Message}";
                             modem.LastActivity = DateTime.Now;
                             TotalSmsCount += newMessages.Count;
                             
-                            StatusMessage = $"📨 استلام {newMessages.Count} رسالة من {modem.PortName}";
+                            StatusMessage = $"📨 استلام {newMessages.Count} رسالة من {modemPhoneNumber}{otpDisplay}";
                         });
                     }
 
-                    // الانتظار 5 ثوانٍ قبل الفحص التالي
                     await Task.Delay(5000);
                 }
                 catch (Exception ex)
@@ -1104,7 +1123,7 @@ public partial class MainViewModel : ObservableObject
                         modem.LastError = ex.Message;
                         modem.Status = "خطأ في الاستماع";
                     });
-                    await Task.Delay(10000); // انتظار أطول في حالة الخطأ
+                    await Task.Delay(10000);
                 }
             }
 
