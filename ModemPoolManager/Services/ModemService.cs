@@ -420,7 +420,7 @@ public class ModemService : IDisposable
         if (opLower.Contains("vodafone") || opLower.Contains("فودافون"))
             return "*878#";
         
-        if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل"))
+        if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل") || opLower.Contains("egyptian") || opLower.Contains("proud"))
             return "#119*1#";
         
         if (opLower.Contains("etisalat") || opLower.Contains("اتصالات"))
@@ -1605,7 +1605,7 @@ public class ModemService : IDisposable
         if (opLower.Contains("vodafone") || opLower.Contains("فودافون"))
             return "*878#";
         
-        if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل"))
+        if (opLower.Contains("orange") || opLower.Contains("اورنج") || opLower.Contains("موبينيل") || opLower.Contains("egyptian") || opLower.Contains("proud"))
             return "#119*1#";
         
         if (opLower.Contains("etisalat") || opLower.Contains("اتصالات"))
