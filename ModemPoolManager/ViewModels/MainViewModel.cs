@@ -190,9 +190,31 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private Modem? _selectedSenderModem;
 
+    [ObservableProperty]
+    private ObservableCollection<SequentialUssdCommand> _sequentialCommands = new();
+
+    [ObservableProperty]
+    private string _sequentialUssdLog = "";
+
+    [ObservableProperty]
+    private bool _isSequentialRunning;
+
+    [ObservableProperty]
+    private Modem? _selectedSequentialModem;
+
+    [ObservableProperty]
+    private string _newSequentialCommand = "";
+
+    [ObservableProperty]
+    private bool _newCommandIsReply;
+
+    [ObservableProperty]
+    private int _sequentialDelayMs = 1000;
+
     private OcSeriesService? _ocSeriesService;
     private CancellationTokenSource? _ocSeriesCts;
     private CancellationTokenSource? _customTransferCts;
+    private CancellationTokenSource? _sequentialUssdCts;
 
     private int _commandId = 0;
 
@@ -2327,6 +2349,182 @@ public partial class MainViewModel : ObservableObject
         IsCustomTransferRunning = false;
         CustomTransferLog += "\n⏹ تم إيقاف التحويل المخصص\n";
         StatusMessage = "تم إيقاف التحويل المخصص";
+    }
+
+    #endregion
+
+    #region Sequential USSD Commands
+
+    [RelayCommand]
+    private void AddSequentialCommand()
+    {
+        if (string.IsNullOrWhiteSpace(NewSequentialCommand))
+        {
+            StatusMessage = "الرجاء إدخال أمر USSD";
+            return;
+        }
+
+        var command = new SequentialUssdCommand
+        {
+            Order = SequentialCommands.Count + 1,
+            Command = NewSequentialCommand.Trim(),
+            IsReply = NewCommandIsReply
+        };
+
+        SequentialCommands.Add(command);
+        NewSequentialCommand = "";
+        NewCommandIsReply = false;
+        StatusMessage = $"تمت إضافة الأمر رقم {command.Order}";
+    }
+
+    [RelayCommand]
+    private void RemoveSequentialCommand(SequentialUssdCommand? command)
+    {
+        if (command == null) return;
+
+        SequentialCommands.Remove(command);
+        ReorderSequentialCommands();
+        StatusMessage = "تم حذف الأمر";
+    }
+
+    [RelayCommand]
+    private void ClearSequentialCommands()
+    {
+        SequentialCommands.Clear();
+        SequentialUssdLog = "";
+        StatusMessage = "تم مسح جميع الأوامر";
+    }
+
+    [RelayCommand]
+    private void MoveSequentialCommandUp(SequentialUssdCommand? command)
+    {
+        if (command == null) return;
+
+        var index = SequentialCommands.IndexOf(command);
+        if (index > 0)
+        {
+            SequentialCommands.Move(index, index - 1);
+            ReorderSequentialCommands();
+        }
+    }
+
+    [RelayCommand]
+    private void MoveSequentialCommandDown(SequentialUssdCommand? command)
+    {
+        if (command == null) return;
+
+        var index = SequentialCommands.IndexOf(command);
+        if (index < SequentialCommands.Count - 1)
+        {
+            SequentialCommands.Move(index, index + 1);
+            ReorderSequentialCommands();
+        }
+    }
+
+    private void ReorderSequentialCommands()
+    {
+        for (int i = 0; i < SequentialCommands.Count; i++)
+        {
+            SequentialCommands[i].Order = i + 1;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ExecuteSequentialCommandsAsync()
+    {
+        if (SelectedSequentialModem == null)
+        {
+            StatusMessage = "الرجاء اختيار مودم للتنفيذ";
+            return;
+        }
+
+        if (!SelectedSequentialModem.IsConnected)
+        {
+            StatusMessage = "المودم المحدد غير متصل";
+            return;
+        }
+
+        if (SequentialCommands.Count == 0)
+        {
+            StatusMessage = "لا توجد أوامر للتنفيذ";
+            return;
+        }
+
+        try
+        {
+            IsSequentialRunning = true;
+            _sequentialUssdCts = new CancellationTokenSource();
+
+            foreach (var cmd in SequentialCommands)
+            {
+                cmd.IsExecuted = false;
+                cmd.IsSuccess = false;
+                cmd.Response = null;
+                cmd.ErrorMessage = null;
+            }
+
+            SequentialUssdLog = $"🚀 بدء التنفيذ المتسلسل على {SelectedSequentialModem.PortName}\n";
+            SequentialUssdLog += $"📱 الرقم: {SelectedSequentialModem.PhoneNumber}\n";
+            SequentialUssdLog += $"📋 عدد الأوامر: {SequentialCommands.Count}\n";
+            SequentialUssdLog += $"⏱ التأخير بين الأوامر: {SequentialDelayMs} مللي ثانية\n";
+            SequentialUssdLog += $"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+
+            var commandList = SequentialCommands
+                .Select(c => (c.Command, c.IsReply))
+                .ToList();
+
+            var results = await _modemService.ExecuteSequentialUssdCommandsAsync(
+                SelectedSequentialModem.PortName,
+                commandList,
+                SequentialDelayMs,
+                10,
+                _sequentialUssdCts.Token);
+
+            for (int i = 0; i < results.Count && i < SequentialCommands.Count; i++)
+            {
+                var (command, response, success) = results[i];
+                var cmd = SequentialCommands[i];
+
+                cmd.IsExecuted = true;
+                cmd.IsSuccess = success;
+                cmd.Response = response;
+
+                var replyIndicator = cmd.IsReply ? "↩️ رد" : "📤 أمر جديد";
+                SequentialUssdLog += $"[{i + 1}] {replyIndicator}: {command}\n";
+                SequentialUssdLog += $"    {(success ? "✅" : "❌")} الرد: {response}\n\n";
+            }
+
+            var successCount = SequentialCommands.Count(c => c.IsSuccess);
+            var failCount = SequentialCommands.Count(c => c.IsExecuted && !c.IsSuccess);
+
+            SequentialUssdLog += $"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+            SequentialUssdLog += $"📊 النتيجة: {successCount} نجح، {failCount} فشل\n";
+
+            StatusMessage = $"تم تنفيذ الأوامر المتسلسلة: {successCount}/{SequentialCommands.Count} نجح";
+        }
+        catch (OperationCanceledException)
+        {
+            SequentialUssdLog += "\n⏹ تم إلغاء التنفيذ\n";
+            StatusMessage = "تم إلغاء التنفيذ المتسلسل";
+        }
+        catch (Exception ex)
+        {
+            SequentialUssdLog += $"\n❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsSequentialRunning = false;
+        }
+    }
+
+    [RelayCommand]
+    private void StopSequentialExecution()
+    {
+        _sequentialUssdCts?.Cancel();
+        IsSequentialRunning = false;
+        SequentialUssdLog += "\n⏹ تم إيقاف التنفيذ المتسلسل\n";
+        StatusMessage = "تم إيقاف التنفيذ المتسلسل";
     }
 
     #endregion

@@ -1906,6 +1906,215 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="📝 USSD متسلسل" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource CardPanel}" Margin="0,0,6,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock Text="📝" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="تنفيذ أوامر USSD متسلسلة" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="المودم:" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                    <ComboBox Grid.Column="1" 
+                                              ItemsSource="{Binding Modems}" 
+                                              SelectedItem="{Binding SelectedSequentialModem}"
+                                              DisplayMemberPath="DisplayName"
+                                              Background="#0D1117" Foreground="#C9D1D9"
+                                              IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"/>
+                                </Grid>
+
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="التأخير (مللي ثانية):" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                    <TextBox Grid.Column="1" Text="{Binding SequentialDelayMs}" 
+                                             Style="{StaticResource ModernTextBox}" Width="100" HorizontalAlignment="Left"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Background="#21262D" CornerRadius="6" Padding="12" Margin="0,0,0,12">
+                                <StackPanel>
+                                    <TextBlock Text="إضافة أمر جديد:" Foreground="#F0F6FC" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox Text="{Binding NewSequentialCommand, UpdateSourceTrigger=PropertyChanged}" 
+                                                 Style="{StaticResource ModernTextBox}"
+                                                 FlowDirection="LeftToRight"/>
+                                        <Button Grid.Column="1" Content="➕ إضافة" 
+                                                Command="{Binding AddSequentialCommandCommand}"
+                                                Style="{StaticResource ModernButton}"
+                                                IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"/>
+                                    </Grid>
+                                    <CheckBox Content="هذا رد على جلسة USSD نشطة (Reply)" 
+                                              IsChecked="{Binding NewCommandIsReply}"
+                                              Style="{StaticResource ModernCheckBox}" Margin="0,8,0,0"
+                                              ToolTip="حدد هذا الخيار إذا كان الأمر رداً على قائمة USSD موجودة وليس أمراً جديداً"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Row="2" Background="#0D1117" CornerRadius="6" BorderBrush="#30363D" BorderThickness="1" Padding="8">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="*"/>
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Text="قائمة الأوامر:" Foreground="#8B949E" FontSize="12" Margin="0,0,0,8"/>
+                                    <ListView Grid.Row="1" ItemsSource="{Binding SequentialCommands}" 
+                                              Background="Transparent" BorderThickness="0"
+                                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Background="#161B22" CornerRadius="4" Padding="10" Margin="0,2">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsSuccess}" Value="True">
+                                                                    <Setter Property="BorderBrush" Value="#238636"/>
+                                                                    <Setter Property="BorderThickness" Value="1"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsExecuted}" Value="True">
+                                                                    <DataTrigger.EnterActions>
+                                                                        <BeginStoryboard>
+                                                                            <Storyboard>
+                                                                                <ColorAnimation Storyboard.TargetProperty="(Border.Background).(SolidColorBrush.Color)"
+                                                                                                From="#161B22" To="#1C2128" Duration="0:0:0.3"/>
+                                                                            </Storyboard>
+                                                                        </BeginStoryboard>
+                                                                    </DataTrigger.EnterActions>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <Border Background="#0D419D" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
+                                                                <TextBlock Text="{Binding Order}" FontSize="12" FontWeight="Bold" Foreground="#58A6FF"/>
+                                                            </Border>
+                                                            <Border CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
+                                                                <Border.Style>
+                                                                    <Style TargetType="Border">
+                                                                        <Setter Property="Background" Value="#238636"/>
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding IsReply}" Value="True">
+                                                                                <Setter Property="Background" Value="#D29922"/>
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </Border.Style>
+                                                                <TextBlock FontSize="10" Foreground="White">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Text" Value="أمر جديد"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsReply}" Value="True">
+                                                                                    <Setter Property="Text" Value="رد"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Command}" FontSize="14" FontWeight="SemiBold" 
+                                                                       Foreground="#F0F6FC" FlowDirection="LeftToRight"/>
+                                                            <TextBlock Text="{Binding Response}" FontSize="11" Foreground="#8B949E" 
+                                                                       TextTrimming="CharacterEllipsis" MaxWidth="300"
+                                                                       Visibility="{Binding Response, Converter={StaticResource StringToVisibility}}"/>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="2" Orientation="Horizontal">
+                                                            <Button Content="▲" 
+                                                                    Command="{Binding DataContext.MoveSequentialCommandUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource GhostButton}" Padding="8,4" FontSize="10"/>
+                                                            <Button Content="▼" 
+                                                                    Command="{Binding DataContext.MoveSequentialCommandDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource GhostButton}" Padding="8,4" FontSize="10"/>
+                                                            <Button Content="🗑" 
+                                                                    Command="{Binding DataContext.RemoveSequentialCommandCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                    CommandParameter="{Binding}"
+                                                                    Style="{StaticResource RedButton}" Padding="8,4" FontSize="10"/>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,12,0,0">
+                                <Button Content="▶ تنفيذ الأوامر" 
+                                        Command="{Binding ExecuteSequentialCommandsCommand}"
+                                        Style="{StaticResource OrangeButton}" Padding="20,12"
+                                        IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"
+                                        Visibility="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolToVisibility}}"/>
+                                <Button Content="⏹ إيقاف" 
+                                        Command="{Binding StopSequentialExecutionCommand}"
+                                        Style="{StaticResource RedButton}" Padding="20,12"
+                                        Visibility="{Binding IsSequentialRunning, Converter={StaticResource BoolToVisibility}}"/>
+                                <Button Content="🗑 مسح الكل" 
+                                        Command="{Binding ClearSequentialCommandsCommand}"
+                                        Style="{StaticResource GhostButton}"
+                                        IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource CardPanel}" Margin="6,0,0,0">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                                <TextBlock Text="📜" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="سجل التنفيذ" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+
+                            <Border Grid.Row="1" Background="#0D1117" CornerRadius="6" BorderBrush="#30363D" BorderThickness="1" Padding="12">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <TextBlock Text="{Binding SequentialUssdLog}" 
+                                               FontFamily="Consolas" FontSize="12" Foreground="#C9D1D9"
+                                               TextWrapping="Wrap"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="⚙ الإعدادات" Style="{StaticResource TabItemStyle}">
                 <ScrollViewer Margin="10" VerticalScrollBarVisibility="Auto">
                     <StackPanel>
