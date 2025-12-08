@@ -352,8 +352,6 @@
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
-                                                        <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
                                                     </Grid.ColumnDefinitions>
 
@@ -407,20 +405,8 @@
                                                         </Button>
                                                     </StackPanel>
 
-                                                    <Border Grid.Column="2" Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
-                                                            Padding="8,3" Margin="0,0,4,0">
-                                                        <TextBlock Text="{Binding PortName}" FontSize="11" Foreground="#C9D1D9" 
-                                                                   FontFamily="Consolas"/>
-                                                    </Border>
-
-                                                    <Border Grid.Column="3" Background="#21262D" BorderBrush="#30363D" BorderThickness="1" 
-                                                            Padding="8,3">
-                                                        <TextBlock Text="{Binding Index, StringFormat='Modem {0}'}" FontSize="11" 
-                                                                   Foreground="#C9D1D9" FontFamily="Consolas"/>
-                                                    </Border>
-
                                                     <!-- Phone Number with Refresh Button and Reset Button -->
-                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right">
                                                         <TextBlock Text="{Binding PhoneNumber}" FontSize="18" FontWeight="Bold"
                                                                    Foreground="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}"
                                                                    VerticalAlignment="Center" Margin="8,0,4,0"
