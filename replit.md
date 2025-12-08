@@ -95,6 +95,13 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 -   **Modem Card Improvements:**
     -   Increased phone number font size to 18 for better visibility.
     -   Added Reset button next to phone refresh button for full modem reset (AT+CFUN=0/1).
+-   **SMS Inbox Feature (NEW - Mobile-like design):**
+    -   SMS button with unread count badge on each modem card.
+    -   Click to open popup showing message list for that modem.
+    -   Messages displayed with sender number, timestamp, and preview text.
+    -   Click any message to view full details in a dialog.
+    -   Uses SmsService.GetAllMessagesAsync for message retrieval.
+    -   Integrated with SmsListenerService for real-time updates.
 -   **Right-click Context Menu on Modem Cards:**
     -   Restart Modem (AT+CFUN=0/1 sequence).
     -   Copy Phone Number to clipboard.
