@@ -807,6 +807,78 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task MarkAllSmsReadAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected) return;
+        
+        try
+        {
+            modem.IsBusy = true;
+            StatusMessage = "جاري تحديث حالة الرسائل...";
+            
+            foreach (var msg in modem.SmsMessages)
+            {
+                msg.Status = SmsStatus.Read;
+            }
+            modem.UnreadSmsCount = 0;
+            
+            StatusMessage = "تم تحديث جميع الرسائل كمقروءة";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            modem.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task DeleteModemSmsAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected) return;
+        
+        var result = MessageBox.Show(
+            "هل أنت متأكد من حذف جميع الرسائل؟",
+            "تأكيد الحذف",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+            
+        if (result != MessageBoxResult.Yes) return;
+        
+        try
+        {
+            modem.IsBusy = true;
+            StatusMessage = "جاري حذف الرسائل...";
+            
+            var (success, error) = await _smsService.DeleteAllSmsAsync(modem.PortName);
+            
+            if (success)
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    modem.SmsMessages.Clear();
+                    modem.UnreadSmsCount = 0;
+                });
+                StatusMessage = "تم حذف جميع الرسائل بنجاح";
+            }
+            else
+            {
+                StatusMessage = $"فشل في حذف الرسائل: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ في الحذف: {ex.Message}";
+        }
+        finally
+        {
+            modem.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task SendSmsAsync()
     {
         if (string.IsNullOrWhiteSpace(SmsPhoneNumber) || string.IsNullOrWhiteSpace(SmsMessage))

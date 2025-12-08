@@ -491,23 +491,64 @@
                                                                     <!-- Header -->
                                                                     <Border Grid.Row="0" Background="#21262D" CornerRadius="4" Padding="8,6" Margin="0,0,0,8">
                                                                         <Grid>
-                                                                            <TextBlock Text="📬 الرسائل" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                                                            <Button Content="↻" HorizontalAlignment="Left" ToolTip="تحديث الرسائل"
-                                                                                    Command="{Binding DataContext.LoadModemSmsCommand, Source={x:Reference Name=RootWindow}}"
-                                                                                    CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Popup}}">
-                                                                                <Button.Template>
-                                                                                    <ControlTemplate TargetType="Button">
-                                                                                        <Border Background="Transparent" Padding="4,2" x:Name="btn" CornerRadius="3">
-                                                                                            <TextBlock Text="↻" FontSize="12" Foreground="#58A6FF"/>
-                                                                                        </Border>
-                                                                                        <ControlTemplate.Triggers>
-                                                                                            <Trigger Property="IsMouseOver" Value="True">
-                                                                                                <Setter TargetName="btn" Property="Background" Value="#30363D"/>
-                                                                                            </Trigger>
-                                                                                        </ControlTemplate.Triggers>
-                                                                                    </ControlTemplate>
-                                                                                </Button.Template>
-                                                                            </Button>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*"/>
+                                                                                <ColumnDefinition Width="Auto"/>
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <TextBlock Grid.Column="0" Text="📬 الرسائل" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                                                                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                                                                                <!-- Mark All Read Button -->
+                                                                                <Button ToolTip="قراءة الكل" Margin="0,0,4,0"
+                                                                                        Command="{Binding DataContext.MarkAllSmsReadCommand, Source={x:Reference Name=RootWindow}}"
+                                                                                        CommandParameter="{Binding}">
+                                                                                    <Button.Template>
+                                                                                        <ControlTemplate TargetType="Button">
+                                                                                            <Border Background="#238636" Padding="6,3" x:Name="btn" CornerRadius="3" Cursor="Hand">
+                                                                                                <TextBlock Text="✓" FontSize="10" Foreground="White" FontWeight="Bold"/>
+                                                                                            </Border>
+                                                                                            <ControlTemplate.Triggers>
+                                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                                    <Setter TargetName="btn" Property="Background" Value="#2EA043"/>
+                                                                                                </Trigger>
+                                                                                            </ControlTemplate.Triggers>
+                                                                                        </ControlTemplate>
+                                                                                    </Button.Template>
+                                                                                </Button>
+                                                                                <!-- Delete All Button -->
+                                                                                <Button ToolTip="حذف الكل" Margin="0,0,4,0"
+                                                                                        Command="{Binding DataContext.DeleteModemSmsCommand, Source={x:Reference Name=RootWindow}}"
+                                                                                        CommandParameter="{Binding}">
+                                                                                    <Button.Template>
+                                                                                        <ControlTemplate TargetType="Button">
+                                                                                            <Border Background="#DA3633" Padding="6,3" x:Name="btn" CornerRadius="3" Cursor="Hand">
+                                                                                                <TextBlock Text="🗑" FontSize="10" Foreground="White"/>
+                                                                                            </Border>
+                                                                                            <ControlTemplate.Triggers>
+                                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                                    <Setter TargetName="btn" Property="Background" Value="#F85149"/>
+                                                                                                </Trigger>
+                                                                                            </ControlTemplate.Triggers>
+                                                                                        </ControlTemplate>
+                                                                                    </Button.Template>
+                                                                                </Button>
+                                                                                <!-- Refresh Button -->
+                                                                                <Button ToolTip="تحديث الرسائل"
+                                                                                        Command="{Binding DataContext.LoadModemSmsCommand, Source={x:Reference Name=RootWindow}}"
+                                                                                        CommandParameter="{Binding}">
+                                                                                    <Button.Template>
+                                                                                        <ControlTemplate TargetType="Button">
+                                                                                            <Border Background="Transparent" Padding="6,3" x:Name="btn" CornerRadius="3" Cursor="Hand">
+                                                                                                <TextBlock Text="↻" FontSize="12" Foreground="#58A6FF"/>
+                                                                                            </Border>
+                                                                                            <ControlTemplate.Triggers>
+                                                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                                                    <Setter TargetName="btn" Property="Background" Value="#30363D"/>
+                                                                                                </Trigger>
+                                                                                            </ControlTemplate.Triggers>
+                                                                                        </ControlTemplate>
+                                                                                    </Button.Template>
+                                                                                </Button>
+                                                                            </StackPanel>
                                                                         </Grid>
                                                                     </Border>
                                                                     
