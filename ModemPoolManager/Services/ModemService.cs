@@ -981,6 +981,87 @@ public class ModemService : IDisposable
         return await SendUssdCommandAsync(portName, command, ussdWaitTimeSeconds);
     }
 
+    public async Task<string> SendUssdReplyAsync(string portName, string reply, int ussdWaitTimeSeconds = 10)
+    {
+        var encodedReply = EncodeUssd(reply);
+        var command = $"AT+CUSD=1,\"{encodedReply}\",15";
+        Console.WriteLine($"[{portName}] إرسال رد USSD: {reply}");
+        return await SendUssdCommandAsync(portName, command, ussdWaitTimeSeconds);
+    }
+
+    public async Task CancelUssdSessionAsync(string portName)
+    {
+        try
+        {
+            await SendATCommandAsync(portName, "AT+CUSD=2", 2000);
+            Console.WriteLine($"[{portName}] تم إلغاء جلسة USSD");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[{portName}] خطأ في إلغاء جلسة USSD: {ex.Message}");
+        }
+    }
+
+    public async Task<List<(string Command, string Response, bool Success)>> ExecuteSequentialUssdCommandsAsync(
+        string portName, 
+        List<(string Command, bool IsReply)> commands, 
+        int delayBetweenCommands = 1000,
+        int ussdWaitTimeSeconds = 10,
+        CancellationToken cancellationToken = default)
+    {
+        var results = new List<(string Command, string Response, bool Success)>();
+        bool sessionActive = false;
+
+        foreach (var (command, isReply) in commands)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine($"[{portName}] تم إلغاء التنفيذ المتسلسل");
+                break;
+            }
+
+            try
+            {
+                string response;
+                
+                if (isReply && sessionActive)
+                {
+                    Console.WriteLine($"[{portName}] إرسال رد: {command}");
+                    response = await SendUssdReplyAsync(portName, command, ussdWaitTimeSeconds);
+                }
+                else
+                {
+                    Console.WriteLine($"[{portName}] إرسال أمر جديد: {command}");
+                    response = await SendUssdCommandPublicAsync(portName, command, ussdWaitTimeSeconds);
+                    sessionActive = true;
+                }
+
+                var decodedResponse = DecodeUssdResponse(response);
+                var success = response.Contains("+CUSD:") && !response.Contains("ERROR");
+                
+                results.Add((command, decodedResponse, success));
+                
+                if (!success)
+                {
+                    sessionActive = false;
+                }
+
+                if (delayBetweenCommands > 0)
+                {
+                    await Task.Delay(delayBetweenCommands, cancellationToken);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{portName}] خطأ في تنفيذ الأمر {command}: {ex.Message}");
+                results.Add((command, ex.Message, false));
+                sessionActive = false;
+            }
+        }
+
+        return results;
+    }
+
     public async Task<ModemInfo> GetModemInfoAsync(string portName)
     {
         var info = new ModemInfo { LastUpdated = DateTime.Now };
