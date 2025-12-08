@@ -1002,60 +1002,55 @@ public class ModemService : IDisposable
         }
     }
 
-    public async Task<List<(string Command, string Response, bool Success)>> ExecuteSequentialUssdCommandsAsync(
-        string portName, 
-        List<(string Command, bool IsReply)> commands, 
-        int delayBetweenCommands = 1000,
+    public async Task<Dictionary<string, List<(string Command, string Response, bool Success)>>> ExecuteSequentialUssdOnAllModemsAsync(
+        List<Modem> modems,
+        List<string> commands,
+        int delayBetweenModems = 500,
         int ussdWaitTimeSeconds = 10,
+        IProgress<(int CommandIndex, string PortName, string Response, bool Success)>? progress = null,
         CancellationToken cancellationToken = default)
     {
-        var results = new List<(string Command, string Response, bool Success)>();
-        bool sessionActive = false;
-
-        foreach (var (command, isReply) in commands)
+        var results = new Dictionary<string, List<(string Command, string Response, bool Success)>>();
+        
+        foreach (var modem in modems)
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                Console.WriteLine($"[{portName}] تم إلغاء التنفيذ المتسلسل");
-                break;
-            }
+            results[modem.PortName] = new List<(string Command, string Response, bool Success)>();
+        }
 
-            try
+        for (int cmdIndex = 0; cmdIndex < commands.Count; cmdIndex++)
+        {
+            var command = commands[cmdIndex];
+            Console.WriteLine($"تنفيذ الأمر {cmdIndex + 1}/{commands.Count}: {command}");
+
+            foreach (var modem in modems)
             {
-                string response;
-                
-                if (isReply && sessionActive)
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    Console.WriteLine($"[{portName}] إرسال رد: {command}");
-                    response = await SendUssdReplyAsync(portName, command, ussdWaitTimeSeconds);
-                }
-                else
-                {
-                    Console.WriteLine($"[{portName}] إرسال أمر جديد: {command}");
-                    response = await SendUssdCommandPublicAsync(portName, command, ussdWaitTimeSeconds);
-                    sessionActive = true;
+                    Console.WriteLine("تم إلغاء التنفيذ المتسلسل");
+                    return results;
                 }
 
-                var decodedResponse = DecodeUssdResponse(response);
-                var success = response.Contains("+CUSD:") && !response.Contains("ERROR");
-                
-                results.Add((command, decodedResponse, success));
-                
-                if (!success)
+                try
                 {
-                    sessionActive = false;
-                }
+                    Console.WriteLine($"[{modem.PortName}] إرسال: {command}");
+                    var response = await SendUssdCommandPublicAsync(modem.PortName, command, ussdWaitTimeSeconds);
+                    var decodedResponse = DecodeUssdResponse(response);
+                    var success = response.Contains("+CUSD:") && !response.Contains("ERROR");
+                    
+                    results[modem.PortName].Add((command, decodedResponse, success));
+                    progress?.Report((cmdIndex, modem.PortName, decodedResponse, success));
 
-                if (delayBetweenCommands > 0)
-                {
-                    await Task.Delay(delayBetweenCommands, cancellationToken);
+                    if (delayBetweenModems > 0)
+                    {
+                        await Task.Delay(delayBetweenModems, cancellationToken);
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[{portName}] خطأ في تنفيذ الأمر {command}: {ex.Message}");
-                results.Add((command, ex.Message, false));
-                sessionActive = false;
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[{modem.PortName}] خطأ: {ex.Message}");
+                    results[modem.PortName].Add((command, ex.Message, false));
+                    progress?.Report((cmdIndex, modem.PortName, ex.Message, false));
+                }
             }
         }
 

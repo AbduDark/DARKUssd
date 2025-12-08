@@ -1925,37 +1925,35 @@
                             <StackPanel Grid.Row="0">
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
                                     <TextBlock Text="📝" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="تنفيذ أوامر USSD متسلسلة" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                    <TextBlock Text="تنفيذ أوامر USSD متسلسلة على كل المودمات" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
                                 </StackPanel>
 
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="المودم:" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                    <ComboBox Grid.Column="1" 
-                                              ItemsSource="{Binding Modems}" 
-                                              SelectedItem="{Binding SelectedSequentialModem}"
-                                              DisplayMemberPath="DisplayName"
-                                              Background="#0D1117" Foreground="#C9D1D9"
-                                              IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"/>
-                                </Grid>
+                                <TextBlock Text="يتم تنفيذ كل أمر على جميع المودمات المحددة في لوحة التحكم" 
+                                           Foreground="#8B949E" FontSize="12" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
                                 <Grid Margin="0,0,0,12">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Text="التأخير (مللي ثانية):" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                    <TextBlock Text="التأخير بين المودمات:" Foreground="#8B949E" VerticalAlignment="Center"/>
                                     <TextBox Grid.Column="1" Text="{Binding SequentialDelayMs}" 
-                                             Style="{StaticResource ModernTextBox}" Width="100" HorizontalAlignment="Left"/>
+                                             Style="{StaticResource ModernTextBox}" Width="80" Margin="10,0,0,0"/>
+                                    <TextBlock Grid.Column="2" Text="مللي ثانية" Foreground="#8B949E" 
+                                               VerticalAlignment="Center" Margin="8,0,0,0"/>
                                 </Grid>
+
+                                <Border Background="#0D419D" CornerRadius="6" Padding="10" Margin="0,0,0,12"
+                                        Visibility="{Binding CurrentSequentialCommand, Converter={StaticResource StringToVisibility}}">
+                                    <TextBlock Text="{Binding CurrentSequentialCommand}" Foreground="#F0F6FC" 
+                                               FontSize="13" FontWeight="SemiBold"/>
+                                </Border>
                             </StackPanel>
 
                             <Border Grid.Row="1" Background="#21262D" CornerRadius="6" Padding="12" Margin="0,0,0,12">
                                 <StackPanel>
-                                    <TextBlock Text="إضافة أمر جديد:" Foreground="#F0F6FC" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                    <TextBlock Text="إضافة أمر USSD:" Foreground="#F0F6FC" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
@@ -1969,10 +1967,6 @@
                                                 Style="{StaticResource ModernButton}"
                                                 IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"/>
                                     </Grid>
-                                    <CheckBox Content="هذا رد على جلسة USSD نشطة (Reply)" 
-                                              IsChecked="{Binding NewCommandIsReply}"
-                                              Style="{StaticResource ModernCheckBox}" Margin="0,8,0,0"
-                                              ToolTip="حدد هذا الخيار إذا كان الأمر رداً على قائمة USSD موجودة وليس أمراً جديداً"/>
                                 </StackPanel>
                             </Border>
 
@@ -2015,42 +2009,11 @@
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                            <Border Background="#0D419D" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
-                                                                <TextBlock Text="{Binding Order}" FontSize="12" FontWeight="Bold" Foreground="#58A6FF"/>
-                                                            </Border>
-                                                            <Border CornerRadius="4" Padding="6,2" Margin="0,0,8,0">
-                                                                <Border.Style>
-                                                                    <Style TargetType="Border">
-                                                                        <Setter Property="Background" Value="#238636"/>
-                                                                        <Style.Triggers>
-                                                                            <DataTrigger Binding="{Binding IsReply}" Value="True">
-                                                                                <Setter Property="Background" Value="#D29922"/>
-                                                                            </DataTrigger>
-                                                                        </Style.Triggers>
-                                                                    </Style>
-                                                                </Border.Style>
-                                                                <TextBlock FontSize="10" Foreground="White">
-                                                                    <TextBlock.Style>
-                                                                        <Style TargetType="TextBlock">
-                                                                            <Setter Property="Text" Value="أمر جديد"/>
-                                                                            <Style.Triggers>
-                                                                                <DataTrigger Binding="{Binding IsReply}" Value="True">
-                                                                                    <Setter Property="Text" Value="رد"/>
-                                                                                </DataTrigger>
-                                                                            </Style.Triggers>
-                                                                        </Style>
-                                                                    </TextBlock.Style>
-                                                                </TextBlock>
-                                                            </Border>
-                                                        </StackPanel>
-                                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Command}" FontSize="14" FontWeight="SemiBold" 
-                                                                       Foreground="#F0F6FC" FlowDirection="LeftToRight"/>
-                                                            <TextBlock Text="{Binding Response}" FontSize="11" Foreground="#8B949E" 
-                                                                       TextTrimming="CharacterEllipsis" MaxWidth="300"
-                                                                       Visibility="{Binding Response, Converter={StaticResource StringToVisibility}}"/>
-                                                        </StackPanel>
+                                                        <Border Background="#0D419D" CornerRadius="4" Padding="8,4" Margin="0,0,10,0" VerticalAlignment="Center">
+                                                            <TextBlock Text="{Binding Order}" FontSize="12" FontWeight="Bold" Foreground="#58A6FF"/>
+                                                        </Border>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Command}" FontSize="14" FontWeight="SemiBold" 
+                                                                   Foreground="#F0F6FC" FlowDirection="LeftToRight" VerticalAlignment="Center"/>
                                                         <StackPanel Grid.Column="2" Orientation="Horizontal">
                                                             <Button Content="▲" 
                                                                     Command="{Binding DataContext.MoveSequentialCommandUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"

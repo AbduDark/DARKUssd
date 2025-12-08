@@ -1,12 +1,24 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace ModemPoolManager.Models;
 
-public class SequentialUssdCommand
+public partial class SequentialUssdCommand : ObservableObject
 {
-    public int Order { get; set; }
-    public string Command { get; set; } = "";
-    public bool IsReply { get; set; }
-    public string? Response { get; set; }
-    public bool IsExecuted { get; set; }
-    public bool IsSuccess { get; set; }
-    public string? ErrorMessage { get; set; }
+    [ObservableProperty]
+    private int _order;
+    
+    [ObservableProperty]
+    private string _command = "";
+    
+    [ObservableProperty]
+    private string? _response;
+    
+    [ObservableProperty]
+    private bool _isExecuted;
+    
+    [ObservableProperty]
+    private bool _isSuccess;
+    
+    [ObservableProperty]
+    private string? _errorMessage;
 }

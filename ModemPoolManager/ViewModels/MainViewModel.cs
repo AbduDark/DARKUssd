@@ -200,16 +200,13 @@ public partial class MainViewModel : ObservableObject
     private bool _isSequentialRunning;
 
     [ObservableProperty]
-    private Modem? _selectedSequentialModem;
-
-    [ObservableProperty]
     private string _newSequentialCommand = "";
 
     [ObservableProperty]
-    private bool _newCommandIsReply;
+    private int _sequentialDelayMs = 500;
 
     [ObservableProperty]
-    private int _sequentialDelayMs = 1000;
+    private string _currentSequentialCommand = "";
 
     private OcSeriesService? _ocSeriesService;
     private CancellationTokenSource? _ocSeriesCts;
@@ -2367,13 +2364,11 @@ public partial class MainViewModel : ObservableObject
         var command = new SequentialUssdCommand
         {
             Order = SequentialCommands.Count + 1,
-            Command = NewSequentialCommand.Trim(),
-            IsReply = NewCommandIsReply
+            Command = NewSequentialCommand.Trim()
         };
 
         SequentialCommands.Add(command);
         NewSequentialCommand = "";
-        NewCommandIsReply = false;
         StatusMessage = $"تمت إضافة الأمر رقم {command.Order}";
     }
 
@@ -2432,15 +2427,11 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task ExecuteSequentialCommandsAsync()
     {
-        if (SelectedSequentialModem == null)
+        var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected).ToList();
+        
+        if (selectedModems.Count == 0)
         {
-            StatusMessage = "الرجاء اختيار مودم للتنفيذ";
-            return;
-        }
-
-        if (!SelectedSequentialModem.IsConnected)
-        {
-            StatusMessage = "المودم المحدد غير متصل";
+            StatusMessage = "الرجاء تحديد مودمات للتنفيذ";
             return;
         }
 
@@ -2463,44 +2454,107 @@ public partial class MainViewModel : ObservableObject
                 cmd.ErrorMessage = null;
             }
 
-            SequentialUssdLog = $"🚀 بدء التنفيذ المتسلسل على {SelectedSequentialModem.PortName}\n";
-            SequentialUssdLog += $"📱 الرقم: {SelectedSequentialModem.PhoneNumber}\n";
+            SequentialUssdLog = $"🚀 بدء التنفيذ المتسلسل\n";
+            SequentialUssdLog += $"📱 عدد المودمات: {selectedModems.Count}\n";
             SequentialUssdLog += $"📋 عدد الأوامر: {SequentialCommands.Count}\n";
-            SequentialUssdLog += $"⏱ التأخير بين الأوامر: {SequentialDelayMs} مللي ثانية\n";
+            SequentialUssdLog += $"⏱ التأخير بين المودمات: {SequentialDelayMs} مللي ثانية\n";
             SequentialUssdLog += $"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-            var commandList = SequentialCommands
-                .Select(c => (c.Command, c.IsReply))
-                .ToList();
+            var commandList = SequentialCommands.Select(c => c.Command).ToList();
+            var commandResponses = new Dictionary<int, List<(string ModemName, string Response, bool Success)>>();
+            for (int i = 0; i < commandList.Count; i++)
+            {
+                commandResponses[i] = new List<(string, string, bool)>();
+            }
 
-            var results = await _modemService.ExecuteSequentialUssdCommandsAsync(
-                SelectedSequentialModem.PortName,
+            var progress = new Progress<(int CommandIndex, string PortName, string Response, bool Success)>(update =>
+            {
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var modem = Modems.FirstOrDefault(m => m.PortName == update.PortName);
+                    var modemName = modem?.PhoneNumber ?? update.PortName;
+                    CurrentSequentialCommand = $"أمر {update.CommandIndex + 1}: {commandList[update.CommandIndex]}";
+                    SequentialUssdLog += $"[{modemName}] {(update.Success ? "✅" : "❌")} {update.Response}\n";
+                    
+                    commandResponses[update.CommandIndex].Add((modemName, update.Response, update.Success));
+                    
+                    if (update.CommandIndex < SequentialCommands.Count)
+                    {
+                        var cmd = SequentialCommands[update.CommandIndex];
+                        cmd.IsExecuted = true;
+                        if (update.Success)
+                        {
+                            cmd.IsSuccess = true;
+                        }
+                        var responsesList = commandResponses[update.CommandIndex];
+                        cmd.Response = string.Join(" | ", responsesList.Select(r => $"{r.ModemName}: {(r.Success ? "✓" : "✗")}"));
+                        if (!cmd.IsSuccess && !string.IsNullOrEmpty(update.Response))
+                        {
+                            cmd.ErrorMessage = update.Response;
+                        }
+                    }
+                });
+            });
+
+            var results = await _modemService.ExecuteSequentialUssdOnAllModemsAsync(
+                selectedModems,
                 commandList,
                 SequentialDelayMs,
                 10,
+                progress,
                 _sequentialUssdCts.Token);
 
-            for (int i = 0; i < results.Count && i < SequentialCommands.Count; i++)
+            int totalSuccess = 0;
+            int totalFail = 0;
+
+            for (int i = 0; i < SequentialCommands.Count; i++)
             {
-                var (command, response, success) = results[i];
                 var cmd = SequentialCommands[i];
-
                 cmd.IsExecuted = true;
-                cmd.IsSuccess = success;
-                cmd.Response = response;
-
-                var replyIndicator = cmd.IsReply ? "↩️ رد" : "📤 أمر جديد";
-                SequentialUssdLog += $"[{i + 1}] {replyIndicator}: {command}\n";
-                SequentialUssdLog += $"    {(success ? "✅" : "❌")} الرد: {response}\n\n";
+                
+                int cmdSuccessCount = 0;
+                int cmdFailCount = 0;
+                
+                foreach (var modem in selectedModems)
+                {
+                    if (results.TryGetValue(modem.PortName, out var modemResults) && i < modemResults.Count)
+                    {
+                        if (modemResults[i].Success)
+                            cmdSuccessCount++;
+                        else
+                            cmdFailCount++;
+                    }
+                }
+                
+                cmd.IsSuccess = cmdSuccessCount > 0;
+                cmd.Response = $"✅ {cmdSuccessCount} نجح، ❌ {cmdFailCount} فشل";
+                if (cmdFailCount > 0 && cmdSuccessCount == 0)
+                {
+                    cmd.ErrorMessage = "فشل على جميع المودمات";
+                }
+                
+                totalSuccess += cmdSuccessCount;
+                totalFail += cmdFailCount;
             }
 
-            var successCount = SequentialCommands.Count(c => c.IsSuccess);
-            var failCount = SequentialCommands.Count(c => c.IsExecuted && !c.IsSuccess);
+            SequentialUssdLog += $"\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+            SequentialUssdLog += $"📊 ملخص النتائج:\n";
 
-            SequentialUssdLog += $"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-            SequentialUssdLog += $"📊 النتيجة: {successCount} نجح، {failCount} فشل\n";
+            foreach (var modem in selectedModems)
+            {
+                if (results.TryGetValue(modem.PortName, out var modemResults))
+                {
+                    var successCount = modemResults.Count(r => r.Success);
+                    var failCount = modemResults.Count(r => !r.Success);
+                    
+                    var modemName = modem.PhoneNumber ?? modem.PortName;
+                    SequentialUssdLog += $"   {modemName}: ✅ {successCount} ❌ {failCount}\n";
+                }
+            }
 
-            StatusMessage = $"تم تنفيذ الأوامر المتسلسلة: {successCount}/{SequentialCommands.Count} نجح";
+            SequentialUssdLog += $"\n📊 الإجمالي: ✅ {totalSuccess} نجح، ❌ {totalFail} فشل\n";
+            StatusMessage = $"تم تنفيذ الأوامر: {totalSuccess} نجح، {totalFail} فشل";
+            CurrentSequentialCommand = "";
         }
         catch (OperationCanceledException)
         {
@@ -2515,6 +2569,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsSequentialRunning = false;
+            CurrentSequentialCommand = "";
         }
     }
 
