@@ -15,6 +15,8 @@ public class OperatorToBrushConverter : IValueConverter
         { "Orange", new SolidColorBrush(Color.FromRgb(255, 121, 0)) },
         { "اورنج", new SolidColorBrush(Color.FromRgb(255, 121, 0)) },
         { "Mobinil", new SolidColorBrush(Color.FromRgb(255, 121, 0)) },
+        { "Egyptian", new SolidColorBrush(Color.FromRgb(255, 121, 0)) },
+        { "Proud", new SolidColorBrush(Color.FromRgb(255, 121, 0)) },
         
         { "Etisalat", new SolidColorBrush(Color.FromRgb(128, 184, 38)) },
         { "اتصالات", new SolidColorBrush(Color.FromRgb(128, 184, 38)) },
