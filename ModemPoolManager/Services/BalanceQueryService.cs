@@ -7,6 +7,9 @@ namespace ModemPoolManager.Services;
 public class BalanceQueryService
 {
     private readonly ModemService _modemService;
+    private readonly RetryService _retryService;
+    
+    public event EventHandler<RetryEventArgs>? OnRetryAttempt;
 
     private static readonly Dictionary<string, string> OperatorBalanceCodes = new()
     {
@@ -22,9 +25,11 @@ public class BalanceQueryService
         { "المصرية", "*550#" }
     };
 
-    public BalanceQueryService(ModemService modemService)
+    public BalanceQueryService(ModemService modemService, RetryService? retryService = null)
     {
         _modemService = modemService;
+        _retryService = retryService ?? new RetryService();
+        _retryService.OnRetryAttempt += (s, e) => OnRetryAttempt?.Invoke(this, e);
     }
 
     public string GetBalanceCode(string? operatorName)
@@ -60,21 +65,35 @@ public class BalanceQueryService
             }
             
             var balanceCode = GetBalanceCode(modem.Operator);
-            var ussdResult = await _modemService.ExecuteUssdAsync(modem, balanceCode);
             
-            result.RawResponse = ussdResult.Response;
-            result.IsSuccess = ussdResult.IsSuccess;
-
-            if (ussdResult.IsSuccess)
+            var (success, ussdResult, message) = await _retryService.ExecuteWithRetryAndStatusAsync(
+                async () => await _modemService.ExecuteUssdAsync(modem, balanceCode),
+                r => r.IsSuccess && !string.IsNullOrEmpty(r.Response) && r.Response.Length > 5,
+                r => r.ErrorMessage ?? "فشل في استعلام الرصيد",
+                $"استعلام رصيد {modem.PhoneNumber}");
+            
+            result.IsSuccess = success;
+            result.RetryMessage = message;
+            
+            if (ussdResult != null)
             {
-                result.MainBalance = ExtractMainBalance(ussdResult.Response, modem.Operator);
-                result.BonusBalance = ExtractBonusBalance(ussdResult.Response);
-                result.DataBalance = ExtractDataBalance(ussdResult.Response);
-                result.ExpiryDate = ExtractExpiryDate(ussdResult.Response);
+                result.RawResponse = ussdResult.Response;
+
+                if (success)
+                {
+                    result.MainBalance = ExtractMainBalance(ussdResult.Response, modem.Operator);
+                    result.BonusBalance = ExtractBonusBalance(ussdResult.Response);
+                    result.DataBalance = ExtractDataBalance(ussdResult.Response);
+                    result.ExpiryDate = ExtractExpiryDate(ussdResult.Response);
+                }
+                else
+                {
+                    result.ErrorMessage = message;
+                }
             }
             else
             {
-                result.ErrorMessage = ussdResult.ErrorMessage ?? "فشل في استعلام الرصيد";
+                result.ErrorMessage = message;
             }
         }
         catch (Exception ex)
@@ -269,6 +288,7 @@ public class BalanceResult
     public string RawResponse { get; set; } = "";
     public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? RetryMessage { get; set; }
 }
 
 public class GroupBalanceResult

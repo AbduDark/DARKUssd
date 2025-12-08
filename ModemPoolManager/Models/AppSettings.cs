@@ -114,6 +114,9 @@ public class ModemSettings
     public int SmsTimeout { get; set; } = 30000;
     public int RetryCount { get; set; } = 3;
     public int RetryDelayMs { get; set; } = 1000;
+    public int RetryMaxDelayMs { get; set; } = 10000;
+    public bool RetryUseExponentialBackoff { get; set; } = true;
+    public bool RetryAddJitter { get; set; } = true;
     public bool AutoRefreshPorts { get; set; } = true;
     public int AutoRefreshIntervalSeconds { get; set; } = 60;
     public int MaxModems { get; set; } = 12;

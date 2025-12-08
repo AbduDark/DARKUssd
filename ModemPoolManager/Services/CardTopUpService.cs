@@ -7,6 +7,9 @@ namespace ModemPoolManager.Services;
 public class CardTopUpService
 {
     private readonly ModemService _modemService;
+    private readonly RetryService _retryService;
+    
+    public event EventHandler<RetryEventArgs>? OnRetryAttempt;
 
     private static readonly Dictionary<string, string> OperatorTopUpFormats = new()
     {
@@ -31,9 +34,11 @@ public class CardTopUpService
         { "اتصالات", "*557*{number}*{amount}#" }
     };
 
-    public CardTopUpService(ModemService modemService)
+    public CardTopUpService(ModemService modemService, RetryService? retryService = null)
     {
         _modemService = modemService;
+        _retryService = retryService ?? new RetryService();
+        _retryService.OnRetryAttempt += (s, e) => OnRetryAttempt?.Invoke(this, e);
     }
 
     public string GetTopUpCode(string? operatorName, string cardNumber)
@@ -85,19 +90,33 @@ public class CardTopUpService
             }
             
             var topUpCode = GetTopUpCode(modem.Operator, cardNumber);
-            var ussdResult = await _modemService.ExecuteUssdAsync(modem, topUpCode);
             
-            result.RawResponse = ussdResult.Response;
-            result.IsSuccess = IsTopUpSuccessful(ussdResult.Response);
+            var (success, ussdResult, message) = await _retryService.ExecuteWithRetryAndStatusAsync(
+                async () => await _modemService.ExecuteUssdAsync(modem, topUpCode),
+                r => r.IsSuccess && IsTopUpSuccessful(r.Response),
+                r => GetTopUpErrorMessage(r.Response),
+                $"شحن كارت {modem.PhoneNumber}");
             
-            if (result.IsSuccess)
+            result.IsSuccess = success;
+            result.RetryMessage = message;
+            
+            if (ussdResult != null)
             {
-                result.NewBalance = ExtractNewBalance(ussdResult.Response);
-                result.ChargedAmount = ExtractChargedAmount(ussdResult.Response);
+                result.RawResponse = ussdResult.Response;
+                
+                if (success)
+                {
+                    result.NewBalance = ExtractNewBalance(ussdResult.Response);
+                    result.ChargedAmount = ExtractChargedAmount(ussdResult.Response);
+                }
+                else
+                {
+                    result.ErrorMessage = message;
+                }
             }
             else
             {
-                result.ErrorMessage = GetTopUpErrorMessage(ussdResult.Response);
+                result.ErrorMessage = message;
             }
         }
         catch (Exception ex)
@@ -184,14 +203,28 @@ public class CardTopUpService
         try
         {
             var transferCode = GetTransferCode(sourceModem.Operator, targetNumber, amount);
-            var ussdResult = await _modemService.ExecuteUssdAsync(sourceModem, transferCode);
             
-            result.RawResponse = ussdResult.Response;
-            result.IsSuccess = IsTransferSuccessful(ussdResult.Response);
+            var (success, ussdResult, message) = await _retryService.ExecuteWithRetryAndStatusAsync(
+                async () => await _modemService.ExecuteUssdAsync(sourceModem, transferCode),
+                r => r.IsSuccess && IsTransferSuccessful(r.Response),
+                r => GetTransferErrorMessage(r.Response),
+                $"تحويل رصيد من {sourceModem.PhoneNumber}");
             
-            if (!result.IsSuccess)
+            result.IsSuccess = success;
+            result.RetryMessage = message;
+            
+            if (ussdResult != null)
             {
-                result.ErrorMessage = GetTransferErrorMessage(ussdResult.Response);
+                result.RawResponse = ussdResult.Response;
+                
+                if (!success)
+                {
+                    result.ErrorMessage = message;
+                }
+            }
+            else
+            {
+                result.ErrorMessage = message;
             }
         }
         catch (Exception ex)
@@ -289,6 +322,7 @@ public class CardTopUpResult
     public string RawResponse { get; set; } = "";
     public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? RetryMessage { get; set; }
 }
 
 public class TransferResult
@@ -300,4 +334,5 @@ public class TransferResult
     public string RawResponse { get; set; } = "";
     public bool IsSuccess { get; set; }
     public string? ErrorMessage { get; set; }
+    public string? RetryMessage { get; set; }
 }

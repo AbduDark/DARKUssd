@@ -6,18 +6,26 @@ namespace ModemPoolManager.Services;
 public class OcSeriesService
 {
     private readonly ModemService _modemService;
+    private readonly RetryService _retryService;
     private CancellationTokenSource? _cancellationTokenSource;
     
     public event EventHandler<string>? LogUpdated;
     public event EventHandler<OcTransferResult>? TransferCompleted;
     public event EventHandler<int>? CountdownTick;
     public event EventHandler<decimal>? MainLineBalanceUpdated;
+    public event EventHandler<RetryEventArgs>? OnRetryAttempt;
     
     public bool IsRunning { get; private set; }
     
-    public OcSeriesService(ModemService modemService)
+    public OcSeriesService(ModemService modemService, RetryService? retryService = null)
     {
         _modemService = modemService;
+        _retryService = retryService ?? new RetryService();
+        _retryService.OnRetryAttempt += (s, e) => 
+        {
+            OnRetryAttempt?.Invoke(this, e);
+            LogUpdated?.Invoke(this, $"   🔄 {e.Message}");
+        };
     }
     
     public async Task<List<OcTransferResult>> ExecuteChainedTransfersAsync(
@@ -63,11 +71,12 @@ public class OcSeriesService
             LogUpdated?.Invoke(this, $"   إلى: {firstRecipient.PhoneNumber}");
             LogUpdated?.Invoke(this, $"   المبلغ: {totalToTransfer} ج.م");
             
-            var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
+            var (success, message, rawResponse) = await ExecuteTransferWithRetryAsync(
                 mainLineModem.PortName,
                 password,
                 firstRecipient.PhoneNumber!,
-                totalToTransfer);
+                totalToTransfer,
+                $"تحويل الأساسي → {firstRecipient.PhoneNumber}");
             
             var mainTransferResult = new OcTransferResult
             {
@@ -134,11 +143,12 @@ public class OcSeriesService
                 
                 sender.TransferStatus = "جاري التحويل...";
                 
-                var (chainSuccess, chainMessage, chainRawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
+                var (chainSuccess, chainMessage, chainRawResponse) = await ExecuteTransferWithRetryAsync(
                     sender.PortName,
                     password,
                     receiver.PhoneNumber!,
-                    amountToForward);
+                    amountToForward,
+                    $"تحويل {sender.PhoneNumber} → {receiver.PhoneNumber}");
                 
                 var chainResult = new OcTransferResult
                 {
@@ -241,11 +251,12 @@ public class OcSeriesService
                 
                 item.SenderModem.TransferStatus = "جاري التحويل...";
                 
-                var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
+                var (success, message, rawResponse) = await ExecuteTransferWithRetryAsync(
                     item.SenderModem.PortName,
                     password,
                     item.ReceiverPhone,
-                    item.Amount);
+                    item.Amount,
+                    $"تحويل {item.SenderModem.PhoneNumber} → {item.ReceiverPhone}");
                 
                 var result = new OcTransferResult
                 {
@@ -317,6 +328,27 @@ public class OcSeriesService
     {
         _cancellationTokenSource?.Cancel();
         IsRunning = false;
+    }
+    
+    private async Task<(bool Success, string Message, string RawResponse)> ExecuteTransferWithRetryAsync(
+        string portName,
+        string password,
+        string targetPhone,
+        int amount,
+        string operationName)
+    {
+        var (success, result, message) = await _retryService.ExecuteWithRetryAndStatusAsync(
+            async () => await _modemService.ExecuteOrangeCashTransferAsync(portName, password, targetPhone, amount),
+            r => r.Success,
+            r => r.Message,
+            operationName);
+        
+        if (result != default)
+        {
+            return (success, result.Message, result.RawResponse);
+        }
+        
+        return (false, message, "");
     }
 }
 

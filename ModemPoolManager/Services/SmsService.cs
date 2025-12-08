@@ -7,10 +7,15 @@ namespace ModemPoolManager.Services;
 public class SmsService
 {
     private readonly ModemService _modemService;
+    private readonly RetryService _retryService;
+    
+    public event EventHandler<RetryEventArgs>? OnRetryAttempt;
 
-    public SmsService(ModemService modemService)
+    public SmsService(ModemService modemService, RetryService? retryService = null)
     {
         _modemService = modemService;
+        _retryService = retryService ?? new RetryService();
+        _retryService.OnRetryAttempt += (s, e) => OnRetryAttempt?.Invoke(this, e);
     }
 
     public async Task<bool> SetTextModeAsync(string portName)
@@ -181,26 +186,34 @@ public class SmsService
     {
         try
         {
-            await SetTextModeAsync(portName);
-            await SetCharacterSetAsync(portName);
+            var (success, _, statusMessage) = await _retryService.ExecuteWithRetryAndStatusAsync(
+                async () =>
+                {
+                    await SetTextModeAsync(portName);
+                    await SetCharacterSetAsync(portName);
 
-            var response = await _modemService.SendATCommandPublicAsync(portName, $"AT+CMGS=\"{phoneNumber}\"", 5000);
+                    var response = await _modemService.SendATCommandPublicAsync(portName, $"AT+CMGS=\"{phoneNumber}\"", 5000);
+                    
+                    if (response.Contains(">"))
+                    {
+                        response = await _modemService.SendATCommandPublicAsync(portName, message + "\x1A", 30000);
+                        
+                        if (response.Contains("+CMGS:") || response.Contains("OK"))
+                        {
+                            return (true, string.Empty);
+                        }
+                        else if (response.Contains("ERROR"))
+                        {
+                            return (false, "فشل في إرسال الرسالة");
+                        }
+                    }
+                    return (false, "لم يستجب المودم");
+                },
+                r => r.Item1,
+                r => r.Item2,
+                $"إرسال SMS إلى {phoneNumber}");
             
-            if (response.Contains(">"))
-            {
-                response = await _modemService.SendATCommandPublicAsync(portName, message + "\x1A", 30000);
-                
-                if (response.Contains("+CMGS:") || response.Contains("OK"))
-                {
-                    return (true, string.Empty);
-                }
-                else if (response.Contains("ERROR"))
-                {
-                    return (false, "فشل في إرسال الرسالة");
-                }
-            }
-
-            return (false, "لم يستجب المودم");
+            return (success, success ? string.Empty : statusMessage);
         }
         catch (Exception ex)
         {

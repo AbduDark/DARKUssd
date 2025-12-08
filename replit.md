@@ -108,21 +108,36 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Refresh Signal and Phone Number.
 
 ### New Services (Wave 1-3 Implementation)
+-   **RetryService (NEW):**
+    -   Centralized automatic retry system for all operations.
+    -   Configurable retry count (default: 3 retries).
+    -   Exponential backoff between retries.
+    -   Jitter to prevent thundering herd.
+    -   Events for retry attempts, success, and failure.
+    -   Integration with AppSettings for configuration.
 -   **SmsListenerService (NEW):**
     -   Real-time SMS monitoring using CNMI (AT+CNMI=2,1,0,0,0).
     -   Polling-based fallback for older modems.
     -   Events for new message notifications.
     -   Automatic unread count tracking per modem.
+    -   Automatic retry on send failure.
 -   **BalanceQueryService (NEW):**
     -   Parallel balance queries for all modems.
     -   Operator-specific balance codes (Vodafone *868#, Orange *100#, Etisalat *102#, WE *550#).
     -   Extraction of main balance, bonus, data, and expiry date.
     -   Group balance statistics (total, average, success/failure counts).
+    -   Automatic retry on query failure.
 -   **CardTopUpService (NEW):**
     -   Parallel card charging across all modems.
     -   Operator-specific top-up codes (Vodafone *858*, Orange *110*, Etisalat *556*).
     -   Balance transfer between lines.
     -   Success/failure detection with error messages.
+    -   Automatic retry on top-up failure.
+-   **OcSeriesService (NEW):**
+    -   Orange Cash sequential transfers with automatic retry.
+    -   Chain transfer support (main line to multiple recipients).
+    -   Real-time countdown between transfers.
+    -   Detailed transfer logging.
 -   **OperatorServicesManager (NEW):**
     -   Vodafone services: Flex balance, data remaining, power menu, master menu.
     -   Orange services: Internet bundles, Orange Cash operations, data remaining.
@@ -131,7 +146,7 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 
 ### Project Structure
 -   **Models:** Data structures for Modems, ModemInfo, UssdResult, SmsMessage, BalanceResult, CardTopUpResult, TransferResult, CommandHistory, AppSettings.
--   **Services:** Business logic for ModemService, SmsService, SmsListenerService, BalanceQueryService, CardTopUpService, OperatorServicesManager, AiAssistantService.
+-   **Services:** Business logic for ModemService, SmsService, SmsListenerService, BalanceQueryService, CardTopUpService, OcSeriesService, OperatorServicesManager, RetryService, AiAssistantService.
 -   **ViewModels:** MainViewModel for UI logic.
 -   **Converters:** UI utility converters (e.g., `InverseBoolConverter`, `OperatorToBrushConverter`, `SignalBarsToOpacityConverter`).
 -   **Views:** `MainWindow.xaml` for the main user interface (all 17 tabs).

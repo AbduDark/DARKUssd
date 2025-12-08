@@ -6,10 +6,15 @@ namespace ModemPoolManager.Services;
 public class OperatorServicesManager
 {
     private readonly ModemService _modemService;
+    private readonly RetryService _retryService;
+    
+    public event EventHandler<RetryEventArgs>? OnRetryAttempt;
 
-    public OperatorServicesManager(ModemService modemService)
+    public OperatorServicesManager(ModemService modemService, RetryService? retryService = null)
     {
         _modemService = modemService;
+        _retryService = retryService ?? new RetryService();
+        _retryService.OnRetryAttempt += (s, e) => OnRetryAttempt?.Invoke(this, e);
     }
 
     #region Vodafone Services
