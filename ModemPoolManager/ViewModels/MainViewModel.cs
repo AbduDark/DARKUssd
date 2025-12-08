@@ -201,6 +201,9 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _newSequentialCommand = "";
+    
+    [ObservableProperty]
+    private bool _newCommandIsReply;
 
     [ObservableProperty]
     private int _sequentialDelayMs = 500;
@@ -2364,12 +2367,14 @@ public partial class MainViewModel : ObservableObject
         var command = new SequentialUssdCommand
         {
             Order = SequentialCommands.Count + 1,
-            Command = NewSequentialCommand.Trim()
+            Command = NewSequentialCommand.Trim(),
+            IsReply = NewCommandIsReply
         };
 
         SequentialCommands.Add(command);
         NewSequentialCommand = "";
-        StatusMessage = $"تمت إضافة الأمر رقم {command.Order}";
+        NewCommandIsReply = false;
+        StatusMessage = $"تمت إضافة الأمر رقم {command.Order} {(command.IsReply ? "(رد)" : "(جلسة جديدة)")}";
     }
 
     [RelayCommand]
@@ -2460,7 +2465,7 @@ public partial class MainViewModel : ObservableObject
             SequentialUssdLog += $"⏱ التأخير بين المودمات: {SequentialDelayMs} مللي ثانية\n";
             SequentialUssdLog += $"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-            var commandList = SequentialCommands.Select(c => c.Command).ToList();
+            var commandList = SequentialCommands.Select(c => (c.Command, c.IsReply)).ToList();
             var commandResponses = new Dictionary<int, List<(string ModemName, string Response, bool Success)>>();
             for (int i = 0; i < commandList.Count; i++)
             {
@@ -2473,7 +2478,7 @@ public partial class MainViewModel : ObservableObject
                 {
                     var modem = Modems.FirstOrDefault(m => m.PortName == update.PortName);
                     var modemName = modem?.PhoneNumber ?? update.PortName;
-                    CurrentSequentialCommand = $"أمر {update.CommandIndex + 1}: {commandList[update.CommandIndex]}";
+                    CurrentSequentialCommand = $"أمر {update.CommandIndex + 1}: {commandList[update.CommandIndex].Command}";
                     SequentialUssdLog += $"[{modemName}] {(update.Success ? "✅" : "❌")} {update.Response}\n";
                     
                     commandResponses[update.CommandIndex].Add((modemName, update.Response, update.Success));
@@ -2496,7 +2501,7 @@ public partial class MainViewModel : ObservableObject
                 });
             });
 
-            var results = await _modemService.ExecuteSequentialUssdOnAllModemsAsync(
+            var results = await _modemService.ExecuteSequentialUssdWithReplyOnAllModemsAsync(
                 selectedModems,
                 commandList,
                 SequentialDelayMs,

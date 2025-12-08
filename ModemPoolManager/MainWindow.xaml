@@ -1959,6 +1959,10 @@
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
                                         <TextBox Text="{Binding NewSequentialCommand, UpdateSourceTrigger=PropertyChanged}" 
                                                  Style="{StaticResource ModernTextBox}"
                                                  FlowDirection="LeftToRight"/>
@@ -1966,6 +1970,12 @@
                                                 Command="{Binding AddSequentialCommandCommand}"
                                                 Style="{StaticResource ModernButton}"
                                                 IsEnabled="{Binding IsSequentialRunning, Converter={StaticResource InverseBoolConverter}}"/>
+                                        <CheckBox Grid.Row="1" Grid.ColumnSpan="2"
+                                                  IsChecked="{Binding NewCommandIsReply}" 
+                                                  Content="رد في نفس الجلسة (Reply)" 
+                                                  Foreground="#8B949E" 
+                                                  Margin="0,8,0,0"
+                                                  ToolTip="حدد هذا الخيار إذا كان الأمر رداً على أمر USSD سابق في نفس الجلسة"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -2009,9 +2019,16 @@
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <Border Background="#0D419D" CornerRadius="4" Padding="8,4" Margin="0,0,10,0" VerticalAlignment="Center">
-                                                            <TextBlock Text="{Binding Order}" FontSize="12" FontWeight="Bold" Foreground="#58A6FF"/>
-                                                        </Border>
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                            <Border Background="#0D419D" CornerRadius="4" Padding="8,4">
+                                                                <TextBlock Text="{Binding Order}" FontSize="12" FontWeight="Bold" Foreground="#58A6FF"/>
+                                                            </Border>
+                                                            <Border Background="#E36209" 
+                                                                    CornerRadius="4" Padding="6,2" Margin="6,0,0,0"
+                                                                    Visibility="{Binding IsReply, Converter={StaticResource BoolToVisibility}}">
+                                                                <TextBlock Text="رد" FontSize="10" Foreground="#F0F6FC"/>
+                                                            </Border>
+                                                        </StackPanel>
                                                         <TextBlock Grid.Column="1" Text="{Binding Command}" FontSize="14" FontWeight="SemiBold" 
                                                                    Foreground="#F0F6FC" FlowDirection="LeftToRight" VerticalAlignment="Center"/>
                                                         <StackPanel Grid.Column="2" Orientation="Horizontal">

@@ -1010,6 +1010,19 @@ public class ModemService : IDisposable
         IProgress<(int CommandIndex, string PortName, string Response, bool Success)>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        var commandsWithReply = commands.Select(c => (Command: c, IsReply: false)).ToList();
+        return await ExecuteSequentialUssdWithReplyOnAllModemsAsync(
+            modems, commandsWithReply, delayBetweenModems, ussdWaitTimeSeconds, progress, cancellationToken);
+    }
+    
+    public async Task<Dictionary<string, List<(string Command, string Response, bool Success)>>> ExecuteSequentialUssdWithReplyOnAllModemsAsync(
+        List<Modem> modems,
+        List<(string Command, bool IsReply)> commands,
+        int delayBetweenModems = 500,
+        int ussdWaitTimeSeconds = 10,
+        IProgress<(int CommandIndex, string PortName, string Response, bool Success)>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
         var results = new Dictionary<string, List<(string Command, string Response, bool Success)>>();
         
         foreach (var modem in modems)
@@ -1017,32 +1030,62 @@ public class ModemService : IDisposable
             results[modem.PortName] = new List<(string Command, string Response, bool Success)>();
         }
 
-        for (int cmdIndex = 0; cmdIndex < commands.Count; cmdIndex++)
+        for (int modemIndex = 0; modemIndex < modems.Count; modemIndex++)
         {
-            var command = commands[cmdIndex];
-            Console.WriteLine($"تنفيذ الأمر {cmdIndex + 1}/{commands.Count}: {command}");
+            var modem = modems[modemIndex];
+            
+            if (cancellationToken.IsCancellationRequested)
+            {
+                Console.WriteLine("تم إلغاء التنفيذ المتسلسل");
+                break;
+            }
 
-            foreach (var modem in modems)
+            Console.WriteLine($"[{modem.PortName}] بدء جلسة USSD جديدة");
+            
+            try
+            {
+                await CancelUssdSessionAsync(modem.PortName);
+                await Task.Delay(100, cancellationToken);
+            }
+            catch { }
+
+            for (int cmdIndex = 0; cmdIndex < commands.Count; cmdIndex++)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
                     Console.WriteLine("تم إلغاء التنفيذ المتسلسل");
-                    return results;
+                    break;
                 }
 
+                var (command, isReply) = commands[cmdIndex];
+                
                 try
                 {
-                    Console.WriteLine($"[{modem.PortName}] إرسال: {command}");
-                    var response = await SendUssdCommandPublicAsync(modem.PortName, command, ussdWaitTimeSeconds);
+                    string response;
+                    
+                    if (cmdIndex == 0 || !isReply)
+                    {
+                        Console.WriteLine($"[{modem.PortName}] إرسال USSD جديد: {command}");
+                        response = await SendUssdCommandPublicAsync(modem.PortName, command, ussdWaitTimeSeconds);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"[{modem.PortName}] إرسال رد USSD: {command}");
+                        response = await SendUssdReplyAsync(modem.PortName, command, ussdWaitTimeSeconds);
+                    }
+                    
                     var decodedResponse = DecodeUssdResponse(response);
-                    var success = response.Contains("+CUSD:") && !response.Contains("ERROR");
+                    var success = !string.IsNullOrEmpty(response) && 
+                                  !response.Contains("ERROR") && 
+                                  (response.Contains("+CUSD:") || decodedResponse.Length > 0);
                     
                     results[modem.PortName].Add((command, decodedResponse, success));
                     progress?.Report((cmdIndex, modem.PortName, decodedResponse, success));
-
-                    if (delayBetweenModems > 0)
+                    
+                    if (!success)
                     {
-                        await Task.Delay(delayBetweenModems, cancellationToken);
+                        Console.WriteLine($"[{modem.PortName}] فشل الأمر، إيقاف التنفيذ لهذا المودم");
+                        break;
                     }
                 }
                 catch (Exception ex)
@@ -1050,6 +1093,25 @@ public class ModemService : IDisposable
                     Console.WriteLine($"[{modem.PortName}] خطأ: {ex.Message}");
                     results[modem.PortName].Add((command, ex.Message, false));
                     progress?.Report((cmdIndex, modem.PortName, ex.Message, false));
+                    break;
+                }
+            }
+            
+            try
+            {
+                await CancelUssdSessionAsync(modem.PortName);
+            }
+            catch { }
+
+            if (delayBetweenModems > 0 && modemIndex < modems.Count - 1)
+            {
+                try
+                {
+                    await Task.Delay(delayBetweenModems, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine("تم إلغاء التنفيذ أثناء التأخير");
                 }
             }
         }

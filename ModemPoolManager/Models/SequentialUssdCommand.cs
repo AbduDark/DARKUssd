@@ -11,6 +11,9 @@ public partial class SequentialUssdCommand : ObservableObject
     private string _command = "";
     
     [ObservableProperty]
+    private bool _isReply;
+    
+    [ObservableProperty]
     private string? _response;
     
     [ObservableProperty]

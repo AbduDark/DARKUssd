@@ -138,6 +138,12 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Chain transfer support (main line to multiple recipients).
     -   Real-time countdown between transfers.
     -   Detailed transfer logging.
+-   **Sequential USSD with Reply Support:**
+    -   IsReply checkbox for each command to distinguish between new USSD sessions and replies.
+    -   Each modem gets a fresh USSD session (AT+CUSD=2 to cancel previous, then new command).
+    -   Commands marked as "Reply" use SendUssdReplyAsync to continue in same session.
+    -   Execution continues to next modem even if one modem fails.
+    -   Visual indicator (orange badge) for reply commands in the UI.
 -   **OperatorServicesManager (NEW):**
     -   Vodafone services: Flex balance, data remaining, power menu, master menu.
     -   Orange services: Internet bundles, Orange Cash operations, data remaining.
