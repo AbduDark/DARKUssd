@@ -740,6 +740,53 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task LoadModemSmsAsync(Modem modem)
+    {
+        if (modem == null || !modem.IsConnected) return;
+        
+        try
+        {
+            modem.IsBusy = true;
+            StatusMessage = $"جاري تحميل الرسائل من {modem.DisplayName}...";
+            
+            var messages = await _smsService.GetAllMessagesAsync(modem.PortName, modem.Index);
+            
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                modem.SmsMessages.Clear();
+                foreach (var msg in messages.OrderByDescending(m => m.Timestamp))
+                {
+                    modem.SmsMessages.Add(msg);
+                }
+                modem.UnreadSmsCount = messages.Count(m => m.Status == SmsStatus.Unread);
+            });
+            
+            StatusMessage = $"تم تحميل {messages.Count} رسالة من {modem.DisplayName}";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ في تحميل الرسائل: {ex.Message}";
+        }
+        finally
+        {
+            modem.IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ShowSmsDetail(SmsMessage message)
+    {
+        if (message == null) return;
+        
+        var detailText = $"📱 من: {message.PhoneNumber}\n" +
+                        $"📅 الوقت: {message.Timestamp:yyyy/MM/dd HH:mm:ss}\n" +
+                        $"━━━━━━━━━━━━━━━━━━━━\n" +
+                        $"{message.Message}";
+        
+        MessageBox.Show(detailText, "تفاصيل الرسالة", MessageBoxButton.OK, MessageBoxImage.Information);
+    }
+
+    [RelayCommand]
     private async Task SendSmsAsync()
     {
         if (string.IsNullOrWhiteSpace(SmsPhoneNumber) || string.IsNullOrWhiteSpace(SmsMessage))

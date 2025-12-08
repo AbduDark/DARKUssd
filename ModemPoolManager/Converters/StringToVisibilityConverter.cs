@@ -13,6 +13,10 @@ public class StringToVisibilityConverter : IValueConverter
         {
             return string.IsNullOrWhiteSpace(str) ? Visibility.Collapsed : Visibility.Visible;
         }
+        if (value is int intVal)
+        {
+            return intVal > 0 ? Visibility.Visible : Visibility.Collapsed;
+        }
         return Visibility.Collapsed;
     }
 

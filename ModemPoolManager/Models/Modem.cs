@@ -1,9 +1,18 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace ModemPoolManager.Models;
 
 public partial class Modem : ObservableObject
 {
+    [ObservableProperty]
+    private ObservableCollection<SmsMessage> _smsMessages = new();
+
+    [ObservableProperty]
+    private SmsMessage? _selectedSmsMessage;
+
+    [ObservableProperty]
+    private bool _isSmsPopupOpen;
     [ObservableProperty]
     private int _index;
 

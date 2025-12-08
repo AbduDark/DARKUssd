@@ -447,6 +447,122 @@
                                                                 </ControlTemplate>
                                                             </Button.Template>
                                                         </Button>
+                                                        
+                                                        <!-- SMS Messages Button with Popup -->
+                                                        <ToggleButton x:Name="SmsToggleButton" ToolTip="الرسائل" Cursor="Hand" Margin="4,0,0,0"
+                                                                      IsChecked="{Binding IsSmsPopupOpen, Mode=TwoWay}">
+                                                            <ToggleButton.Template>
+                                                                <ControlTemplate TargetType="ToggleButton">
+                                                                    <Border Background="#1F6FEB" BorderBrush="#388BFD" BorderThickness="1" 
+                                                                            CornerRadius="4" Padding="6,2" x:Name="border">
+                                                                        <StackPanel Orientation="Horizontal">
+                                                                            <TextBlock Text="✉" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+                                                                            <TextBlock Text="{Binding UnreadSmsCount}" FontSize="10" Foreground="White" 
+                                                                                       VerticalAlignment="Center" Margin="3,0,0,0" FontWeight="Bold"
+                                                                                       Visibility="{Binding UnreadSmsCount, Converter={StaticResource StringToVisibility}}"/>
+                                                                        </StackPanel>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#388BFD"/>
+                                                                        </Trigger>
+                                                                        <Trigger Property="IsChecked" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#58A6FF"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </ToggleButton.Template>
+                                                        </ToggleButton>
+                                                        
+                                                        <!-- SMS Popup -->
+                                                        <Popup IsOpen="{Binding IsSmsPopupOpen}" 
+                                                               PlacementTarget="{Binding ElementName=SmsToggleButton}"
+                                                               Placement="Bottom" StaysOpen="False"
+                                                               AllowsTransparency="True">
+                                                            <Border Background="#161B22" BorderBrush="#30363D" BorderThickness="1" 
+                                                                    CornerRadius="8" Padding="8" MinWidth="280" MaxWidth="350" MaxHeight="300">
+                                                                <Grid>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition Height="Auto"/>
+                                                                        <RowDefinition Height="*"/>
+                                                                    </Grid.RowDefinitions>
+                                                                    
+                                                                    <!-- Header -->
+                                                                    <Border Grid.Row="0" Background="#21262D" CornerRadius="4" Padding="8,6" Margin="0,0,0,8">
+                                                                        <Grid>
+                                                                            <TextBlock Text="📬 الرسائل" FontSize="13" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                                                            <Button Content="↻" HorizontalAlignment="Left" ToolTip="تحديث الرسائل"
+                                                                                    Command="{Binding DataContext.LoadModemSmsCommand, Source={x:Reference Name=RootWindow}}"
+                                                                                    CommandParameter="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Popup}}">
+                                                                                <Button.Template>
+                                                                                    <ControlTemplate TargetType="Button">
+                                                                                        <Border Background="Transparent" Padding="4,2" x:Name="btn" CornerRadius="3">
+                                                                                            <TextBlock Text="↻" FontSize="12" Foreground="#58A6FF"/>
+                                                                                        </Border>
+                                                                                        <ControlTemplate.Triggers>
+                                                                                            <Trigger Property="IsMouseOver" Value="True">
+                                                                                                <Setter TargetName="btn" Property="Background" Value="#30363D"/>
+                                                                                            </Trigger>
+                                                                                        </ControlTemplate.Triggers>
+                                                                                    </ControlTemplate>
+                                                                                </Button.Template>
+                                                                            </Button>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                    
+                                                                    <!-- Messages List -->
+                                                                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="220">
+                                                                        <ItemsControl ItemsSource="{Binding SmsMessages}">
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <Button Command="{Binding DataContext.ShowSmsDetailCommand, Source={x:Reference Name=RootWindow}}"
+                                                                                            CommandParameter="{Binding}" Cursor="Hand" Margin="0,2">
+                                                                                        <Button.Template>
+                                                                                            <ControlTemplate TargetType="Button">
+                                                                                                <Border Background="#0D1117" BorderBrush="#30363D" BorderThickness="1" 
+                                                                                                        CornerRadius="6" Padding="10,8" x:Name="msgBorder">
+                                                                                                    <Grid>
+                                                                                                        <Grid.RowDefinitions>
+                                                                                                            <RowDefinition Height="Auto"/>
+                                                                                                            <RowDefinition Height="Auto"/>
+                                                                                                        </Grid.RowDefinitions>
+                                                                                                        <Grid.ColumnDefinitions>
+                                                                                                            <ColumnDefinition Width="*"/>
+                                                                                                            <ColumnDefinition Width="Auto"/>
+                                                                                                        </Grid.ColumnDefinitions>
+                                                                                                        
+                                                                                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding PhoneNumber}" 
+                                                                                                                   FontSize="12" FontWeight="SemiBold" Foreground="#58A6FF"
+                                                                                                                   FontFamily="Consolas" FlowDirection="LeftToRight"/>
+                                                                                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Timestamp, StringFormat='{}{0:HH:mm}'}" 
+                                                                                                                   FontSize="10" Foreground="#8B949E"/>
+                                                                                                        
+                                                                                                        <TextBlock Grid.Row="1" Grid.ColumnSpan="2" 
+                                                                                                                   Text="{Binding Message}" FontSize="11" Foreground="#C9D1D9"
+                                                                                                                   TextTrimming="CharacterEllipsis" MaxWidth="300" Margin="0,4,0,0"/>
+                                                                                                    </Grid>
+                                                                                                </Border>
+                                                                                                <ControlTemplate.Triggers>
+                                                                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                                                                        <Setter TargetName="msgBorder" Property="Background" Value="#21262D"/>
+                                                                                                        <Setter TargetName="msgBorder" Property="BorderBrush" Value="#58A6FF"/>
+                                                                                                    </Trigger>
+                                                                                                </ControlTemplate.Triggers>
+                                                                                            </ControlTemplate>
+                                                                                        </Button.Template>
+                                                                                    </Button>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+                                                                    </ScrollViewer>
+                                                                    
+                                                                    <!-- Empty State -->
+                                                                    <TextBlock Grid.Row="1" Text="لا توجد رسائل" FontSize="12" Foreground="#8B949E"
+                                                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                               Visibility="{Binding SmsMessages.Count, Converter={StaticResource InverseBoolToVisibility}}"/>
+                                                                </Grid>
+                                                            </Border>
+                                                        </Popup>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
