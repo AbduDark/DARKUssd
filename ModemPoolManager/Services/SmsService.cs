@@ -38,42 +38,93 @@ public class SmsService
         try
         {
             await SetTextModeAsync(portName);
-            await SetCharacterSetAsync(portName);
+            await SetCharacterSetAsync(portName, "UCS2");
 
             var response = await _modemService.SendATCommandPublicAsync(portName, "AT+CMGL=\"ALL\"", 10000);
 
-            var pattern = @"\+CMGL:\s*(\d+),""([^""]*)"",""([^""]*)"","""",""([^""]*)""[\r\n]+(.+?)(?=\+CMGL:|OK|$)";
-            var matches = Regex.Matches(response, pattern, RegexOptions.Singleline);
-
-            foreach (Match match in matches)
+            var patterns = new[]
             {
-                var sms = new SmsMessage
-                {
-                    Index = int.Parse(match.Groups[1].Value),
-                    PhoneNumber = match.Groups[3].Value,
-                    Message = match.Groups[5].Value.Trim(),
-                    ModemPort = portName,
-                    ModemIndex = modemIndex,
-                    Timestamp = ParseSmsTimestamp(match.Groups[4].Value),
-                    Direction = SmsDirection.Incoming
-                };
+                @"\+CMGL:\s*(\d+),""([^""]*)"",""([^""]*)"",""([^""]*)"",""([^""]*)""[\r\n]+(.+?)(?=\+CMGL:|OK|$)",
+                @"\+CMGL:\s*(\d+),""([^""]*)"",""([^""]*)"","""",""([^""]*)""[\r\n]+(.+?)(?=\+CMGL:|OK|$)",
+                @"\+CMGL:\s*(\d+),""([^""]*)"",""([^""]*)""[^\r\n]*[\r\n]+(.+?)(?=\+CMGL:|OK|$)"
+            };
 
-                var statusStr = match.Groups[2].Value;
-                sms.Status = statusStr switch
+            foreach (var pattern in patterns)
+            {
+                var matches = Regex.Matches(response, pattern, RegexOptions.Singleline);
+                if (matches.Count > 0)
                 {
-                    "REC UNREAD" => SmsStatus.Unread,
-                    "REC READ" => SmsStatus.Read,
-                    "STO UNSENT" => SmsStatus.Unsent,
-                    "STO SENT" => SmsStatus.Sent,
-                    _ => SmsStatus.Read
-                };
+                    foreach (Match match in matches)
+                    {
+                        try
+                        {
+                            var sms = new SmsMessage
+                            {
+                                Index = int.Parse(match.Groups[1].Value),
+                                ModemPort = portName,
+                                ModemIndex = modemIndex,
+                                Direction = SmsDirection.Incoming
+                            };
 
-                messages.Add(sms);
+                            var statusStr = match.Groups[2].Value;
+                            sms.Status = statusStr switch
+                            {
+                                "REC UNREAD" => SmsStatus.Unread,
+                                "REC READ" => SmsStatus.Read,
+                                "STO UNSENT" => SmsStatus.Unsent,
+                                "STO SENT" => SmsStatus.Sent,
+                                _ => SmsStatus.Read
+                            };
+
+                            sms.PhoneNumber = DecodeIfUcs2(match.Groups[3].Value);
+                            
+                            if (match.Groups.Count >= 7)
+                            {
+                                sms.Timestamp = ParseSmsTimestamp(match.Groups[5].Value);
+                                sms.Message = DecodeIfUcs2(match.Groups[6].Value.Trim());
+                            }
+                            else if (match.Groups.Count >= 6)
+                            {
+                                sms.Timestamp = ParseSmsTimestamp(match.Groups[4].Value);
+                                sms.Message = DecodeIfUcs2(match.Groups[5].Value.Trim());
+                            }
+                            else
+                            {
+                                sms.Timestamp = DateTime.Now;
+                                sms.Message = DecodeIfUcs2(match.Groups[match.Groups.Count - 1].Value.Trim());
+                            }
+
+                            messages.Add(sms);
+                        }
+                        catch { }
+                    }
+                    break;
+                }
             }
         }
         catch { }
 
         return messages;
+    }
+
+    private string DecodeIfUcs2(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        
+        if (Regex.IsMatch(text, @"^[0-9A-Fa-f]+$") && text.Length >= 4 && text.Length % 4 == 0)
+        {
+            try
+            {
+                var bytes = new byte[text.Length / 2];
+                for (int i = 0; i < text.Length; i += 2)
+                {
+                    bytes[i / 2] = Convert.ToByte(text.Substring(i, 2), 16);
+                }
+                return Encoding.BigEndianUnicode.GetString(bytes);
+            }
+            catch { }
+        }
+        return text;
     }
 
     public async Task<List<SmsMessage>> GetUnreadMessagesAsync(string portName, int modemIndex)
