@@ -52,6 +52,9 @@ artifacts/
 Thumbs.db
 ehthumbs.db
 
+# Temporary WPF project files
+*_wpftmp.csproj
+
 # Replit
 .replit
 .upm
