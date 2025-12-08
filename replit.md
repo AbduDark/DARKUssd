@@ -102,6 +102,14 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Click any message to view full details in a dialog.
     -   Uses SmsService.GetAllMessagesAsync for message retrieval.
     -   Integrated with SmsListenerService for real-time updates.
+-   **MessageDetailsWindow (NEW - Modern SMS Details Dialog):**
+    -   Borderless window with rounded corners and operator-colored border.
+    -   Shows sender number (color-coded by operator), timestamp, modem info, and status badge.
+    -   Full message content in scrollable text area.
+    -   Automatic OTP extraction with one-click copy button.
+    -   Action buttons: Copy message, Reply, Delete, Close.
+    -   Draggable window header for repositioning.
+    -   Dark theme matching the main application design.
 -   **Right-click Context Menu on Modem Cards:**
     -   Restart Modem (AT+CFUN=0/1 sequence).
     -   Copy Phone Number to clipboard.
