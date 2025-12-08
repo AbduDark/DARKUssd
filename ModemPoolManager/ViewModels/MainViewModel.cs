@@ -227,6 +227,7 @@ public partial class MainViewModel : ObservableObject
             if (existing == null)
             {
                 modem.Index = Modems.Count + 1;
+                modem.PropertyChanged += OnModemPropertyChanged;
                 Modems.Add(modem);
                 StatusMessage = $"تم اكتشاف مودم جديد: {modem.PortName} - جاري جلب الرقم...";
             }
@@ -251,12 +252,21 @@ public partial class MainViewModel : ObservableObject
             var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
             if (existing != null)
             {
+                existing.PropertyChanged -= OnModemPropertyChanged;
                 Modems.Remove(existing);
                 ReindexModems();
             }
             UpdateCounts();
             StatusMessage = $"تم فصل المودم: {modem.PortName}";
         });
+    }
+
+    private async void OnModemPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Modem.IsSmsPopupOpen) && sender is Modem modem && modem.IsSmsPopupOpen)
+        {
+            await LoadModemSmsAsync(modem);
+        }
     }
 
     private void ReindexModems()
