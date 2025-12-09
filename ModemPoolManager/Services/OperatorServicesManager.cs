@@ -89,7 +89,7 @@ public class OperatorServicesManager
         public const string InternetBundle = "*111#";
         public const string OrangeCash = "#7115#";
         public const string OrangeCashBalance = "#7115*81*{pin}#";
-        public const string OrangeCashTransfer = "#7115*1*1*{number}*{amount}*{pin}#";
+        public const string OrangeCashTransfer = "#7115*7*{number}*{amount}*{pin}#";
         public const string TransferBalance = "*100*1*{number}*{amount}#";
         public const string DataRemaining = "*100*1*2#";
         public const string StopPromo = "*100*5*0#";

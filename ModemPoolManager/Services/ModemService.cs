@@ -1887,7 +1887,7 @@ public class ModemService : IDisposable
                 normalizedNumber = "0" + normalizedNumber.Substring(2);
             }
             
-            var ussdCode = $"#7115*31*{password}*2*{normalizedNumber}*{amount}*1*1#";
+            var ussdCode = $"#7115*7*{normalizedNumber}*{amount}*{password}#";
             var command = $"AT+CUSD=1,\"{EncodeUssd(ussdCode)}\",15";
             
             Console.WriteLine($"[{portName}] تحويل أورانج كاش: {amount} ج.م إلى {normalizedNumber}");
