@@ -1,0 +1,100 @@
+The name "StringToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "InverseBoolConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OperatorToBrushConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OperatorToGlowColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "SignalColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "SignalBarsToOpacityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "InverseBoolToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OtpVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+Object reference not set to an instance of an object.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "OperatorToGlowColorConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "StringToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "OtpVisibilityConverter" has an incompatible type.
+Unresolved reference 'RootWindow'.'' Line number '7' and line position '148'.'' Line number '7'. ...
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "StringToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "StringToVisibility" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The name 'Path' does not exist in the current context
+The name 'File' does not exist in the current context
+The name 'File' does not exist in the current context
+The name 'Path' does not exist in the current context
+The name 'Directory' does not exist in the current context
+The name 'Directory' does not exist in the current context
+The name 'File' does not exist in the current context
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+Field 'OcSeriesService._cancellationTokenSource' is never assigned to, and will always have its default value null
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+Indexing can be simplified
+Member 'DecodeIfUcs2' does not access instance data and can be marked as static
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Use 'string.Contains(char)' instead of 'string.Contains(string)' when searching for a single character
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Member 'ParseSmsTimestamp' does not access instance data and can be marked as static
+Collection initialization can be simplified
+Collection initialization can be simplified
+Collection initialization can be simplified
+Collection initialization can be simplified
+Collection initialization can be simplified
+Collection initialization can be simplified
+Collection initialization can be simplified
+Make field readonly
+Make field readonly
+Collection initialization can be simplified
+Member 'IsPhoneNumberUnknown' does not access instance data and can be marked as static
+Collection initialization can be simplified
+Use span-based 'string.Concat' and 'AsSpan' instead of 'Substring'
+Substring can be simplified
+Member 'ShowSmsDetail' does not access instance data and can be marked as static
+Member 'OpenSettings' does not access instance data and can be marked as static
+Collection initialization can be simplified
+Substring can be simplified
+Substring can be simplified
+Collection initialization can be simplified
+Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array
+Collection initialization can be simplified
+Collection initialization can be simplified
+Collection initialization can be simplified
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Use 'string.StartsWith(char)' instead of 'string.StartsWith(string)' when you have a string with a single char
+Collection initialization can be simplified
+Prefer 'static readonly' fields over constant array arguments if the called method is called repeatedly and is not mutating the passed array
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Object initialization can be simplified
+Collection initialization can be simplified
