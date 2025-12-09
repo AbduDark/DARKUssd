@@ -374,12 +374,24 @@ public class OcTransferResult
     public int ForwardedAmount { get; set; }
 }
 
-public class ExcelTransferItem
+public class ExcelTransferItem : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
 {
     public int Index { get; set; }
     public string PhoneNumber { get; set; } = "";
     public int Amount { get; set; }
     public int OriginalAmount { get; set; }
-    public string Status { get; set; } = "في الانتظار";
-    public string Result { get; set; } = "";
+    
+    private string _status = "في الانتظار";
+    public string Status 
+    { 
+        get => _status; 
+        set => SetProperty(ref _status, value); 
+    }
+    
+    private string _result = "";
+    public string Result 
+    { 
+        get => _result; 
+        set => SetProperty(ref _result, value); 
+    }
 }

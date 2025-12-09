@@ -240,6 +240,18 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private bool _isCashBalanceQueried;
 
+    [ObservableProperty]
+    private string _currentTransferPhone = "";
+
+    [ObservableProperty]
+    private int _currentTransferAmount;
+
+    [ObservableProperty]
+    private int _currentTransferIndex;
+
+    [ObservableProperty]
+    private string _currentTransferStatus = "";
+
     public MainViewModel()
     {
         Settings = AppSettings.Load();
@@ -2544,6 +2556,12 @@ public partial class MainViewModel : ObservableObject
                 if (_customTransferCts.Token.IsCancellationRequested) break;
 
                 var item = ExcelTransferItems[i];
+                
+                CurrentTransferIndex = i + 1;
+                CurrentTransferPhone = item.PhoneNumber;
+                CurrentTransferAmount = item.Amount;
+                CurrentTransferStatus = "جاري التحويل...";
+                
                 item.Status = "جاري التحويل...";
                 CustomTransferLog += $"━━━━━━━━━━━━━━━━━━━━\n";
                 CustomTransferLog += $"📤 تحويل {i + 1}/{ExcelTransferItems.Count}\n";
@@ -2565,6 +2583,7 @@ public partial class MainViewModel : ObservableObject
                 if (success)
                 {
                     item.Status = "تم ✓";
+                    CurrentTransferStatus = "تم ✓";
                     successCount++;
                     CustomTransferLog += $"   ✅ نجح: {message}\n";
                     
@@ -2578,6 +2597,7 @@ public partial class MainViewModel : ObservableObject
                 else
                 {
                     item.Status = "فشل ✗";
+                    CurrentTransferStatus = "فشل ✗";
                     failCount++;
                     CustomTransferLog += $"   ❌ فشل: {message}\n";
                 }
@@ -2594,6 +2614,9 @@ public partial class MainViewModel : ObservableObject
                     CustomTransferCountdown = 0;
                 }
             }
+            
+            CurrentTransferPhone = "";
+            CurrentTransferStatus = "";
 
             CustomTransferLog += $"\n━━━━━━━━━━━━━━━━━━━━\n";
             CustomTransferLog += $"📊 النتيجة النهائية:\n";
