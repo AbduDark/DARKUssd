@@ -10,6 +10,15 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = new MainViewModel();
+        Closing += MainWindow_Closing;
+    }
+
+    private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.SaveAppState();
+        }
     }
 
     private void CopyOtpButton_Click(object sender, RoutedEventArgs e)

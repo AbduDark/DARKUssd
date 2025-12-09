@@ -229,10 +229,21 @@ public partial class MainViewModel : ObservableObject
     private CancellationTokenSource? _sequentialUssdCts;
 
     private int _commandId = 0;
+    private AppState _appState;
+
+    [ObservableProperty]
+    private decimal _senderCashBalance;
+
+    [ObservableProperty]
+    private decimal _senderCashBalanceRemaining;
+
+    [ObservableProperty]
+    private bool _isCashBalanceQueried;
 
     public MainViewModel()
     {
         Settings = AppSettings.Load();
+        _appState = AppState.Load();
         _modemService = new ModemService();
         _smsService = new SmsService(_modemService);
         _aiService = new AiAssistantService(Settings);
@@ -244,6 +255,8 @@ public partial class MainViewModel : ObservableObject
         CustomUssd2 = Settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
         CustomUssd3 = Settings.General.QuickUssdCommands.ElementAtOrDefault(2) ?? "*102#";
         
+        LoadAppState();
+        
         _modemService.ModemConnected += OnModemConnected;
         _modemService.ModemDisconnected += OnModemDisconnected;
         _modemService.ModemUpdated += OnModemUpdated;
@@ -251,6 +264,75 @@ public partial class MainViewModel : ObservableObject
         
         _modemService.StartMonitoring(5000);
         IsMonitoring = true;
+    }
+
+    private void LoadAppState()
+    {
+        UssdCode = _appState.UssdCode;
+        CustomUssd1 = _appState.CustomUssd1;
+        CustomUssd2 = _appState.CustomUssd2;
+        CustomUssd3 = _appState.CustomUssd3;
+        SmsPhoneNumber = _appState.SmsPhoneNumber;
+        SmsMessage = _appState.SmsMessage;
+        OrangeCashPassword = _appState.OrangeCashPassword;
+        PrimarySenderPhone = _appState.PrimarySenderPhone;
+        TransferAmount = _appState.TransferAmount;
+        OcSeriesTargetPhone = _appState.OcSeriesTargetPhone;
+        OcSeriesAmount = _appState.OcSeriesAmount;
+        OcSeriesDelay = _appState.OcSeriesDelay;
+        RemainingPerModem = _appState.RemainingPerModem;
+        FixedTransferAmount = _appState.FixedTransferAmount;
+        UseFixedAmount = _appState.UseFixedAmount;
+        CustomTransferDelay = _appState.CustomTransferDelay;
+        SequentialDelayMs = _appState.SequentialDelayMs;
+        NewSequentialCommand = _appState.NewSequentialCommand;
+        NewCommandIsReply = _appState.NewCommandIsReply;
+        SenderCashBalance = _appState.SenderCashBalance;
+        SenderCashBalanceRemaining = _appState.SenderCashBalance;
+        IsCashBalanceQueried = _appState.SenderCashBalance > 0;
+        
+        foreach (var cmdState in _appState.SequentialCommands)
+        {
+            SequentialCommands.Add(new SequentialUssdCommand
+            {
+                Order = cmdState.Order,
+                Command = cmdState.Command,
+                IsReply = cmdState.IsReply
+            });
+        }
+    }
+
+    public void SaveAppState()
+    {
+        _appState.UssdCode = UssdCode;
+        _appState.CustomUssd1 = CustomUssd1;
+        _appState.CustomUssd2 = CustomUssd2;
+        _appState.CustomUssd3 = CustomUssd3;
+        _appState.SmsPhoneNumber = SmsPhoneNumber;
+        _appState.SmsMessage = SmsMessage;
+        _appState.OrangeCashPassword = OrangeCashPassword;
+        _appState.PrimarySenderPhone = PrimarySenderPhone;
+        _appState.TransferAmount = TransferAmount;
+        _appState.OcSeriesTargetPhone = OcSeriesTargetPhone;
+        _appState.OcSeriesAmount = OcSeriesAmount;
+        _appState.OcSeriesDelay = OcSeriesDelay;
+        _appState.RemainingPerModem = RemainingPerModem;
+        _appState.FixedTransferAmount = FixedTransferAmount;
+        _appState.UseFixedAmount = UseFixedAmount;
+        _appState.CustomTransferDelay = CustomTransferDelay;
+        _appState.SequentialDelayMs = SequentialDelayMs;
+        _appState.NewSequentialCommand = NewSequentialCommand;
+        _appState.NewCommandIsReply = NewCommandIsReply;
+        _appState.SenderCashBalance = SenderCashBalanceRemaining;
+        
+        _appState.SequentialCommands = SequentialCommands.Select(cmd => new SequentialUssdCommandState
+        {
+            Order = cmd.Order,
+            Command = cmd.Command,
+            IsReply = cmd.IsReply
+        }).ToList();
+        
+        _appState.Save();
     }
 
     private void OnModemConnected(object? sender, Modem modem)
@@ -2346,6 +2428,68 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task QuerySenderCashBalanceAsync()
+    {
+        if (SelectedSenderModem == null)
+        {
+            StatusMessage = "الرجاء اختيار مودم المرسل أولاً";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(OrangeCashPassword))
+        {
+            StatusMessage = "الرجاء إدخال كلمة المرور";
+            return;
+        }
+
+        try
+        {
+            IsProcessing = true;
+            SelectedSenderModem.Status = "جاري استعلام الرصيد...";
+            CustomTransferLog += $"\n🔍 جاري استعلام رصيد الكاش للمرسل...\n";
+            
+            var balanceResult = await _modemService.GetOrangeCashBalanceAsync(
+                SelectedSenderModem.PortName, 
+                OrangeCashPassword);
+            
+            if (decimal.TryParse(
+                System.Text.RegularExpressions.Regex.Match(balanceResult, @"[\d,]+\.?\d*").Value.Replace(",", ""), 
+                out decimal balance))
+            {
+                SenderCashBalance = balance;
+                SenderCashBalanceRemaining = balance;
+                IsCashBalanceQueried = true;
+                SelectedSenderModem.Status = $"رصيد الكاش: {balance} ج.م";
+                CustomTransferLog += $"✅ رصيد الكاش: {balance} ج.م\n";
+                StatusMessage = $"رصيد الكاش: {balance} ج.م";
+                
+                if (TxtTransferTotal > 0 && balance < TxtTransferTotal)
+                {
+                    CustomTransferLog += $"⚠️ تحذير: الرصيد ({balance} ج.م) أقل من الإجمالي المطلوب ({TxtTransferTotal} ج.م)\n";
+                }
+                
+                SaveAppState();
+            }
+            else
+            {
+                CustomTransferLog += $"⚠️ لم يتم التعرف على الرصيد: {balanceResult}\n";
+                StatusMessage = "لم يتم التعرف على الرصيد";
+                SelectedSenderModem.Status = "خطأ في الاستعلام";
+            }
+        }
+        catch (Exception ex)
+        {
+            CustomTransferLog += $"❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+            SelectedSenderModem.Status = "خطأ";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    [RelayCommand]
     private async Task StartCustomTransferAsync()
     {
         if (SelectedSenderModem == null)
@@ -2366,12 +2510,31 @@ public partial class MainViewModel : ObservableObject
             return;
         }
 
+        if (IsCashBalanceQueried && SenderCashBalanceRemaining < TxtTransferTotal)
+        {
+            var result = MessageBox.Show(
+                $"رصيد الكاش المتبقي ({SenderCashBalanceRemaining} ج.م) أقل من الإجمالي المطلوب ({TxtTransferTotal} ج.م).\n\nهل تريد المتابعة؟",
+                "تحذير رصيد غير كافي",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+            
+            if (result == MessageBoxResult.No)
+            {
+                return;
+            }
+        }
+
         try
         {
             IsCustomTransferRunning = true;
             _customTransferCts = new CancellationTokenSource();
             CustomTransferLog = $"🚀 بدء التحويل المخصص من {SelectedSenderModem.PhoneNumber}\n";
-            CustomTransferLog += $"📋 عدد التحويلات: {ExcelTransferItems.Count}\n\n";
+            CustomTransferLog += $"📋 عدد التحويلات: {ExcelTransferItems.Count}\n";
+            if (IsCashBalanceQueried)
+            {
+                CustomTransferLog += $"💰 رصيد الكاش: {SenderCashBalanceRemaining} ج.م\n";
+            }
+            CustomTransferLog += "\n";
 
             int successCount = 0;
             int failCount = 0;
@@ -2386,6 +2549,10 @@ public partial class MainViewModel : ObservableObject
                 CustomTransferLog += $"📤 تحويل {i + 1}/{ExcelTransferItems.Count}\n";
                 CustomTransferLog += $"   إلى: {item.PhoneNumber}\n";
                 CustomTransferLog += $"   المبلغ: {item.Amount} ج.م\n";
+                if (IsCashBalanceQueried)
+                {
+                    CustomTransferLog += $"   💰 الرصيد المتبقي: {SenderCashBalanceRemaining} ج.م\n";
+                }
 
                 var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
                     SelectedSenderModem.PortName,
@@ -2400,6 +2567,13 @@ public partial class MainViewModel : ObservableObject
                     item.Status = "تم ✓";
                     successCount++;
                     CustomTransferLog += $"   ✅ نجح: {message}\n";
+                    
+                    if (IsCashBalanceQueried)
+                    {
+                        SenderCashBalanceRemaining -= item.Amount;
+                        CustomTransferLog += $"   💰 الرصيد بعد الخصم: {SenderCashBalanceRemaining} ج.م\n";
+                        SaveAppState();
+                    }
                 }
                 else
                 {
@@ -2425,8 +2599,13 @@ public partial class MainViewModel : ObservableObject
             CustomTransferLog += $"📊 النتيجة النهائية:\n";
             CustomTransferLog += $"   ✅ نجح: {successCount}\n";
             CustomTransferLog += $"   ❌ فشل: {failCount}\n";
+            if (IsCashBalanceQueried)
+            {
+                CustomTransferLog += $"   💰 الرصيد المتبقي: {SenderCashBalanceRemaining} ج.م\n";
+            }
 
             StatusMessage = $"تم التحويل المخصص: {successCount}/{ExcelTransferItems.Count} نجح";
+            SaveAppState();
         }
         catch (Exception ex)
         {

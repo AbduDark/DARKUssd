@@ -768,27 +768,6 @@
                                                     </TextBlock>
                                                 </ScrollViewer>
 
-                                                <!-- زر استماع للرسائل -->
-                                                <Button Grid.Row="1" Margin="4" Padding="8,6"
-                                                        Command="{Binding DataContext.StartListeningSmsCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                        CommandParameter="{Binding}"
-                                                        ToolTip="بدء الاستماع للرسائل الواردة">
-                                                    <Button.Style>
-                                                        <Style TargetType="Button" BasedOn="{StaticResource ModernButton}">
-                                                            <Setter Property="Background" Value="#1F6FEB"/>
-                                                            <Setter Property="Content" Value="📥 استماع للرسائل"/>
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding IsListeningSms}" Value="True">
-                                                                    <Setter Property="Background" Value="#DA3633"/>
-                                                                    <Setter Property="Content" Value="⏹ إيقاف الاستماع"/>
-                                                                </DataTrigger>
-                                                                <Trigger Property="IsMouseOver" Value="True">
-                                                                    <Setter Property="Opacity" Value="0.9"/>
-                                                                </Trigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </Button.Style>
-                                                </Button>
                                             </Grid>
                                         </Grid>
                                     </Border>
@@ -965,251 +944,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- TopUp شحن البطاقات -->
-            <TabItem Header="💳 شحن البطاقات" Style="{StaticResource TabItemStyle}">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="💳" FontSize="20" Margin="0,0,8,0"/>
-                                <TextBlock Text="شحن البطاقات" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
-                            </StackPanel>
-                            <TextBlock Text="أدخل أرقام الكروت (كل رقم في سطر جديد أو مفصولة بفاصلة)" 
-                                       Foreground="#8B949E" FontSize="13" Margin="0,0,0,8"/>
-                            <TextBox Text="{Binding CardNumbers, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"
-                                     AcceptsReturn="True" TextWrapping="Wrap" Height="100"
-                                     FlowDirection="LeftToRight"/>
-                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                                <Button Content="▶ شحن الكروت" Command="{Binding TopUpCardsCommand}" 
-                                        Style="{StaticResource OrangeButton}"
-                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
-                                <Button Content="🗑 مسح" Command="{Binding ClearTopUpLogCommand}" 
-                                        Style="{StaticResource RedButton}" Margin="8,0,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="📋" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="نتائج الشحن" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                <Border Background="#238636" CornerRadius="4" Padding="6,2" Margin="12,0,0,0">
-                                    <TextBlock Text="{Binding SuccessfulTopUps, StringFormat='✓ {0}'}" FontSize="11" Foreground="White"/>
-                                </Border>
-                                <Border Background="#DA3633" CornerRadius="4" Padding="6,2" Margin="6,0,0,0">
-                                    <TextBlock Text="{Binding FailedTopUps, StringFormat='✗ {0}'}" FontSize="11" Foreground="White"/>
-                                </Border>
-                            </StackPanel>
-
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <TextBlock Text="{Binding TopUpLog}" FontSize="13" Foreground="#C9D1D9" 
-                                           TextWrapping="Wrap" FontFamily="Consolas"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-
-            <!-- BalQry استعلام الرصيد -->
-            <TabItem Header="💰 استعلام الرصيد" Style="{StaticResource TabItemStyle}">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="💰" FontSize="20" Margin="0,0,8,0"/>
-                                <TextBlock Text="استعلام الرصيد" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
-                            </StackPanel>
-                            <TextBlock Text="استعلام رصيد جميع الخطوط المحددة بشكل متوازي" 
-                                       Foreground="#8B949E" FontSize="13" Margin="0,0,0,12"/>
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="▶ استعلام الأرصدة" Command="{Binding QueryAllBalancesCommand}" 
-                                        Style="{StaticResource BlueButton}"
-                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
-                                <Button Content="🗑 مسح" Command="{Binding ClearBalanceLogCommand}" 
-                                        Style="{StaticResource RedButton}" Margin="8,0,0,0"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="📊" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="نتائج الاستعلام" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                            </StackPanel>
-
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <TextBlock Text="{Binding BalanceLog}" FontSize="13" Foreground="#C9D1D9" 
-                                           TextWrapping="Wrap" FontFamily="Consolas"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-
-            <!-- GrpBalQry استعلام جماعي -->
-            <TabItem Header="📊 استعلام جماعي" Style="{StaticResource TabItemStyle}">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="📊" FontSize="20" Margin="0,0,8,0"/>
-                                <TextBlock Text="استعلام جماعي حسب المشغل" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
-                            </StackPanel>
-                            
-                            <Grid Margin="0,0,0,12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                
-                                <TextBlock Text="فلتر المشغل:" Foreground="#8B949E" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                <ComboBox Grid.Column="1" SelectedValue="{Binding SelectedOperatorFilter}" Width="200"
-                                          Background="#21262D" Foreground="#C9D1D9" BorderBrush="#30363D">
-                                    <ComboBoxItem Content="الكل" IsSelected="True" Tag="all"/>
-                                    <ComboBoxItem Content="فودافون" Tag="vodafone"/>
-                                    <ComboBoxItem Content="أورانج" Tag="orange"/>
-                                    <ComboBoxItem Content="اتصالات" Tag="etisalat"/>
-                                    <ComboBoxItem Content="وي" Tag="we"/>
-                                </ComboBox>
-                            </Grid>
-
-                            <StackPanel Orientation="Horizontal">
-                                <Button Content="▶ استعلام جماعي" Command="{Binding QueryGroupBalancesCommand}" 
-                                        Style="{StaticResource OrangeButton}"
-                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
-                                <Button Content="🗑 مسح" Command="{Binding ClearGroupBalanceLogCommand}" 
-                                        Style="{StaticResource RedButton}" Margin="8,0,0,0"/>
-                            </StackPanel>
-
-                            <Border Background="#21262D" CornerRadius="8" Padding="16" Margin="0,12,0,0">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="إجمالي الأرصدة" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding TotalGroupBalance, StringFormat='{}{0:F2} ج.م'}" 
-                                                   FontSize="24" FontWeight="Bold" Foreground="#58A6FF" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                    
-                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
-                                        <TextBlock Text="نجح" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding GroupQuerySuccessCount}" 
-                                                   FontSize="24" FontWeight="Bold" Foreground="#238636" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                    
-                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
-                                        <TextBlock Text="فشل" Foreground="#8B949E" FontSize="12" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding GroupQueryFailCount}" 
-                                                   FontSize="24" FontWeight="Bold" Foreground="#DA3633" HorizontalAlignment="Center"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="📋" FontSize="18" Margin="0,0,8,0"/>
-                                <TextBlock Text="تفاصيل الاستعلام" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                            </StackPanel>
-
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                <TextBlock Text="{Binding BalanceLog}" FontSize="13" Foreground="#C9D1D9" 
-                                           TextWrapping="Wrap" FontFamily="Consolas"/>
-                            </ScrollViewer>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
-
-            <TabItem Header="🤖 المساعد الذكي" Style="{StaticResource TabItemStyle}">
-                <Grid Margin="10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
-                        <StackPanel>
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="🤖" FontSize="20" Margin="0,0,8,0"/>
-                                <TextBlock Text="المساعد الذكي" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                <Border Background="#238636" CornerRadius="4" Padding="8,3" Margin="12,0,0,0">
-                                    <TextBlock Text="AI Powered" FontSize="10" Foreground="White" FontWeight="Bold"/>
-                                </Border>
-                            </StackPanel>
-                            <TextBlock Text="اسأل المساعد الذكي عن أي شيء يتعلق بالمودمات وأوامر USSD" 
-                                       Foreground="#8B949E" FontSize="13"/>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Grid.Row="1" Style="{StaticResource CardPanel}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <TextBlock Text="{Binding AiResponse}" FontSize="14" Foreground="#C9D1D9" 
-                                       TextWrapping="Wrap" Padding="8"/>
-                        </ScrollViewer>
-                    </Border>
-
-                    <Border Grid.Row="2" Style="{StaticResource CardPanel}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-
-                            <TextBox Text="{Binding AiQuestion, UpdateSourceTrigger=PropertyChanged}" 
-                                     Style="{StaticResource ModernTextBox}"
-                                     AcceptsReturn="True" TextWrapping="Wrap" MaxHeight="60"/>
-                            
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="12,0,0,0">
-                                <Button Content="🔍 تحليل الردود" Command="{Binding AnalyzeResponsesCommand}" Style="{StaticResource BlueButton}"/>
-                                <Button Content="💡 اقتراحات" Command="{Binding GetSuggestionsCommand}" Style="{StaticResource OrangeButton}"/>
-                                <Button Content="📤 إرسال" Command="{Binding AskAiCommand}" Style="{StaticResource ModernButton}"/>
-                            </StackPanel>
-                        </Grid>
-                    </Border>
-                </Grid>
-            </TabItem>
 
             <!-- Orange Cash Tab -->
             <TabItem Header="💰 أورانج كاش" Style="{StaticResource OrangeTabItem}">
@@ -1784,21 +1518,46 @@
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
                                     </Grid.ColumnDefinitions>
                                     <StackPanel HorizontalAlignment="Center">
                                         <TextBlock Text="📋 عدد الأرقام" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding TxtTransferCount}" FontSize="28" FontWeight="Bold" 
+                                        <TextBlock Text="{Binding TxtTransferCount}" FontSize="24" FontWeight="Bold" 
                                                    Foreground="#FF7900" HorizontalAlignment="Center" FontFamily="Consolas"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1" HorizontalAlignment="Center">
                                         <TextBlock Text="💰 المبلغ لكل رقم" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding FixedTransferAmount, StringFormat='{}{0} ج.م'}" FontSize="28" FontWeight="Bold" 
+                                        <TextBlock Text="{Binding FixedTransferAmount, StringFormat='{}{0} ج.م'}" FontSize="24" FontWeight="Bold" 
                                                    Foreground="#3FB950" HorizontalAlignment="Center" FontFamily="Consolas"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" HorizontalAlignment="Center">
                                         <TextBlock Text="📊 الإجمالي المطلوب" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
-                                        <TextBlock Text="{Binding TxtTransferTotal, StringFormat='{}{0} ج.م'}" FontSize="28" FontWeight="Bold" 
+                                        <TextBlock Text="{Binding TxtTransferTotal, StringFormat='{}{0} ج.م'}" FontSize="24" FontWeight="Bold" 
                                                    Foreground="#58A6FF" HorizontalAlignment="Center" FontFamily="Consolas"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="3" HorizontalAlignment="Center">
+                                        <TextBlock Text="💵 رصيد الكاش" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
+                                        <TextBlock FontSize="24" FontWeight="Bold" HorizontalAlignment="Center" FontFamily="Consolas">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding SenderCashBalanceRemaining, StringFormat='{}{0} ج.م'}"/>
+                                                    <Setter Property="Foreground" Value="#3FB950"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsCashBalanceQueried}" Value="False">
+                                                            <Setter Property="Text" Value="--"/>
+                                                            <Setter Property="Foreground" Value="#8B949E"/>
+                                                        </DataTrigger>
+                                                        <MultiDataTrigger>
+                                                            <MultiDataTrigger.Conditions>
+                                                                <Condition Binding="{Binding IsCashBalanceQueried}" Value="True"/>
+                                                                <Condition Binding="{Binding SenderCashBalanceRemaining}" Value="0"/>
+                                                            </MultiDataTrigger.Conditions>
+                                                            <Setter Property="Foreground" Value="#DA3633"/>
+                                                        </MultiDataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -1846,28 +1605,38 @@
                             <!-- Settings -->
                             <StackPanel Grid.Row="1">
                                 <TextBlock Text="اختر الرقم المرسل:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
-                                <ComboBox ItemsSource="{Binding Modems}" SelectedItem="{Binding SelectedSenderModem}"
-                                          DisplayMemberPath="DisplayName" Margin="0,0,0,12"
-                                          Background="#FFFFFF" Foreground="#1A1A1A" BorderBrush="#FF7900" BorderThickness="2"
-                                          FontSize="14" FontWeight="SemiBold" Padding="8,6">
-                                    <ComboBox.Resources>
-                                        <Style TargetType="ComboBoxItem">
-                                            <Setter Property="Background" Value="#FFFFFF"/>
-                                            <Setter Property="Foreground" Value="#1A1A1A"/>
-                                            <Setter Property="Padding" Value="12,10"/>
-                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                            <Style.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#FFE5CC"/>
-                                                </Trigger>
-                                                <Trigger Property="IsSelected" Value="True">
-                                                    <Setter Property="Background" Value="#FF7900"/>
-                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
-                                                </Trigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </ComboBox.Resources>
-                                </ComboBox>
+                                <Grid Margin="0,0,0,12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox ItemsSource="{Binding Modems}" SelectedItem="{Binding SelectedSenderModem}"
+                                              DisplayMemberPath="DisplayName"
+                                              Background="#FFFFFF" Foreground="#1A1A1A" BorderBrush="#FF7900" BorderThickness="2"
+                                              FontSize="14" FontWeight="SemiBold" Padding="8,6">
+                                        <ComboBox.Resources>
+                                            <Style TargetType="ComboBoxItem">
+                                                <Setter Property="Background" Value="#FFFFFF"/>
+                                                <Setter Property="Foreground" Value="#1A1A1A"/>
+                                                <Setter Property="Padding" Value="12,10"/>
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                                <Style.Triggers>
+                                                    <Trigger Property="IsMouseOver" Value="True">
+                                                        <Setter Property="Background" Value="#FFE5CC"/>
+                                                    </Trigger>
+                                                    <Trigger Property="IsSelected" Value="True">
+                                                        <Setter Property="Background" Value="#FF7900"/>
+                                                        <Setter Property="Foreground" Value="#FFFFFF"/>
+                                                    </Trigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ComboBox.Resources>
+                                    </ComboBox>
+                                    <Button Grid.Column="1" Content="💰 استعلام الكاش" 
+                                            Command="{Binding QuerySenderCashBalanceCommand}" 
+                                            Style="{StaticResource BlueButton}" Padding="12,6" Margin="8,0,0,0"
+                                            IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                </Grid>
 
                                 <!-- Fixed Amount Section -->
                                 <Border Background="#0D0D0D" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#FF7900" BorderThickness="1">
@@ -2305,30 +2074,6 @@
                             </StackPanel>
                         </Border>
 
-                        <Border Style="{StaticResource CardPanel}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <TextBlock Text="🤖" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="إعدادات الذكاء الاصطناعي" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                </StackPanel>
-
-                                <CheckBox Content="تفعيل المساعد الذكي" IsChecked="{Binding Settings.Ai.Enabled}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,0,0,12"/>
-
-                                <CheckBox Content="تحليل الردود تلقائياً" IsChecked="{Binding Settings.Ai.AutoAnalyzeResponses}" 
-                                          Style="{StaticResource ModernCheckBox}" Margin="0,0,0,12"/>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="API Key:" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Ai.ApiKey}" 
-                                             Style="{StaticResource ModernTextBox}" Width="400" HorizontalAlignment="Left"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
                             <Button Content="💾 حفظ الإعدادات" Command="{Binding SaveSettingsCommand}" Style="{StaticResource ModernButton}"/>

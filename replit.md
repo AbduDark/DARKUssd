@@ -61,15 +61,24 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 -   **AT Command Handling:** Improved AT command parsing to prevent premature termination of responses by filtering `OK` for USSD commands.
 -   **Phone Number Retrieval:** Enhanced `GetPhoneNumberWithUssdFallbackAsync` using multiple regex patterns for `AT+CNUM` and network-specific USSD codes.
 -   **Configuration:** Settings are saved in JSON format.
+-   **Persistent App State (NEW):**
+    -   All user inputs persist between sessions automatically.
+    -   Saved to AppData/ModemPoolManager/appstate.json.
+    -   Includes: USSD codes, passwords, transfer settings, sequential commands, cash balance.
+    -   Auto-save on window close, auto-restore on launch.
 
 ### Core Features
--   **Wave 1 Features (All Visible in UI)**:
+-   **Wave 1 Features (Simplified UI)**:
     -   Main Dashboard - modem management with USSD execution
-    -   SMS - real-time message listening and management
-    -   TopUp - parallel card charging across modems
-    -   BalQry - balance query for all lines
-    -   GrpBalQry - group balance query by operator with statistics
+    -   SMS - message management (SMS listening button removed)
     -   Orange Cash - parallel transfers between sender/receiver pairs
+    -   TXT Transfer - batch transfers with cash balance tracking
+-   **Removed Features (UI Simplification):**
+    -   SMS listening button removed from modem cards
+    -   Card top-up tab removed
+    -   Balance query tab removed
+    -   Group balance query tab removed
+    -   AI assistant tab and AI settings removed
 -   Detailed modem information retrieval (IMEI, IMSI, ICCID, Signal, Operator).
 -   AI-powered USSD response analysis, command suggestions, modem diagnostics, and message analysis.
 -   Comprehensive statistics dashboard and command logging.
@@ -94,7 +103,7 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Import transfer list from TXT files (one phone number per line).
     -   Fixed amount mode: Apply same amount to all phone numbers.
     -   Auto-summary calculation: Shows total lines × amount = total required.
-    -   Summary display with count, per-line amount, and total in prominent cards.
+    -   Summary display with count, per-line amount, total, and sender cash balance.
     -   Support for both TXT (phone-only) and CSV (phone,amount) formats.
     -   Single sender modem to multiple recipients.
     -   DataGrid display with row index, phone, amount, status, result columns.
@@ -103,6 +112,9 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Orange-themed tab with operator styling.
     -   Progress tracking with countdown display.
     -   Start/Stop controls for batch processing.
+    -   **Cash Balance Query:** Query sender's Orange Cash balance before transfers.
+    -   **Local Balance Tracking:** Automatically deduct from local balance on successful transfers.
+    -   **Balance Validation:** Warning when remaining balance is less than total required.
 -   **Modem Card Improvements:**
     -   Increased phone number font size to 18 for better visibility.
     -   Added Reset button next to phone refresh button for full modem reset (AT+CFUN=0/1).
