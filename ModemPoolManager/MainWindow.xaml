@@ -1821,10 +1821,27 @@
 
                             <!-- Settings -->
                             <StackPanel Grid.Row="1">
-                                <TextBlock Text="اختر المودم المرسل:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                <TextBlock Text="اختر الرقم المرسل:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
                                 <ComboBox ItemsSource="{Binding Modems}" SelectedItem="{Binding SelectedSenderModem}"
                                           DisplayMemberPath="DisplayName" Margin="0,0,0,12"
-                                          Background="#0D0D0D" Foreground="#C9D1D9"/>
+                                          Background="#0D1117" Foreground="#C9D1D9" BorderBrush="#30363D">
+                                    <ComboBox.Resources>
+                                        <Style TargetType="ComboBoxItem">
+                                            <Setter Property="Background" Value="#161B22"/>
+                                            <Setter Property="Foreground" Value="#C9D1D9"/>
+                                            <Setter Property="Padding" Value="10,8"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#21262D"/>
+                                                </Trigger>
+                                                <Trigger Property="IsSelected" Value="True">
+                                                    <Setter Property="Background" Value="#0D419D"/>
+                                                    <Setter Property="Foreground" Value="#F0F6FC"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </ComboBox.Resources>
+                                </ComboBox>
 
                                 <!-- Fixed Amount Section -->
                                 <Border Background="#0D0D0D" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#FF7900" BorderThickness="1">
