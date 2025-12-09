@@ -7,7 +7,7 @@ public class OcSeriesService
 {
     private readonly ModemService _modemService;
     private readonly RetryService _retryService;
-    private CancellationTokenSource? _cancellationTokenSource;
+    private CancellationTokenSource? _cancellationTokenSource = new();
     
     public event EventHandler<string>? LogUpdated;
     public event EventHandler<OcTransferResult>? TransferCompleted;

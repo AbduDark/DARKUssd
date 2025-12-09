@@ -112,7 +112,7 @@ public class SmsService
         return messages;
     }
 
-    private string DecodeIfUcs2(string text)
+    private static string DecodeIfUcs2(string text)
     {
         if (string.IsNullOrEmpty(text)) return text;
         
@@ -306,7 +306,7 @@ public class SmsService
         }
     }
 
-    private DateTime ParseSmsTimestamp(string timestamp)
+    private static DateTime ParseSmsTimestamp(string timestamp)
     {
         try
         {
