@@ -20,7 +20,12 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 -   **Color Coding:** Phone numbers are color-coded based on the network operator (e.g., Vodafone: red, Orange: orange, Etisalat: green).
 -   **Real-time Information:** Display of execution time, USSD/SMS responses (scrollable), and success/failure counters per modem.
 -   **Signal Strength Indicator:** Uses `SignalBarsToOpacityConverter` for a visually progressive signal strength display.
--   **Theming:** GitHub Dark Theme.
+-   **Theming:** Pure black (#000000) background with operator-colored accents.
+-   **Color Scheme:**
+    -   Main background: Pure black (#000000)
+    -   Card backgrounds: Dark (#0D0D0D)
+    -   Modem card borders: Colored by operator (Vodafone: red, Orange: orange, Etisalat: green)
+    -   Operator-specific tab styles with colored underlines when selected.
 
 ### Technical Implementations
 -   **Modem Management:**
@@ -85,11 +90,17 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
     -   Real-time countdown display during delays.
     -   Start/Stop controls with cancellation support.
     -   Detailed transfer log with success/failure tracking.
--   **Custom Transfer Tab (تحويل مخصص) - NEW:**
-    -   Import transfer list from CSV files (phone,amount format).
+-   **TXT Transfer Tab (تحويل TXT) - ENHANCED:**
+    -   Import transfer list from TXT files (one phone number per line).
+    -   Fixed amount mode: Apply same amount to all phone numbers.
+    -   Auto-summary calculation: Shows total lines × amount = total required.
+    -   Summary display with count, per-line amount, and total in prominent cards.
+    -   Support for both TXT (phone-only) and CSV (phone,amount) formats.
     -   Single sender modem to multiple recipients.
-    -   DataGrid display of pending transfers with status.
+    -   DataGrid display with row index, phone, amount, status, result columns.
+    -   Real-time amount updates when fixed amount value changes.
     -   Configurable delay between transfers.
+    -   Orange-themed tab with operator styling.
     -   Progress tracking with countdown display.
     -   Start/Stop controls for batch processing.
 -   **Modem Card Improvements:**

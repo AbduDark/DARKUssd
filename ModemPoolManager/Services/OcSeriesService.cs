@@ -376,8 +376,10 @@ public class OcTransferResult
 
 public class ExcelTransferItem
 {
+    public int Index { get; set; }
     public string PhoneNumber { get; set; } = "";
     public int Amount { get; set; }
+    public int OriginalAmount { get; set; }
     public string Status { get; set; } = "في الانتظار";
     public string Result { get; set; } = "";
 }

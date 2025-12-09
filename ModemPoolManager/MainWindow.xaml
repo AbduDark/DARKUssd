@@ -9,7 +9,7 @@
         Title="مدير المودمات - Modem Pool Manager Pro" 
         Height="900" Width="1400"
         FlowDirection="RightToLeft"
-        Background="#0D1117"
+        Background="#000000"
         WindowStartupLocation="CenterScreen"
         MinHeight="700" MinWidth="1100">
 
@@ -127,12 +127,99 @@
         </Style>
 
         <Style x:Key="CardPanel" TargetType="Border">
-            <Setter Property="Background" Value="#161B22"/>
+            <Setter Property="Background" Value="#0D0D0D"/>
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="16"/>
             <Setter Property="Margin" Value="6"/>
-            <Setter Property="BorderBrush" Value="#30363D"/>
+            <Setter Property="BorderBrush" Value="#1A1A1A"/>
             <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <Style x:Key="VodafoneTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}"
+                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#E60000"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#E60000"/>
+                                <Setter TargetName="Border" Property="Background" Value="#1A0000"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#E60000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="OrangeTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}"
+                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#FF7900"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#FF7900"/>
+                                <Setter TargetName="Border" Property="Background" Value="#1A0F00"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#FF7900"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="EtisalatTabItem" TargetType="TabItem">
+            <Setter Property="Foreground" Value="#8B949E"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="16,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="Border" Background="{TemplateBinding Background}" 
+                                Padding="{TemplateBinding Padding}"
+                                BorderThickness="0,0,0,2" BorderBrush="Transparent">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#80B826"/>
+                                <Setter TargetName="Border" Property="BorderBrush" Value="#80B826"/>
+                                <Setter TargetName="Border" Property="Background" Value="#0A1A00"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="#80B826"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style x:Key="TabItemStyle" TargetType="TabItem">
@@ -177,7 +264,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,0,0,1" Padding="16,12">
+        <Border Grid.Row="0" Background="#000000" BorderBrush="#1A1A1A" BorderThickness="0,0,0,1" Padding="16,12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
@@ -312,7 +399,9 @@
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
-                                    <Border Margin="6" Background="#0D1117" BorderBrush="#30363D" BorderThickness="1" CornerRadius="8" MinHeight="200">
+                                    <Border Margin="6" Background="#000000" 
+                                            BorderBrush="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}" 
+                                            BorderThickness="2" CornerRadius="8" MinHeight="200">
                                         <Border.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="🔄 إعادة تشغيل المودم" 
@@ -330,25 +419,13 @@
                                                           CommandParameter="{Binding}"/>
                                             </ContextMenu>
                                         </Border.ContextMenu>
-                                        <Border.Style>
-                                            <Style TargetType="Border">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding Status}" Value="نجح">
-                                                        <Setter Property="BorderBrush" Value="#238636"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding Status}" Value="فشل">
-                                                        <Setter Property="BorderBrush" Value="#DA3633"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </Border.Style>
                                         <Grid>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto"/>
                                                 <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
-                                            <Border Grid.Row="0" Background="#161B22" Padding="10,8" CornerRadius="8,8,0,0">
+                                            <Border Grid.Row="0" Background="#0D0D0D" Padding="10,8" CornerRadius="6,6,0,0">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
@@ -1111,7 +1188,7 @@
             </TabItem>
 
             <!-- Orange Cash Tab -->
-            <TabItem Header="💰 أورانج كاش" Style="{StaticResource TabItemStyle}">
+            <TabItem Header="💰 أورانج كاش" Style="{StaticResource OrangeTabItem}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -1416,7 +1493,7 @@
             </TabItem>
 
             <!-- OC Series Tab - تحويل متسلسل -->
-            <TabItem Header="🔄 OC متسلسل" Style="{StaticResource TabItemStyle}">
+            <TabItem Header="🔄 OC متسلسل" Style="{StaticResource OrangeTabItem}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -1651,11 +1728,11 @@
             </TabItem>
 
             <!-- Custom Orange Transfer Tab - تحويل مخصص -->
-            <TabItem Header="📊 تحويل Excel" Style="{StaticResource TabItemStyle}">
+            <TabItem Header="📊 تحويل TXT" Style="{StaticResource OrangeTabItem}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="350"/>
+                        <ColumnDefinition Width="380"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Left Panel - Transfer List -->
@@ -1663,33 +1740,61 @@
                         <Grid>
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                <TextBlock Text="📊" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="📄" FontSize="18" Margin="0,0,8,0"/>
                                 <TextBlock Text="قائمة التحويلات" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                <Button Content="📂 استيراد Excel" Command="{Binding ImportExcelCommand}" 
-                                        Style="{StaticResource BlueButton}" Margin="20,0,0,0" Padding="12,6"/>
+                                <Button Content="📂 استيراد TXT" Command="{Binding ImportExcelCommand}" 
+                                        Style="{StaticResource OrangeButton}" Margin="20,0,0,0" Padding="12,6"/>
                                 <Button Content="🗑 مسح" Command="{Binding ClearExcelTransfersCommand}" 
                                         Style="{StaticResource RedButton}" Margin="8,0,0,0" Padding="12,6"/>
                             </StackPanel>
 
-                            <DataGrid Grid.Row="1" ItemsSource="{Binding ExcelTransferItems}" 
+                            <!-- Summary Section -->
+                            <Border Grid.Row="1" Background="#1A0F00" BorderBrush="#FF7900" BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel HorizontalAlignment="Center">
+                                        <TextBlock Text="📋 عدد الأرقام" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TxtTransferCount}" FontSize="28" FontWeight="Bold" 
+                                                   Foreground="#FF7900" HorizontalAlignment="Center" FontFamily="Consolas"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Center">
+                                        <TextBlock Text="💰 المبلغ لكل رقم" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding FixedTransferAmount, StringFormat='{}{0} ج.م'}" FontSize="28" FontWeight="Bold" 
+                                                   Foreground="#3FB950" HorizontalAlignment="Center" FontFamily="Consolas"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                        <TextBlock Text="📊 الإجمالي المطلوب" FontSize="12" Foreground="#8B949E" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="{Binding TxtTransferTotal, StringFormat='{}{0} ج.م'}" FontSize="28" FontWeight="Bold" 
+                                                   Foreground="#58A6FF" HorizontalAlignment="Center" FontFamily="Consolas"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <DataGrid Grid.Row="2" ItemsSource="{Binding ExcelTransferItems}" 
                                       AutoGenerateColumns="False" Background="Transparent" 
                                       BorderThickness="0" CanUserAddRows="False" CanUserDeleteRows="False"
                                       GridLinesVisibility="Horizontal" HeadersVisibility="Column"
-                                      RowBackground="#0D1117" AlternatingRowBackground="#161B22"
+                                      RowBackground="#000000" AlternatingRowBackground="#0D0D0D"
                                       Foreground="#C9D1D9">
                                 <DataGrid.ColumnHeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
-                                        <Setter Property="Background" Value="#21262D"/>
+                                        <Setter Property="Background" Value="#1A1A1A"/>
                                         <Setter Property="Foreground" Value="#8B949E"/>
                                         <Setter Property="Padding" Value="12,8"/>
                                         <Setter Property="FontWeight" Value="Bold"/>
                                     </Style>
                                 </DataGrid.ColumnHeaderStyle>
                                 <DataGrid.Columns>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="50" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="رقم الهاتف" Binding="{Binding PhoneNumber}" Width="180" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount}" Width="100" IsReadOnly="True"/>
                                     <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="120" IsReadOnly="True"/>
@@ -1710,8 +1815,8 @@
 
                             <!-- Header -->
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                <TextBlock Text="📊" FontSize="24" Margin="0,0,10,0"/>
-                                <TextBlock Text="تحويل من Excel" FontSize="20" FontWeight="Bold" Foreground="#D29922"/>
+                                <TextBlock Text="📄" FontSize="24" Margin="0,0,10,0"/>
+                                <TextBlock Text="تحويل من TXT" FontSize="20" FontWeight="Bold" Foreground="#FF7900"/>
                             </StackPanel>
 
                             <!-- Settings -->
@@ -1719,7 +1824,23 @@
                                 <TextBlock Text="اختر المودم المرسل:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
                                 <ComboBox ItemsSource="{Binding Modems}" SelectedItem="{Binding SelectedSenderModem}"
                                           DisplayMemberPath="DisplayName" Margin="0,0,0,12"
-                                          Background="#0D1117" Foreground="#C9D1D9"/>
+                                          Background="#0D0D0D" Foreground="#C9D1D9"/>
+
+                                <!-- Fixed Amount Section -->
+                                <Border Background="#0D0D0D" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#FF7900" BorderThickness="1">
+                                    <StackPanel>
+                                        <CheckBox IsChecked="{Binding UseFixedAmount}" Content="استخدام مبلغ موحد لجميع الأرقام" 
+                                                  Foreground="#F0F6FC" FontSize="13" Margin="0,0,0,8"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="المبلغ لكل سطر:" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                            <TextBox Text="{Binding FixedTransferAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="16" 
+                                                     FontWeight="Bold" Width="100"
+                                                     FlowDirection="LeftToRight" IsEnabled="{Binding UseFixedAmount}"/>
+                                            <TextBlock Text="ج.م" Foreground="#FF7900" FontSize="14" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
 
                                 <TextBlock Text="كلمة السر:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
                                 <TextBox Text="{Binding OrangeCashPassword, UpdateSourceTrigger=PropertyChanged}" 
@@ -1732,12 +1853,12 @@
                                          FlowDirection="LeftToRight" Margin="0,0,0,16"/>
 
                                 <!-- Countdown Display -->
-                                <Border Background="#21262D" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                                <Border Background="#1A0F00" CornerRadius="8" Padding="12" Margin="0,0,0,12"
                                         Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}">
                                     <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock Text="⏱️ انتظار" FontSize="14" Foreground="#D29922" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="⏱️ انتظار" FontSize="14" Foreground="#FF7900" HorizontalAlignment="Center"/>
                                         <TextBlock Text="{Binding CustomTransferCountdown, StringFormat='{}{0} ثانية'}" 
-                                                   FontSize="24" FontWeight="Bold" Foreground="#D29922" HorizontalAlignment="Center"/>
+                                                   FontSize="24" FontWeight="Bold" Foreground="#FF7900" HorizontalAlignment="Center"/>
                                     </StackPanel>
                                 </Border>
 
@@ -1762,7 +1883,7 @@
                             </StackPanel>
 
                             <!-- Log -->
-                            <Border Grid.Row="2" Background="#0D1117" CornerRadius="8" Margin="0,16,0,0" Padding="8">
+                            <Border Grid.Row="2" Background="#000000" CornerRadius="8" Margin="0,16,0,0" Padding="8">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto"/>

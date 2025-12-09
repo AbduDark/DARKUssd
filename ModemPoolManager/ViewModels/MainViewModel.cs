@@ -191,6 +191,18 @@ public partial class MainViewModel : ObservableObject
     private Modem? _selectedSenderModem;
 
     [ObservableProperty]
+    private int _fixedTransferAmount = 100;
+
+    [ObservableProperty]
+    private bool _useFixedAmount = true;
+
+    [ObservableProperty]
+    private int _txtTransferCount;
+
+    [ObservableProperty]
+    private int _txtTransferTotal;
+
+    [ObservableProperty]
     private ObservableCollection<SequentialUssdCommand> _sequentialCommands = new();
 
     [ObservableProperty]
@@ -2173,8 +2185,8 @@ public partial class MainViewModel : ObservableObject
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
             {
-                Filter = "CSV Files|*.csv|Text Files|*.txt|All Files|*.*",
-                Title = "اختر ملف التحويلات (CSV)"
+                Filter = "Text Files|*.txt|CSV Files|*.csv|All Files|*.*",
+                Title = "اختر ملف التحويلات (TXT أو CSV)"
             };
 
             if (dialog.ShowDialog() == true)
@@ -2192,26 +2204,68 @@ public partial class MainViewModel : ObservableObject
                 var lines = System.IO.File.ReadAllLines(dialog.FileName);
                 int importedCount = 0;
                 int skippedCount = 0;
+
+                // Detect if it's a simple TXT file (one phone per line) or CSV with amounts
+                bool isTxtWithPhoneOnly = extension == ".txt" && UseFixedAmount;
                 
-                foreach (var line in lines.Skip(1))
+                foreach (var line in lines)
                 {
                     if (string.IsNullOrWhiteSpace(line)) continue;
                     
-                    var parts = line.Split(new[] { ',', '\t', ';' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2)
+                    var trimmedLine = line.Trim();
+                    
+                    // Skip header-like lines
+                    if (trimmedLine.StartsWith("phone", StringComparison.OrdinalIgnoreCase) ||
+                        trimmedLine.StartsWith("رقم", StringComparison.OrdinalIgnoreCase) ||
+                        trimmedLine.StartsWith("#"))
                     {
+                        continue;
+                    }
+                    
+                    var parts = line.Split(new[] { ',', '\t', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                    
+                    if (isTxtWithPhoneOnly || parts.Length == 1)
+                    {
+                        // TXT file with just phone numbers - use fixed amount
+                        var phone = parts[0].Trim().Replace("\"", "");
+                        
+                        // Clean phone number (allow digits only, with optional +)
+                        phone = System.Text.RegularExpressions.Regex.Replace(phone, @"[^\d+]", "");
+                        
+                        if (!string.IsNullOrEmpty(phone) && phone.Length >= 10)
+                        {
+                            importedCount++;
+                            ExcelTransferItems.Add(new ExcelTransferItem
+                            {
+                                Index = importedCount,
+                                PhoneNumber = phone,
+                                Amount = FixedTransferAmount,
+                                OriginalAmount = FixedTransferAmount,
+                                Status = "في الانتظار"
+                            });
+                        }
+                        else
+                        {
+                            skippedCount++;
+                        }
+                    }
+                    else if (parts.Length >= 2)
+                    {
+                        // CSV with phone and amount
                         var phone = parts[0].Trim().Replace("\"", "");
                         var amountStr = parts[1].Trim().Replace("\"", "");
                         
                         if (int.TryParse(amountStr, out int amount) && amount > 0 && !string.IsNullOrEmpty(phone))
                         {
+                            importedCount++;
                             ExcelTransferItems.Add(new ExcelTransferItem
                             {
+                                Index = importedCount,
                                 PhoneNumber = phone,
-                                Amount = amount,
+                                Amount = UseFixedAmount ? FixedTransferAmount : amount,
+                                OriginalAmount = amount,
                                 Status = "في الانتظار"
                             });
-                            importedCount++;
                         }
                         else
                         {
@@ -2224,12 +2278,24 @@ public partial class MainViewModel : ObservableObject
                     }
                 }
 
+                // Update summary
+                UpdateTransferSummary();
+
                 CustomTransferLog = $"✅ تم استيراد {importedCount} عملية تحويل\n";
+                if (UseFixedAmount)
+                {
+                    CustomTransferLog += $"💰 المبلغ الموحد: {FixedTransferAmount} ج.م\n";
+                }
+                else
+                {
+                    CustomTransferLog += $"💰 المبالغ: حسب الملف (مبلغ مختلف لكل سطر)\n";
+                }
+                CustomTransferLog += $"📊 إجمالي المبلغ المطلوب: {TxtTransferTotal} ج.م\n";
                 if (skippedCount > 0)
                 {
                     CustomTransferLog += $"⚠ تم تخطي {skippedCount} سطر غير صالح\n";
                 }
-                StatusMessage = $"تم استيراد {importedCount} تحويل من الملف";
+                StatusMessage = $"تم استيراد {importedCount} تحويل - الإجمالي: {TxtTransferTotal} ج.م";
             }
         }
         catch (Exception ex)
@@ -2239,11 +2305,43 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    private void UpdateTransferSummary()
+    {
+        TxtTransferCount = ExcelTransferItems.Count;
+        TxtTransferTotal = ExcelTransferItems.Sum(x => x.Amount);
+    }
+
+    partial void OnFixedTransferAmountChanged(int value)
+    {
+        if (UseFixedAmount && ExcelTransferItems.Count > 0)
+        {
+            foreach (var item in ExcelTransferItems)
+            {
+                item.Amount = value;
+            }
+            UpdateTransferSummary();
+        }
+    }
+
+    partial void OnUseFixedAmountChanged(bool value)
+    {
+        if (ExcelTransferItems.Count > 0)
+        {
+            foreach (var item in ExcelTransferItems)
+            {
+                item.Amount = value ? FixedTransferAmount : item.OriginalAmount;
+            }
+            UpdateTransferSummary();
+        }
+    }
+
     [RelayCommand]
     private void ClearExcelTransfers()
     {
         ExcelTransferItems.Clear();
         CustomTransferLog = "";
+        TxtTransferCount = 0;
+        TxtTransferTotal = 0;
         StatusMessage = "تم مسح قائمة التحويلات";
     }
 
