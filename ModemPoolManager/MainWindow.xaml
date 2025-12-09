@@ -16,6 +16,7 @@
     <Window.Resources>
         <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
         <converters:OperatorToBrushConverter x:Key="OperatorToBrushConverter"/>
+        <converters:OperatorToGlowColorConverter x:Key="OperatorToGlowColorConverter"/>
         <converters:SignalColorConverter x:Key="SignalColorConverter"/>
         <converters:SignalBarsToOpacityConverter x:Key="SignalBarsToOpacityConverter"/>
         <converters:StringToVisibilityConverter x:Key="StringToVisibility"/>
@@ -402,6 +403,29 @@
                                     <Border Margin="6" Background="#000000" 
                                             BorderBrush="{Binding Operator, Converter={StaticResource OperatorToBrushConverter}}" 
                                             BorderThickness="2" CornerRadius="8" MinHeight="200">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Setter Property="Effect">
+                                                    <Setter.Value>
+                                                        <DropShadowEffect ShadowDepth="0" BlurRadius="15" 
+                                                                          Color="{Binding Operator, Converter={StaticResource OperatorToGlowColorConverter}}"
+                                                                          Opacity="0.6"/>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Style.Triggers>
+                                                    <EventTrigger RoutedEvent="Loaded">
+                                                        <BeginStoryboard>
+                                                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.Opacity)"
+                                                                                 From="0.3" To="0.9" Duration="0:0:2"/>
+                                                                <DoubleAnimation Storyboard.TargetProperty="(UIElement.Effect).(DropShadowEffect.BlurRadius)"
+                                                                                 From="10" To="25" Duration="0:0:2"/>
+                                                            </Storyboard>
+                                                        </BeginStoryboard>
+                                                    </EventTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
                                         <Border.ContextMenu>
                                             <ContextMenu>
                                                 <MenuItem Header="🔄 إعادة تشغيل المودم" 
@@ -1824,19 +1848,21 @@
                                 <TextBlock Text="اختر الرقم المرسل:" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
                                 <ComboBox ItemsSource="{Binding Modems}" SelectedItem="{Binding SelectedSenderModem}"
                                           DisplayMemberPath="DisplayName" Margin="0,0,0,12"
-                                          Background="#0D1117" Foreground="#C9D1D9" BorderBrush="#30363D">
+                                          Background="#FFFFFF" Foreground="#1A1A1A" BorderBrush="#FF7900" BorderThickness="2"
+                                          FontSize="14" FontWeight="SemiBold" Padding="8,6">
                                     <ComboBox.Resources>
                                         <Style TargetType="ComboBoxItem">
-                                            <Setter Property="Background" Value="#161B22"/>
-                                            <Setter Property="Foreground" Value="#C9D1D9"/>
-                                            <Setter Property="Padding" Value="10,8"/>
+                                            <Setter Property="Background" Value="#FFFFFF"/>
+                                            <Setter Property="Foreground" Value="#1A1A1A"/>
+                                            <Setter Property="Padding" Value="12,10"/>
+                                            <Setter Property="FontWeight" Value="SemiBold"/>
                                             <Style.Triggers>
                                                 <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter Property="Background" Value="#21262D"/>
+                                                    <Setter Property="Background" Value="#FFE5CC"/>
                                                 </Trigger>
                                                 <Trigger Property="IsSelected" Value="True">
-                                                    <Setter Property="Background" Value="#0D419D"/>
-                                                    <Setter Property="Foreground" Value="#F0F6FC"/>
+                                                    <Setter Property="Background" Value="#FF7900"/>
+                                                    <Setter Property="Foreground" Value="#FFFFFF"/>
                                                 </Trigger>
                                             </Style.Triggers>
                                         </Style>
@@ -1906,7 +1932,11 @@
                                         <RowDefinition Height="Auto"/>
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
-                                    <TextBlock Text="📋 سجل التحويلات" FontSize="13" Foreground="#8B949E" Margin="0,0,0,8"/>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <TextBlock Text="📋 سجل التحويلات" FontSize="13" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                        <Button Content="📖 عرض السجل" Command="{Binding ShowTransferLogCommand}" 
+                                                Style="{StaticResource BlueButton}" Padding="10,4" Margin="12,0,0,0" FontSize="11"/>
+                                    </StackPanel>
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                                         <TextBlock Text="{Binding CustomTransferLog}" FontSize="11" 
                                                    Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap"/>

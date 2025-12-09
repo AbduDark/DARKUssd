@@ -2449,6 +2449,14 @@ public partial class MainViewModel : ObservableObject
         StatusMessage = "تم إيقاف التحويل المخصص";
     }
 
+    [RelayCommand]
+    private void ShowTransferLog()
+    {
+        var logWindow = new ModemPoolManager.TransferLogWindow(CustomTransferLog);
+        logWindow.Owner = System.Windows.Application.Current.MainWindow;
+        logWindow.ShowDialog();
+    }
+
     #endregion
 
     #region Sequential USSD Commands
