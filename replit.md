@@ -18,6 +18,7 @@ The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems a
 
 ### Technical Implementations
 - **Modem Management:** Supports up to 12 ZTE modems via WMI queries for automatic detection. Features parallel command execution, robust reconnection logic (cleaning up resources and re-detecting), and automatic removal of disconnected modems from the UI.
+- **Force Cleanup & Rescan:** New `DisposeAllPorts()` and `ForceRescanAsync()` methods fix modem detection after frequent connect/disconnect cycles. Falls back to scanning all COM ports when ZTE NMEA WMI enumeration fails. Uses retry logic with exponential backoff for port testing.
 - **Phone Number & Operator Retrieval:** Fast retrieval using operator-specific USSD codes (e.g., Vodafone `*878#`). Automatically retries fetching unknown numbers every 5 seconds.
 - **Modem Control:** Improved modem restart (AT+CFUN=0/1) and network mode management (automatic 2G/3G setting based on operator using AT+ZSNT or AT^SYSCFG).
 - **USSD Commands:** Reliable `SendUssdCommandAsync` for response capture, handling unsolicited responses, and decoding (GSM-7 & UCS-2). Supports sequential USSD commands with reply functionality.
