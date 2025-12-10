@@ -556,7 +556,7 @@ public partial class MainViewModel : ObservableObject
             
             StatusMessage = "🔍 جاري البحث في جميع المنافذ...";
             
-            var detectedModems = await _modemService.ForceRescanAsync();
+            var detectedModems = await _modemService.ForceRescanAsync(12);
             
             foreach (var modem in detectedModems.Where(m => m.IsConnected))
             {
