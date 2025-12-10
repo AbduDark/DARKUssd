@@ -535,6 +535,67 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    [RelayCommand]
+    private async Task ForceCleanupAndRescanAsync()
+    {
+        try
+        {
+            IsProcessing = true;
+            StatusMessage = "⚡ جاري التنظيف القسري وإعادة البحث عن المودمات...";
+            
+            _modemService.StopMonitoring();
+            IsMonitoring = false;
+            
+            Modems.Clear();
+            Results.Clear();
+            UpdateCounts();
+            
+            _modemService.DisposeAllPorts();
+            
+            await Task.Delay(1000);
+            
+            StatusMessage = "🔍 جاري البحث في جميع المنافذ...";
+            
+            var detectedModems = await _modemService.ForceRescanAsync();
+            
+            foreach (var modem in detectedModems.Where(m => m.IsConnected))
+            {
+                modem.Index = Modems.Count + 1;
+                Modems.Add(modem);
+            }
+
+            UpdateCounts();
+            
+            if (ConnectedCount == 0)
+            {
+                var allPorts = _modemService.GetAllAvailableComPorts();
+                if (allPorts.Count > 0)
+                {
+                    StatusMessage = $"⚠️ لم يتم العثور على مودمات. المنافذ المتاحة: {string.Join(", ", allPorts)}";
+                }
+                else
+                {
+                    StatusMessage = "❌ لم يتم العثور على أي منفذ COM - تحقق من الاتصال";
+                }
+            }
+            else
+            {
+                StatusMessage = $"✅ تم العثور على {ConnectedCount} مودم متصل بنجاح!";
+                
+                _modemService.StartMonitoring(5000);
+                IsMonitoring = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
     private bool IsPhoneNumberUnknown(string? phoneNumber)
     {
         if (string.IsNullOrWhiteSpace(phoneNumber))

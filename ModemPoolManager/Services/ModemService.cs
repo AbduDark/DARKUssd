@@ -2273,26 +2273,280 @@ public class ModemService : IDisposable
 
     #endregion
 
-    public void Dispose()
+    #region Force Cleanup & Rescan Methods
+
+    public void DisposeAllPorts()
     {
-        StopMonitoring();
+        Console.WriteLine("[Cleanup] جاري إغلاق جميع المنافذ بشكل قسري...");
         
-        foreach (var port in _persistentPorts.Values)
+        var portNames = _persistentPorts.Keys.ToList();
+        foreach (var portName in portNames)
         {
             try
             {
-                if (port.IsOpen)
-                    port.Close();
-                port.Dispose();
+                if (_persistentPorts.TryRemove(portName, out var port))
+                {
+                    try
+                    {
+                        if (port.IsOpen)
+                        {
+                            port.DiscardInBuffer();
+                            port.DiscardOutBuffer();
+                            port.Close();
+                        }
+                        port.Dispose();
+                        Console.WriteLine($"[Cleanup] تم إغلاق {portName}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"[Cleanup] خطأ في إغلاق {portName}: {ex.Message}");
+                    }
+                }
             }
             catch { }
         }
-        _persistentPorts.Clear();
-
-        foreach (var semaphore in _portLocks.Values)
+        
+        var lockNames = _portLocks.Keys.ToList();
+        foreach (var lockName in lockNames)
         {
-            semaphore.Dispose();
+            try
+            {
+                if (_portLocks.TryRemove(lockName, out var lockObj))
+                {
+                    lockObj.Dispose();
+                }
+            }
+            catch { }
         }
-        _portLocks.Clear();
+        
+        _activeModems.Clear();
+        _phoneNumberFetchInProgress.Clear();
+        
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        
+        Console.WriteLine("[Cleanup] تم إغلاق جميع المنافذ بنجاح ✓");
+    }
+
+    public async Task<List<Modem>> ForceRescanAsync(int maxModems = 12)
+    {
+        Console.WriteLine("[ForceRescan] بدء البحث القسري عن المودمات...");
+        
+        DisposeAllPorts();
+        
+        await Task.Delay(500);
+        
+        var modems = new List<Modem>();
+        var ports = GetZTEDiagnosticsPorts();
+        
+        if (ports.Count == 0)
+        {
+            Console.WriteLine("[ForceRescan] لم يتم العثور على أجهزة ZTE NMEA، جاري البحث في جميع المنافذ...");
+            ports = GetAllAvailableComPorts();
+        }
+        
+        Console.WriteLine($"[ForceRescan] المنافذ المكتشفة: {string.Join(", ", ports)}");
+        
+        foreach (var (port, index) in ports.Take(maxModems).Select((p, i) => (p, i)))
+        {
+            var modem = new Modem
+            {
+                Index = index + 1,
+                PortName = port
+            };
+
+            try
+            {
+                Console.WriteLine($"[ForceRescan] جاري اختبار {port}...");
+                var isConnected = await TestPortConnectionWithRetryAsync(port, 3);
+                modem.IsConnected = isConnected;
+                modem.Status = isConnected ? "متصل" : "غير متصل";
+                
+                if (isConnected)
+                {
+                    _activeModems.TryAdd(port, modem);
+                    Console.WriteLine($"[ForceRescan] {port} متصل ✓");
+                }
+            }
+            catch (Exception ex)
+            {
+                modem.IsConnected = false;
+                modem.Status = "خطأ في الاتصال";
+                Console.WriteLine($"[ForceRescan] خطأ في {port}: {ex.Message}");
+            }
+
+            modems.Add(modem);
+        }
+
+        Console.WriteLine($"[ForceRescan] تم اكتشاف {modems.Count(m => m.IsConnected)} مودم متصل");
+        return modems;
+    }
+
+    public List<string> GetAllAvailableComPorts()
+    {
+        var ports = new List<string>();
+        
+        try
+        {
+            var availablePorts = SerialPort.GetPortNames();
+            foreach (var port in availablePorts)
+            {
+                if (!string.IsNullOrEmpty(port) && port.StartsWith("COM", StringComparison.OrdinalIgnoreCase))
+                {
+                    ports.Add(port);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[GetAllPorts] خطأ: {ex.Message}");
+        }
+        
+        try
+        {
+            using var searcher = new ManagementObjectSearcher(
+                "root\\CIMV2", "SELECT * FROM Win32_SerialPort");
+            
+            foreach (ManagementObject obj in searcher.Get())
+            {
+                var deviceId = obj["DeviceID"]?.ToString();
+                if (!string.IsNullOrEmpty(deviceId) && !ports.Contains(deviceId))
+                {
+                    ports.Add(deviceId);
+                }
+            }
+        }
+        catch { }
+        
+        return ports.Distinct()
+            .Where(p => !string.IsNullOrEmpty(p))
+            .OrderBy(p => 
+            {
+                var numStr = Regex.Match(p, @"\d+").Value;
+                return int.TryParse(numStr, out var num) ? num : 999;
+            })
+            .ToList();
+    }
+
+    private async Task<bool> TestPortConnectionWithRetryAsync(string portName, int retries = 3)
+    {
+        for (int attempt = 1; attempt <= retries; attempt++)
+        {
+            try
+            {
+                CleanupPort(portName);
+                
+                await Task.Delay(100);
+                
+                using var testPort = new SerialPort(portName, _baudRate, Parity.None, 8, StopBits.One)
+                {
+                    ReadTimeout = 2000,
+                    WriteTimeout = 2000
+                };
+                
+                testPort.Open();
+                testPort.DiscardInBuffer();
+                testPort.DiscardOutBuffer();
+                
+                testPort.Write("AT\r");
+                await Task.Delay(500);
+                
+                var response = testPort.ReadExisting();
+                testPort.Close();
+                
+                if (response.Contains("OK"))
+                {
+                    return true;
+                }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                Console.WriteLine($"[{portName}] المنفذ مشغول، المحاولة {attempt}/{retries}...");
+                await Task.Delay(500 * attempt);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[{portName}] خطأ في المحاولة {attempt}: {ex.Message}");
+                await Task.Delay(200);
+            }
+        }
+        
+        return false;
+    }
+
+    public async Task<List<Modem>> RefreshAllModemsAsync(List<Modem> currentModems)
+    {
+        Console.WriteLine("[Refresh] جاري تحديث حالة المودمات...");
+        
+        foreach (var modem in currentModems.Where(m => !m.IsConnected))
+        {
+            CleanupPort(modem.PortName);
+        }
+        
+        await Task.Delay(200);
+        
+        var ports = GetZTEDiagnosticsPorts();
+        
+        if (ports.Count == 0)
+        {
+            ports = GetAllAvailableComPorts();
+        }
+        
+        foreach (var modem in currentModems)
+        {
+            if (ports.Contains(modem.PortName))
+            {
+                if (!modem.IsConnected)
+                {
+                    var isConnected = await TestPortConnectionWithRetryAsync(modem.PortName, 2);
+                    modem.IsConnected = isConnected;
+                    modem.Status = isConnected ? "متصل" : "غير متصل";
+                    
+                    if (isConnected)
+                    {
+                        _activeModems.TryAdd(modem.PortName, modem);
+                    }
+                }
+            }
+            else
+            {
+                modem.IsConnected = false;
+                modem.Status = "تم الفصل";
+                _activeModems.TryRemove(modem.PortName, out _);
+                CleanupPort(modem.PortName);
+            }
+        }
+        
+        foreach (var port in ports)
+        {
+            if (!currentModems.Any(m => m.PortName == port))
+            {
+                var isConnected = await TestPortConnectionWithRetryAsync(port, 2);
+                if (isConnected)
+                {
+                    var newModem = new Modem
+                    {
+                        Index = currentModems.Count + 1,
+                        PortName = port,
+                        IsConnected = true,
+                        Status = "متصل"
+                    };
+                    currentModems.Add(newModem);
+                    _activeModems.TryAdd(port, newModem);
+                    Console.WriteLine($"[Refresh] تم اكتشاف مودم جديد: {port}");
+                }
+            }
+        }
+        
+        Console.WriteLine($"[Refresh] تم التحديث - {currentModems.Count(m => m.IsConnected)} مودم متصل");
+        return currentModems;
+    }
+
+    #endregion
+
+    public void Dispose()
+    {
+        StopMonitoring();
+        DisposeAllPorts();
     }
 }
