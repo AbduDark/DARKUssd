@@ -1000,15 +1000,36 @@ public class ModemService : IDisposable
 
         try
         {
-            var response = await SendUssdCommandPublicAsync(portName, ussdCode, timeoutMs / 1000);
-            result.Response = response;
-            result.IsSuccess = !string.IsNullOrEmpty(response) && !response.Contains("ERROR") && !response.Contains("خطأ");
+            var encodedUssd = EncodeUssd(ussdCode);
+            var command = $"AT+CUSD=1,\"{encodedUssd}\",15";
+            
+            var rawResponse = await SendUssdCommandAsync(portName, command, timeoutMs / 1000);
+            
+            result.Response = DecodeUssdResponse(rawResponse);
+            result.IsSuccess = rawResponse.Contains("+CUSD:");
+            
+            if (!result.IsSuccess)
+            {
+                if (rawResponse.Contains("No USSD response received"))
+                {
+                    result.ErrorMessage = "No USSD response received";
+                    result.Response = "لم يتم استلام رد USSD خلال فترة الانتظار";
+                }
+                else if (rawResponse.Contains("ERROR"))
+                {
+                    result.ErrorMessage = "خطأ من المودم";
+                }
+                else
+                {
+                    result.ErrorMessage = "لا توجد استجابة من الشبكة";
+                }
+            }
         }
         catch (Exception ex)
         {
             result.IsSuccess = false;
             result.ErrorMessage = ex.Message;
-            result.Response = string.Empty;
+            result.Response = $"خطأ: {ex.Message}";
         }
 
         return result;
@@ -1025,15 +1046,33 @@ public class ModemService : IDisposable
 
         try
         {
-            var response = await SendUssdReplyAsync(portName, reply, ussdWaitTimeSeconds);
-            result.Response = response;
-            result.IsSuccess = !string.IsNullOrEmpty(response) && !response.Contains("ERROR") && !response.Contains("خطأ");
+            var rawResponse = await SendUssdReplyAsync(portName, reply, ussdWaitTimeSeconds);
+            
+            result.Response = DecodeUssdResponse(rawResponse);
+            result.IsSuccess = rawResponse.Contains("+CUSD:");
+            
+            if (!result.IsSuccess)
+            {
+                if (rawResponse.Contains("No USSD response received"))
+                {
+                    result.ErrorMessage = "No USSD response received";
+                    result.Response = "لم يتم استلام رد USSD خلال فترة الانتظار";
+                }
+                else if (rawResponse.Contains("ERROR"))
+                {
+                    result.ErrorMessage = "خطأ من المودم";
+                }
+                else
+                {
+                    result.ErrorMessage = "لا توجد استجابة من الشبكة";
+                }
+            }
         }
         catch (Exception ex)
         {
             result.IsSuccess = false;
             result.ErrorMessage = ex.Message;
-            result.Response = string.Empty;
+            result.Response = $"خطأ: {ex.Message}";
         }
 
         return result;
