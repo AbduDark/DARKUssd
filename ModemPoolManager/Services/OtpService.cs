@@ -28,49 +28,49 @@ public class OtpService
         try
         {
             var ussdResult = await _modemService.SendUssdAndGetFullResponseAsync(portName, "*9*22#", 30000);
-            if (!ussdResult.isSuccess)
+            if (!ussdResult.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في تنفيذ الأمر الأول: {ussdResult.response}";
+                result.ErrorMessage = $"فشل في تنفيذ الأمر الأول: {ussdResult.Response}";
                 return result;
             }
 
             await Task.Delay(1000);
-            var replyResult1 = await _modemService.SendUssdReplyAsync(portName, amount.ToString());
-            if (!replyResult1.isSuccess)
+            var replyResult1 = await _modemService.SendUssdReplyWithResultAsync(portName, amount.ToString());
+            if (!replyResult1.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في إدخال المبلغ: {replyResult1.response}";
+                result.ErrorMessage = $"فشل في إدخال المبلغ: {replyResult1.Response}";
                 return result;
             }
 
             await Task.Delay(1000);
-            var replyResult2 = await _modemService.SendUssdReplyAsync(portName, pin);
-            if (!replyResult2.isSuccess)
+            var replyResult2 = await _modemService.SendUssdReplyWithResultAsync(portName, pin);
+            if (!replyResult2.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في إدخال الرقم السري: {replyResult2.response}";
+                result.ErrorMessage = $"فشل في إدخال الرقم السري: {replyResult2.Response}";
                 return result;
             }
 
-            var otpMatch = Regex.Match(replyResult2.response, @"الرقم السري المتغير هو[:\s]*(\d{4,8})", RegexOptions.RightToLeft);
+            var otpMatch = Regex.Match(replyResult2.Response, @"الرقم السري المتغير هو[:\s]*(\d{4,8})", RegexOptions.RightToLeft);
             if (!otpMatch.Success)
             {
-                otpMatch = Regex.Match(replyResult2.response, @"OTP[:\s]*(\d{4,8})", RegexOptions.IgnoreCase);
+                otpMatch = Regex.Match(replyResult2.Response, @"OTP[:\s]*(\d{4,8})", RegexOptions.IgnoreCase);
             }
             if (!otpMatch.Success)
             {
-                otpMatch = Regex.Match(replyResult2.response, @"(\d{6})", RegexOptions.IgnoreCase);
+                otpMatch = Regex.Match(replyResult2.Response, @"(\d{6})", RegexOptions.IgnoreCase);
             }
 
             if (otpMatch.Success)
             {
                 result.OtpCode = otpMatch.Groups[1].Value;
                 result.IsSuccess = true;
-                result.RawResponse = replyResult2.response;
+                result.RawResponse = replyResult2.Response;
                 result.StartCountdown();
             }
             else
             {
                 result.ErrorMessage = "لم يتم العثور على OTP في الرد";
-                result.RawResponse = replyResult2.response;
+                result.RawResponse = replyResult2.Response;
             }
         }
         catch (Exception ex)
@@ -95,38 +95,38 @@ public class OtpService
         try
         {
             var ussdResult = await _modemService.SendUssdAndGetFullResponseAsync(portName, "#7115#", 30000);
-            if (!ussdResult.isSuccess)
+            if (!ussdResult.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في تنفيذ الأمر الأول: {ussdResult.response}";
+                result.ErrorMessage = $"فشل في تنفيذ الأمر الأول: {ussdResult.Response}";
                 return result;
             }
 
             await Task.Delay(1000);
             var pinReply = $"121{pin}";
-            var replyResult1 = await _modemService.SendUssdReplyAsync(portName, pinReply);
-            if (!replyResult1.isSuccess)
+            var replyResult1 = await _modemService.SendUssdReplyWithResultAsync(portName, pinReply);
+            if (!replyResult1.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في إدخال الرقم السري: {replyResult1.response}";
+                result.ErrorMessage = $"فشل في إدخال الرقم السري: {replyResult1.Response}";
                 return result;
             }
 
             await Task.Delay(1000);
-            var replyResult2 = await _modemService.SendUssdReplyAsync(portName, amount.ToString());
-            if (!replyResult2.isSuccess)
+            var replyResult2 = await _modemService.SendUssdReplyWithResultAsync(portName, amount.ToString());
+            if (!replyResult2.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في إدخال المبلغ: {replyResult2.response}";
+                result.ErrorMessage = $"فشل في إدخال المبلغ: {replyResult2.Response}";
                 return result;
             }
 
             await Task.Delay(1000);
-            var replyResult3 = await _modemService.SendUssdReplyAsync(portName, "1");
-            if (!replyResult3.isSuccess)
+            var replyResult3 = await _modemService.SendUssdReplyWithResultAsync(portName, "1");
+            if (!replyResult3.IsSuccess)
             {
-                result.ErrorMessage = $"فشل في التأكيد: {replyResult3.response}";
+                result.ErrorMessage = $"فشل في التأكيد: {replyResult3.Response}";
                 return result;
             }
 
-            result.RawResponse = replyResult3.response;
+            result.RawResponse = replyResult3.Response;
 
             await Task.Delay(3000);
             var messages = await _smsService.GetUnreadMessagesAsync(portName, modemIndex);
@@ -173,7 +173,7 @@ public class OtpService
             var ussdCode = $"*777*3*2*{pin}*{amount}#";
             var ussdResult = await _modemService.SendUssdAndGetFullResponseAsync(portName, ussdCode, 30000);
             
-            result.RawResponse = ussdResult.response;
+            result.RawResponse = ussdResult.Response;
 
             await Task.Delay(3000);
             var messages = await _smsService.GetUnreadMessagesAsync(portName, modemIndex);

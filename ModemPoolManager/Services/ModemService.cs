@@ -989,6 +989,56 @@ public class ModemService : IDisposable
         return await SendUssdCommandAsync(portName, command, ussdWaitTimeSeconds);
     }
 
+    public async Task<UssdResult> SendUssdAndGetFullResponseAsync(string portName, string ussdCode, int timeoutMs = 30000)
+    {
+        var result = new UssdResult
+        {
+            PortName = portName,
+            UssdCode = ussdCode,
+            Timestamp = DateTime.Now
+        };
+
+        try
+        {
+            var response = await SendUssdCommandPublicAsync(portName, ussdCode, timeoutMs / 1000);
+            result.Response = response;
+            result.IsSuccess = !string.IsNullOrEmpty(response) && !response.Contains("ERROR") && !response.Contains("خطأ");
+        }
+        catch (Exception ex)
+        {
+            result.IsSuccess = false;
+            result.ErrorMessage = ex.Message;
+            result.Response = string.Empty;
+        }
+
+        return result;
+    }
+
+    public async Task<UssdResult> SendUssdReplyWithResultAsync(string portName, string reply, int ussdWaitTimeSeconds = 10)
+    {
+        var result = new UssdResult
+        {
+            PortName = portName,
+            UssdCode = reply,
+            Timestamp = DateTime.Now
+        };
+
+        try
+        {
+            var response = await SendUssdReplyAsync(portName, reply, ussdWaitTimeSeconds);
+            result.Response = response;
+            result.IsSuccess = !string.IsNullOrEmpty(response) && !response.Contains("ERROR") && !response.Contains("خطأ");
+        }
+        catch (Exception ex)
+        {
+            result.IsSuccess = false;
+            result.ErrorMessage = ex.Message;
+            result.Response = string.Empty;
+        }
+
+        return result;
+    }
+
     public async Task CancelUssdSessionAsync(string portName)
     {
         try
