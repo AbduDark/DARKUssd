@@ -22,6 +22,7 @@
         <converters:StringToVisibilityConverter x:Key="StringToVisibility"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
         <converters:OtpVisibilityConverter x:Key="OtpVisibilityConverter"/>
+        <converters:TransferStatusToColorConverter x:Key="TransferStatusToColorConverter"/>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         
         <Style x:Key="ModernButton" TargetType="Button">
@@ -1252,9 +1253,43 @@
                                                 ToolTip="مسح السجل"/>
                                     </StackPanel>
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                        <TextBlock Text="{Binding TransferLog}" FontSize="11" 
-                                                   Foreground="#3FB950" FontFamily="Consolas"
-                                                   TextWrapping="Wrap"/>
+                                        <StackPanel>
+                                            <ItemsControl ItemsSource="{Binding TransferLogEntries}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Margin="0,2" Padding="8,4" CornerRadius="4" 
+                                                                Background="#161B22" BorderThickness="1"
+                                                                BorderBrush="{Binding IsSuccess, Converter={StaticResource TransferStatusToColorConverter}}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" 
+                                                                           Text="{Binding PhoneNumber}" 
+                                                                           FontSize="12" FontWeight="Bold" 
+                                                                           Foreground="{Binding IsSuccess, Converter={StaticResource TransferStatusToColorConverter}}"
+                                                                           Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="1" 
+                                                                           Text="{Binding Message}" 
+                                                                           FontSize="11" 
+                                                                           Foreground="#8B949E"
+                                                                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="2" 
+                                                                           Text="{Binding StatusIcon}" 
+                                                                           FontSize="14" FontWeight="Bold"
+                                                                           Foreground="{Binding IsSuccess, Converter={StaticResource TransferStatusToColorConverter}}"
+                                                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Text="{Binding TransferLog}" FontSize="11" 
+                                                       Foreground="#3FB950" FontFamily="Consolas"
+                                                       TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                        </StackPanel>
                                     </ScrollViewer>
                                 </Grid>
                             </Border>
@@ -1720,8 +1755,42 @@
                                                 Style="{StaticResource BlueButton}" Padding="10,4" Margin="12,0,0,0" FontSize="11"/>
                                     </StackPanel>
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                        <TextBlock Text="{Binding CustomTransferLog}" FontSize="11" 
-                                                   Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap"/>
+                                        <StackPanel>
+                                            <ItemsControl ItemsSource="{Binding CustomTransferLogEntries}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Margin="0,2" Padding="8,4" CornerRadius="4" 
+                                                                Background="#161B22" BorderThickness="1"
+                                                                BorderBrush="{Binding IsSuccess, Converter={StaticResource TransferStatusToColorConverter}}">
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                    <ColumnDefinition Width="*"/>
+                                                                    <ColumnDefinition Width="Auto"/>
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Grid.Column="0" 
+                                                                           Text="{Binding PhoneNumber}" 
+                                                                           FontSize="12" FontWeight="Bold" 
+                                                                           Foreground="{Binding IsSuccess, Converter={StaticResource TransferStatusToColorConverter}}"
+                                                                           Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="1" 
+                                                                           Text="{Binding Message}" 
+                                                                           FontSize="11" 
+                                                                           Foreground="#8B949E"
+                                                                           TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                                                <TextBlock Grid.Column="2" 
+                                                                           Text="{Binding StatusIcon}" 
+                                                                           FontSize="14" FontWeight="Bold"
+                                                                           Foreground="{Binding IsSuccess, Converter={StaticResource TransferStatusToColorConverter}}"
+                                                                           VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Text="{Binding CustomTransferLog}" FontSize="11" 
+                                                       Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                        </StackPanel>
                                     </ScrollViewer>
                                 </Grid>
                             </Border>

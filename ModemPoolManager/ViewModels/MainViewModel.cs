@@ -85,6 +85,9 @@ public partial class MainViewModel : ObservableObject
     private string _transferLog = "";
 
     [ObservableProperty]
+    private ObservableCollection<TransferLogEntry> _transferLogEntries = new();
+
+    [ObservableProperty]
     private int _successfulTransfers;
 
     [ObservableProperty]
@@ -179,6 +182,9 @@ public partial class MainViewModel : ObservableObject
 
     [ObservableProperty]
     private string _customTransferLog = "";
+
+    [ObservableProperty]
+    private ObservableCollection<TransferLogEntry> _customTransferLogEntries = new();
 
     [ObservableProperty]
     private bool _isCustomTransferRunning;
@@ -1542,6 +1548,7 @@ public partial class MainViewModel : ObservableObject
             SuccessfulTransfers = 0;
             FailedTransfers = 0;
             TransferLog = "🚀 بدء التحويل المتوازي...\n";
+            TransferLogEntries.Clear();
 
             if (hasPrimarySender && primarySenderModem != null)
             {
@@ -1587,6 +1594,14 @@ public partial class MainViewModel : ObservableObject
                         {
                             TransferLog += $"📤 {primarySenderModem.PhoneNumber} → {receiver.PhoneNumber}: {(success ? "تم ✓" : $"فشل: {message}")}\n";
                             TransferLog += $"   📨 رد الشبكة: {rawResponse}\n";
+                            
+                            TransferLogEntries.Add(new TransferLogEntry
+                            {
+                                PhoneNumber = receiver.PhoneNumber ?? "",
+                                Message = success ? "تم التحويل بنجاح" : message,
+                                IsSuccess = success,
+                                RawResponse = rawResponse
+                            });
                         });
                         
                         return success;
@@ -2655,6 +2670,7 @@ public partial class MainViewModel : ObservableObject
             _customTransferCts = new CancellationTokenSource();
             CustomTransferLog = $"🚀 بدء التحويل المخصص من {SelectedSenderModem.PhoneNumber}\n";
             CustomTransferLog += $"📋 عدد التحويلات: {ExcelTransferItems.Count}\n";
+            CustomTransferLogEntries.Clear();
             if (IsCashBalanceQueried)
             {
                 CustomTransferLog += $"💰 رصيد الكاش: {SenderCashBalanceRemaining} ج.م\n";
@@ -2693,6 +2709,14 @@ public partial class MainViewModel : ObservableObject
 
                 item.Result = message;
                 CustomTransferLog += $"   📨 رد الشبكة: {rawResponse}\n";
+                CustomTransferLogEntries.Add(new TransferLogEntry
+                {
+                    PhoneNumber = item.PhoneNumber,
+                    Message = success ? "تم التحويل بنجاح" : message,
+                    IsSuccess = success,
+                    RawResponse = rawResponse
+                });
+
                 if (success)
                 {
                     item.Status = "تم ✓";
@@ -2767,7 +2791,7 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void ShowTransferLog()
     {
-        var logWindow = new ModemPoolManager.TransferLogWindow(CustomTransferLog);
+        var logWindow = new ModemPoolManager.TransferLogWindow(CustomTransferLog, CustomTransferLogEntries);
         logWindow.Owner = System.Windows.Application.Current.MainWindow;
         logWindow.ShowDialog();
     }

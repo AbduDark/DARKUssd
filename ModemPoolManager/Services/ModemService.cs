@@ -1986,7 +1986,7 @@ public class ModemService : IDisposable
             
             Console.WriteLine($"[{portName}] الرد: {decoded}");
             
-            if (decoded.Contains("تم شحن") || decoded.Contains("تم التحويل") || 
+            if (decoded.Contains("تم تحويل") || decoded.Contains("تم شحن") || decoded.Contains("تم التحويل") || 
                 decoded.Contains("successfully") || decoded.Contains("Success"))
             {
                 return (true, "تم التحويل بنجاح ✓", decoded);

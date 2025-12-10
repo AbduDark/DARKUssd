@@ -34,9 +34,9 @@ The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems a
 ### Core Features
 - **Main Dashboard:** Modem management with USSD execution.
 - **SMS:** Message management.
-- **Orange Cash Parallel Transfer System:** Dedicated tab for parallel transfers (6 senders to 6 receivers) with balance inquiry, automatic pairing, and real-time status.
+- **Orange Cash Parallel Transfer System:** Dedicated tab for parallel transfers (6 senders to 6 receivers) with balance inquiry, automatic pairing, real-time status, and color-coded results (orange for success, red for failure). Success detection includes "تم تحويل" pattern.
 - **OC Series Tab (تحويل متسلسل):** Sequential Orange Cash transfers from multiple modems to a single target, with configurable delays and detailed logging.
-- **TXT Transfer Tab (تحويل TXT):** Batch transfers from TXT/CSV files, with fixed amount mode, auto-summary, cash balance query, and local balance tracking.
+- **TXT Transfer Tab (تحويل TXT):** Batch transfers from TXT/CSV files, with fixed amount mode, auto-summary, cash balance query, and local balance tracking. Transfer results are color-coded: orange for successful transfers, red for failed transfers.
 - **OTP Generation Tab (🔐 OTP السحب):** Generates ATM withdrawal OTPs using operator-specific USSD/SMS workflows (Vodafone, Orange, Etisalat) with real-time countdowns and session management.
 - **Modem Card Enhancements:** Increased phone number font size, reset button, and right-click context menu for actions like restarting or copying phone numbers.
 - **Automatic Validity Renewal (صلاحية الخطوط):** Each modem card has a "صلاحية" checkbox. When enabled, the system automatically sends SMS to 2656 upon modem connection to renew line validity. A checkmark (✅) appears when renewal is successful.
