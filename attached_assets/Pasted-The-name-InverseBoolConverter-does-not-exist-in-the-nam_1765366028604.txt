@@ -1,0 +1,81 @@
+The name "InverseBoolConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+'ModemService' does not contain a definition for 'SendUssdAndGetFullResponseAsync' and no accessible extension method 'SendUssdAndGetFullResponseAsync' accepting a first argument of type 'ModemService' could be found (are you missing a using directive or an assembly reference?)
+'ModemService' does not contain a definition for 'SendUssdAndGetFullResponseAsync' and no accessible extension method 'SendUssdAndGetFullResponseAsync' accepting a first argument of type 'ModemService' could be found (are you missing a using directive or an assembly reference?)
+'ModemService' does not contain a definition for 'SendUssdAndGetFullResponseAsync' and no accessible extension method 'SendUssdAndGetFullResponseAsync' accepting a first argument of type 'ModemService' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'isSuccess' and no accessible extension method 'isSuccess' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'isSuccess' and no accessible extension method 'isSuccess' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'isSuccess' and no accessible extension method 'isSuccess' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'isSuccess' and no accessible extension method 'isSuccess' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'isSuccess' and no accessible extension method 'isSuccess' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+'string' does not contain a definition for 'response' and no accessible extension method 'response' accepting a first argument of type 'string' could be found (are you missing a using directive or an assembly reference?)
+Cannot set MultiBinding because MultiValueConverter must be specified.
+Collection initialization can be simplified
+Collection initialization can be simplified
+Make field readonly
+Member 'GetDataRemainingCode' does not access instance data and can be marked as static
+Member 'GetStopPromoCode' does not access instance data and can be marked as static
+Object reference not set to an instance of an object.
+The name "InverseBoolToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OperatorToBrushConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OperatorToGlowColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "OtpVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "SignalBarsToOpacityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "SignalColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The name "StringToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolConverter" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "InverseBoolToVisibility" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "OperatorToBrushConverter" has an incompatible type.
+The resource "OperatorToGlowColorConverter" has an incompatible type.
+The resource "OtpVisibilityConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalBarsToOpacityConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "SignalColorConverter" has an incompatible type.
+The resource "StringToVisibility" has an incompatible type.
+The resource "StringToVisibility" has an incompatible type.
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+This async method lacks 'await' operators and will run synchronously. Consider using the 'await' operator to await non-blocking API calls, or 'await Task.Run(...)' to do CPU-bound work on a background thread.
+Unresolved reference 'RootWindow'.'' Line number '7' and line position '148'.'' Line number '7'. ...
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Use 'GeneratedRegexAttribute' to generate the regular expression implementation at compile-time.
+Use primary constructor
