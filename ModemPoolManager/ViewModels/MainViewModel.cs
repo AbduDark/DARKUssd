@@ -1774,8 +1774,17 @@ public partial class MainViewModel : ObservableObject
     private void ClearTransferLog()
     {
         TransferLog = "";
+        TransferLogEntries.Clear();
         SuccessfulTransfers = 0;
         FailedTransfers = 0;
+    }
+
+    [RelayCommand]
+    private void ShowParallelTransferLog()
+    {
+        var logWindow = new ModemPoolManager.TransferLogWindow(TransferLog, TransferLogEntries);
+        logWindow.Owner = System.Windows.Application.Current.MainWindow;
+        logWindow.ShowDialog();
     }
 
     [RelayCommand]

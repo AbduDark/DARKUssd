@@ -1247,7 +1247,9 @@
                                         <RowDefinition Height="*"/>
                                     </Grid.RowDefinitions>
                                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                                        <TextBlock Text="📋 سجل العمليات" FontSize="13" Foreground="#8B949E"/>
+                                        <TextBlock Text="📋 سجل العمليات" FontSize="13" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                        <Button Content="📖 عرض السجل" Command="{Binding ShowParallelTransferLogCommand}" 
+                                                Style="{StaticResource BlueButton}" Padding="10,4" Margin="12,0,0,0" FontSize="11"/>
                                         <Button Content="🗑" Command="{Binding ClearTransferLogCommand}" 
                                                 Style="{StaticResource GhostButton}" Padding="4,2" Margin="8,0,0,0"
                                                 ToolTip="مسح السجل"/>
