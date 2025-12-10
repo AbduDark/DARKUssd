@@ -1,7 +1,7 @@
 # Modem Pool Manager Pro - مدير المودمات الاحترافي
 
 ## Overview
-Modem Pool Manager Pro is a professional C# WPF application designed to manage multiple modems (up to 12) for concurrent USSD/SMS operations, enhanced with AI capabilities. The project aims to provide a robust solution for businesses requiring large-scale modem interaction, offering automatic modem detection, detailed information retrieval, and intelligent response analysis. It is a Windows-only application, leveraging WPF for the UI and Windows-specific functionalities for COM port communication and modem discovery.
+Modem Pool Manager Pro is a professional C# WPF application designed to manage up to 12 modems concurrently for USSD/SMS operations, enhanced with AI capabilities. Its purpose is to provide a robust, Windows-only solution for businesses requiring large-scale modem interaction, offering automatic modem detection, detailed information retrieval, and intelligent response analysis. The project aims to streamline multi-modem management, improve reliability, and provide advanced features for tasks like parallel money transfers and OTP generation.
 
 ## User Preferences
 - **Coding Style:** I prefer clean, maintainable C# code.
@@ -14,184 +14,34 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage m
 ## System Architecture
 
 ### UI/UX Decisions
--   **Main Interface:** WPF (Windows Presentation Foundation) with MVVM (Model-View-ViewModel) pattern using CommunityToolkit.Mvvm.
--   **Modem Display:** Individual modem cards (320x280 pixels) arranged in a `WrapPanel`.
--   **Visual Feedback:** Animated loading circles during command execution.
--   **Color Coding:** Phone numbers are color-coded based on the network operator (e.g., Vodafone: red, Orange: orange, Etisalat: green).
--   **Real-time Information:** Display of execution time, USSD/SMS responses (scrollable), and success/failure counters per modem.
--   **Signal Strength Indicator:** Uses `SignalBarsToOpacityConverter` for a visually progressive signal strength display.
--   **Theming:** Pure black (#000000) background with operator-colored accents.
--   **Color Scheme:**
-    -   Main background: Pure black (#000000)
-    -   Card backgrounds: Dark (#0D0D0D)
-    -   Modem card borders: Colored by operator (Vodafone: red, Orange: orange, Etisalat: green)
-    -   Operator-specific tab styles with colored underlines when selected.
+The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems are displayed as individual cards (320x280 pixels) in a `WrapPanel`, featuring real-time information, animated loading circles, and color-coded elements. Phone numbers are color-coded by network operator. The theme is pure black (#000000) with dark card backgrounds (#0D0D0D) and operator-colored accents for borders and selected tab underlines. A `SignalBarsToOpacityConverter` provides visual signal strength feedback.
 
 ### Technical Implementations
--   **Modem Management:**
-    -   Automatic detection of ZTE modems (ZTE NMEA Device, ZTE Diagnostics Interface) via WMI queries (`SELECT * FROM Win32_PnPEntity`).
-    -   Support for up to 12 connected modems.
-    -   Parallel execution of commands.
-    -   Robust reconnection logic with `CleanupPort`, `TestPortConnectionAsync`, `ForceRescanAsync`, and `RefreshPortsAsync` for reliable modem re-detection after disconnection.
-    -   Interactive monitoring: auto-detection of new modems, display of phone number and signal strength, disconnection detection, and 5-second signal updates.
-    -   **Auto-remove modem from UI when disconnected:** Modem card disappears immediately when device is unplugged.
-    -   **Auto-fetch phone number on connection:** Phone number is retrieved automatically using USSD codes when modem is connected.
-    -   **Improved reconnection handling:** When modem is unplugged and replugged, old port resources are cleaned up and new connection is established automatically via WMI event watchers.
-    -   **Robust refresh button:** ForceRescanAsync now properly cleans all port resources (persistent ports, locks) before rescanning.
--   **Fast phone number retrieval:** Uses the same USSD-direct approach as the old VB.NET system - sends operator-specific USSD codes (*878# for Vodafone, #119*1# for Orange, *947# for Etisalat) directly without trying AT+CNUM first. Operator and signal are fetched in parallel, then phone number is retrieved via USSD with 6-second timeout.
--   **Auto-retry phone number retrieval:** When a phone number is unknown ("غير معروف"), the system automatically retries fetching it every 5 seconds using operator-specific USSD codes:
-    -   Vodafone: `*878#`
-    -   Orange: `#119*1#`
-    -   Etisalat: `*947#`
-    -   WE: `*999#`
--   **MF626 Modem Support:** Added explicit detection patterns for ZTE MF626 modems in GetZTEDiagnosticsPorts.
--   **Improved Modem Restart:** RestartModemAsync now properly acquires port locks, disposes cached ports, uses AT+CFUN=0/1 sequence with AT^RESET fallback, and verifies reconnection via polling.
--   **Network Mode Management:**
-    -   Automatic network mode setting based on operator: Vodafone = 2G only, all other operators = 3G only.
-    -   Uses AT+ZSNT command with fallback to AT^SYSCFG for broader modem compatibility.
-    -   Verifies network mode after setting and displays current mode in modem info.
--   **USSD Commands:**
-    -   Specialized `SendUssdCommandAsync` for reliable USSD response capture, handling unsolicited responses and multiple replies.
-    -   Decoding of USSD responses (GSM-7 & UCS-2).
-    -   Quick, customizable USSD commands.
-    -   Fallback mechanism for phone number retrieval using network-specific USSD codes if `AT+CNUM` fails.
--   **SMS Messaging:**
-    -   Send, receive, read, and delete SMS messages.
-    -   Support for Text Mode and PDU Mode.
--   **AT Command Handling:** Improved AT command parsing to prevent premature termination of responses by filtering `OK` for USSD commands.
--   **Phone Number Retrieval:** Enhanced `GetPhoneNumberWithUssdFallbackAsync` using multiple regex patterns for `AT+CNUM` and network-specific USSD codes.
--   **Configuration:** Settings are saved in JSON format.
--   **Persistent App State (NEW):**
-    -   All user inputs persist between sessions automatically.
-    -   Saved to AppData/ModemPoolManager/appstate.json.
-    -   Includes: USSD codes, passwords, transfer settings, sequential commands, cash balance.
-    -   Auto-save on window close, auto-restore on launch.
+- **Modem Management:** Supports up to 12 ZTE modems via WMI queries for automatic detection. Features parallel command execution, robust reconnection logic (cleaning up resources and re-detecting), and automatic removal of disconnected modems from the UI.
+- **Phone Number & Operator Retrieval:** Fast retrieval using operator-specific USSD codes (e.g., Vodafone `*878#`). Automatically retries fetching unknown numbers every 5 seconds.
+- **Modem Control:** Improved modem restart (AT+CFUN=0/1) and network mode management (automatic 2G/3G setting based on operator using AT+ZSNT or AT^SYSCFG).
+- **USSD Commands:** Reliable `SendUssdCommandAsync` for response capture, handling unsolicited responses, and decoding (GSM-7 & UCS-2). Supports sequential USSD commands with reply functionality.
+- **SMS Messaging:** Capabilities to send, receive, read, and delete SMS messages in Text or PDU mode. Includes an SMS Inbox with unread count badge, message details view, and OTP extraction.
+- **Persistent State:** All user inputs and application settings are automatically saved to `AppData/ModemPoolManager/appstate.json` and restored on launch.
+- **Services:**
+    -   `RetryService`: Centralized retry system with configurable counts, exponential backoff, and jitter.
+    -   `SmsListenerService`: Real-time SMS monitoring via CNMI with polling fallback.
+    -   `BalanceQueryService`: Parallel balance queries using operator-specific codes.
+    -   `OcSeriesService`: Handles sequential Orange Cash transfers with retry logic.
 
 ### Core Features
--   **Wave 1 Features (Simplified UI)**:
-    -   Main Dashboard - modem management with USSD execution
-    -   SMS - message management (SMS listening button removed)
-    -   Orange Cash - parallel transfers between sender/receiver pairs
-    -   TXT Transfer - batch transfers with cash balance tracking
--   **Removed Features (UI Simplification):**
-    -   SMS listening button removed from modem cards
-    -   Card top-up tab removed
-    -   Balance query tab removed
-    -   Group balance query tab removed
-    -   AI assistant tab and AI settings removed
--   Detailed modem information retrieval (IMEI, IMSI, ICCID, Signal, Operator).
--   AI-powered USSD response analysis, command suggestions, modem diagnostics, and message analysis.
--   Comprehensive statistics dashboard and command logging.
--   **Orange Cash Parallel Transfer System:**
-    -   Dedicated tab for Orange Cash operations with 6 sender → 6 receiver parallel transfer pattern.
-    -   Balance inquiry for all modems using USSD code `#7115*81*{password}#`.
-    -   Parallel money transfers using USSD code `#7115*1*1*{phone}*{amount}*{password}#`.
-    -   Automatic pairing: modems 1-6 as senders, modems 7-12 as receivers (1→7, 2→8, 3→9, 4→10, 5→11, 6→12).
-    -   Real-time status display: "تم التحويل" for senders, "تم الاستلام" for receivers.
-    -   8-second cooldown between transfer batches to prevent carrier blocking.
-    -   Visual indicators: orange border for senders, green border for receivers.
-    -   Transfer log with detailed operation history.
--   **OC Series Tab (تحويل متسلسل) - NEW:**
-    -   Sequential Orange Cash transfers from multiple modems to a single target phone.
-    -   Uses USSD code `#7115*1*1*{phone}*{amount}*{password}#` for transfers.
-    -   Phone number retrieval via `#119*1#` USSD code.
-    -   Configurable delay between transfers (default 12 seconds).
-    -   Real-time countdown display during delays.
-    -   Start/Stop controls with cancellation support.
-    -   Detailed transfer log with success/failure tracking.
--   **TXT Transfer Tab (تحويل TXT) - ENHANCED:**
-    -   Import transfer list from TXT files (one phone number per line).
-    -   Fixed amount mode: Apply same amount to all phone numbers.
-    -   Auto-summary calculation: Shows total lines × amount = total required.
-    -   Summary display with count, per-line amount, total, and sender cash balance.
-    -   Support for both TXT (phone-only) and CSV (phone,amount) formats.
-    -   Single sender modem to multiple recipients.
-    -   DataGrid display with row index, phone, amount, status, result columns.
-    -   Real-time amount updates when fixed amount value changes.
-    -   Configurable delay between transfers.
-    -   Orange-themed tab with operator styling.
-    -   Progress tracking with countdown display.
-    -   Start/Stop controls for batch processing.
-    -   **Cash Balance Query:** Query sender's Orange Cash balance before transfers.
-    -   **Local Balance Tracking:** Automatically deduct from local balance on successful transfers.
-    -   **Balance Validation:** Warning when remaining balance is less than total required.
--   **Modem Card Improvements:**
-    -   Increased phone number font size to 18 for better visibility.
-    -   Added Reset button next to phone refresh button for full modem reset (AT+CFUN=0/1).
--   **SMS Inbox Feature (NEW - Mobile-like design):**
-    -   SMS button with unread count badge on each modem card.
-    -   Click to open popup showing message list for that modem.
-    -   Messages displayed with sender number, timestamp, and preview text.
-    -   Click any message to view full details in a dialog.
-    -   Uses SmsService.GetAllMessagesAsync for message retrieval.
-    -   Integrated with SmsListenerService for real-time updates.
--   **MessageDetailsWindow (NEW - Modern SMS Details Dialog):**
-    -   Borderless window with rounded corners and operator-colored border.
-    -   Shows sender number (color-coded by operator), timestamp, modem info, and status badge.
-    -   Full message content in scrollable text area.
-    -   Automatic OTP extraction with one-click copy button.
-    -   Action buttons: Copy message, Reply, Delete, Close.
-    -   Draggable window header for repositioning.
-    -   Dark theme matching the main application design.
--   **Right-click Context Menu on Modem Cards:**
-    -   Restart Modem (AT+CFUN=0/1 sequence).
-    -   Copy Phone Number to clipboard.
-    -   Refresh Signal and Phone Number.
-
-### New Services (Wave 1-3 Implementation)
--   **RetryService (NEW):**
-    -   Centralized automatic retry system for all operations.
-    -   Configurable retry count (default: 3 retries).
-    -   Exponential backoff between retries.
-    -   Jitter to prevent thundering herd.
-    -   Events for retry attempts, success, and failure.
-    -   Integration with AppSettings for configuration.
--   **SmsListenerService (NEW):**
-    -   Real-time SMS monitoring using CNMI (AT+CNMI=2,1,0,0,0).
-    -   Polling-based fallback for older modems.
-    -   Events for new message notifications.
-    -   Automatic unread count tracking per modem.
-    -   Automatic retry on send failure.
--   **BalanceQueryService (NEW):**
-    -   Parallel balance queries for all modems.
-    -   Operator-specific balance codes (Vodafone *868#, Orange *100#, Etisalat *102#, WE *550#).
-    -   Extraction of main balance, bonus, data, and expiry date.
-    -   Group balance statistics (total, average, success/failure counts).
-    -   Automatic retry on query failure.
--   **CardTopUpService (NEW):**
-    -   Parallel card charging across all modems.
-    -   Operator-specific top-up codes (Vodafone *858*, Orange *110*, Etisalat *556*).
-    -   Balance transfer between lines.
-    -   Success/failure detection with error messages.
-    -   Automatic retry on top-up failure.
--   **OcSeriesService (NEW):**
-    -   Orange Cash sequential transfers with automatic retry.
-    -   Chain transfer support (main line to multiple recipients).
-    -   Real-time countdown between transfers.
-    -   Detailed transfer logging.
--   **Sequential USSD with Reply Support:**
-    -   IsReply checkbox for each command to distinguish between new USSD sessions and replies.
-    -   Each modem gets a fresh USSD session (AT+CUSD=2 to cancel previous, then new command).
-    -   Commands marked as "Reply" use SendUssdReplyAsync to continue in same session.
-    -   Execution continues to next modem even if one modem fails.
-    -   Visual indicator (orange badge) for reply commands in the UI.
--   **OperatorServicesManager (NEW):**
-    -   Vodafone services: Flex balance, data remaining, power menu, master menu.
-    -   Orange services: Internet bundles, Orange Cash operations, data remaining.
-    -   Etisalat services: Internet bundles, call bundles, data remaining.
-    -   Saved services management for custom USSD operations.
-
-### Project Structure
--   **Models:** Data structures for Modems, ModemInfo, UssdResult, SmsMessage, BalanceResult, CardTopUpResult, TransferResult, CommandHistory, AppSettings.
--   **Services:** Business logic for ModemService, SmsService, SmsListenerService, BalanceQueryService, CardTopUpService, OcSeriesService, OperatorServicesManager, RetryService, AiAssistantService.
--   **ViewModels:** MainViewModel for UI logic.
--   **Converters:** UI utility converters (e.g., `InverseBoolConverter`, `OperatorToBrushConverter`, `SignalBarsToOpacityConverter`).
--   **Views:** `MainWindow.xaml` for the main user interface (all 17 tabs).
+- **Main Dashboard:** Modem management with USSD execution.
+- **SMS:** Message management.
+- **Orange Cash Parallel Transfer System:** Dedicated tab for parallel transfers (6 senders to 6 receivers) with balance inquiry, automatic pairing, and real-time status.
+- **OC Series Tab (تحويل متسلسل):** Sequential Orange Cash transfers from multiple modems to a single target, with configurable delays and detailed logging.
+- **TXT Transfer Tab (تحويل TXT):** Batch transfers from TXT/CSV files, with fixed amount mode, auto-summary, cash balance query, and local balance tracking.
+- **OTP Generation Tab (🔐 OTP السحب):** Generates ATM withdrawal OTPs using operator-specific USSD/SMS workflows (Vodafone, Orange, Etisalat) with real-time countdowns and session management.
+- **Modem Card Enhancements:** Increased phone number font size, reset button, and right-click context menu for actions like restarting or copying phone numbers.
 
 ## External Dependencies
 -   **.NET 8.0:** Application Framework.
--   **WPF (Windows Presentation Foundation):** User Interface Framework (Windows-only).
--   **CommunityToolkit.Mvvm:** MVVM Library.
--   **System.IO.Ports:** For COM port communication (Windows-only).
--   **System.Management:** For WMI queries to discover modems (Windows-only).
+-   **WPF (Windows Presentation Foundation):** User Interface Framework.
+-   **CommunityToolkit.Mvvm:** MVVM Library for WPF.
+-   **System.IO.Ports:** For COM port communication.
+-   **System.Management:** For WMI queries to discover modems.
 -   **OpenAI API:** For AI functionalities (USSD analysis, command suggestions, diagnostics, message analysis).
