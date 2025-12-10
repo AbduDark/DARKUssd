@@ -16,6 +16,7 @@ public partial class MainViewModel : ObservableObject
     private readonly AiAssistantService _aiService;
     private readonly BalanceQueryService _balanceQueryService;
     private readonly CardTopUpService _cardTopUpService;
+    private readonly ValidityRenewalService _validityRenewalService;
 
     [ObservableProperty]
     private ObservableCollection<Modem> _modems = new();
@@ -286,6 +287,7 @@ public partial class MainViewModel : ObservableObject
         _cardTopUpService = new CardTopUpService(_modemService);
         _ocSeriesService = new OcSeriesService(_modemService);
         _otpService = new OtpService(_modemService, _smsService);
+        _validityRenewalService = new ValidityRenewalService(_smsService);
 
         CustomUssd1 = Settings.General.QuickUssdCommands.ElementAtOrDefault(0) ?? "*100#";
         CustomUssd2 = Settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
@@ -371,8 +373,10 @@ public partial class MainViewModel : ObservableObject
         _appState.Save();
     }
 
-    private void OnModemConnected(object? sender, Modem modem)
+    private async void OnModemConnected(object? sender, Modem modem)
     {
+        Modem? targetModem = null;
+        
         Application.Current.Dispatcher.Invoke(() =>
         {
             var existing = Modems.FirstOrDefault(m => m.PortName == modem.PortName);
@@ -381,6 +385,7 @@ public partial class MainViewModel : ObservableObject
                 modem.Index = Modems.Count + 1;
                 modem.PropertyChanged += OnModemPropertyChanged;
                 Modems.Add(modem);
+                targetModem = modem;
                 StatusMessage = $"تم اكتشاف مودم جديد: {modem.PortName} - جاري جلب الرقم...";
             }
             else
@@ -391,10 +396,33 @@ public partial class MainViewModel : ObservableObject
                 existing.SignalStrength = modem.SignalStrength;
                 existing.Operator = modem.Operator;
                 existing.LastActivity = DateTime.Now;
+                existing.ValidityRenewed = false;
+                targetModem = existing;
                 StatusMessage = $"تم إعادة توصيل المودم: {modem.PortName}";
             }
             UpdateCounts();
         });
+
+        if (targetModem != null && targetModem.AutoRenewValidity && !targetModem.ValidityRenewed)
+        {
+            await Task.Delay(2000);
+            
+            if (!string.IsNullOrEmpty(targetModem.PhoneNumber) && targetModem.PhoneNumber != "غير معروف")
+            {
+                Application.Current.Dispatcher.Invoke(() => 
+                    StatusMessage = $"جاري تجديد صلاحية الخط: {targetModem.PhoneNumber}...");
+                
+                var success = await _validityRenewalService.RenewValidityAsync(targetModem);
+                
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (success)
+                    {
+                        StatusMessage = $"✅ تم تجديد صلاحية الخط: {targetModem.PhoneNumber}";
+                    }
+                });
+            }
+        }
     }
 
     private void OnModemDisconnected(object? sender, Modem modem)

@@ -122,6 +122,18 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private bool _isMainLine;
 
+    [ObservableProperty]
+    private bool _autoRenewValidity;
+
+    [ObservableProperty]
+    private bool _validityRenewed;
+
+    [ObservableProperty]
+    private bool _isRenewingValidity;
+
+    [ObservableProperty]
+    private string _validityStatus = "";
+
     public double SuccessRate => SuccessfulCommands + FailedCommands > 0 
         ? (double)SuccessfulCommands / (SuccessfulCommands + FailedCommands) * 100 
         : 0;

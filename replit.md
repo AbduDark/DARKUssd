@@ -29,6 +29,7 @@ The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems a
     -   `SmsListenerService`: Real-time SMS monitoring via CNMI with polling fallback.
     -   `BalanceQueryService`: Parallel balance queries using operator-specific codes.
     -   `OcSeriesService`: Handles sequential Orange Cash transfers with retry logic.
+    -   `ValidityRenewalService`: Automatic line validity renewal by sending SMS to 2656.
 
 ### Core Features
 - **Main Dashboard:** Modem management with USSD execution.
@@ -38,6 +39,7 @@ The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems a
 - **TXT Transfer Tab (تحويل TXT):** Batch transfers from TXT/CSV files, with fixed amount mode, auto-summary, cash balance query, and local balance tracking.
 - **OTP Generation Tab (🔐 OTP السحب):** Generates ATM withdrawal OTPs using operator-specific USSD/SMS workflows (Vodafone, Orange, Etisalat) with real-time countdowns and session management.
 - **Modem Card Enhancements:** Increased phone number font size, reset button, and right-click context menu for actions like restarting or copying phone numbers.
+- **Automatic Validity Renewal (صلاحية الخطوط):** Each modem card has a "صلاحية" checkbox. When enabled, the system automatically sends SMS to 2656 upon modem connection to renew line validity. A checkmark (✅) appears when renewal is successful.
 
 ## External Dependencies
 -   **.NET 8.0:** Application Framework.
