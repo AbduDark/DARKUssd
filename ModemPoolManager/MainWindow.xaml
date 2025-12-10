@@ -2032,6 +2032,245 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="🔐 OTP السحب" Style="{StaticResource TabItemStyle}">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Style="{StaticResource CardPanel}" Margin="0,0,0,10">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="🔐" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                <TextBlock Text="توليد OTP للسحب من ATM" FontSize="18" FontWeight="Bold" Foreground="#F0F6FC" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Border Background="#238636" CornerRadius="6" Padding="16,8" Margin="8,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="💰 إجمالي المسحوب:" Foreground="White" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding TotalWithdrawnAmount, StringFormat='{}{0:N0} ج.م'}" 
+                                                   Foreground="White" FontWeight="Bold" FontSize="16"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#0D419D" CornerRadius="6" Padding="12,8" Margin="4,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="✅" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding SuccessfulWithdrawals}" Foreground="#C9D1D9" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                                <Border Background="#D29922" CornerRadius="6" Padding="12,8" Margin="4,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="⏳" Margin="0,0,6,0"/>
+                                        <TextBlock Text="{Binding PendingWithdrawals}" Foreground="White" FontWeight="SemiBold"/>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
+
+                            <Button Grid.Column="2" Content="🔄 جلسة جديدة" 
+                                    Command="{Binding StartNewWithdrawalSessionCommand}"
+                                    Style="{StaticResource BlueButton}"/>
+                        </Grid>
+                    </Border>
+
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="350"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource CardPanel}" Margin="0,0,10,0">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock Text="⚙" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="إعدادات OTP" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+
+                                <TextBlock Text="المبلغ:" Foreground="#8B949E" Margin="0,0,0,6"/>
+                                <TextBox Text="{Binding OtpAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" Margin="0,0,0,16"/>
+
+                                <TextBlock Text="الرقم السري (PIN):" Foreground="#8B949E" Margin="0,0,0,6"/>
+                                <TextBox Text="{Binding OtpPin, UpdateSourceTrigger=PropertyChanged}" 
+                                         Style="{StaticResource ModernTextBox}" Margin="0,0,0,16"/>
+
+                                <Border Background="#21262D" CornerRadius="6" Padding="12" Margin="0,0,0,16">
+                                    <StackPanel>
+                                        <TextBlock Text="📋 ملاحظات:" Foreground="#F0F6FC" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                        <TextBlock Text="• Vodafone: صلاحية 15 دقيقة" Foreground="#E60000" FontSize="12"/>
+                                        <TextBlock Text="• Orange: صلاحية 3 دقائق" Foreground="#FF7900" FontSize="12"/>
+                                        <TextBlock Text="• Etisalat: صلاحية 15 دقيقة" Foreground="#80B826" FontSize="12"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <Button Content="▶ توليد OTP للمحدد" 
+                                        Command="{Binding GenerateOtpForAllCommand}"
+                                        Style="{StaticResource OrangeButton}" 
+                                        FontSize="15" Padding="20,14"
+                                        IsEnabled="{Binding IsOtpGenerating, Converter={StaticResource InverseBoolConverter}}"
+                                        HorizontalAlignment="Stretch"/>
+
+                                <Button Content="🗑 مسح الكل" 
+                                        Command="{Binding ClearAllOtpsCommand}"
+                                        Style="{StaticResource GhostButton}" 
+                                        Margin="0,10,0,0"
+                                        HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Style="{StaticResource CardPanel}">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                                    <TextBlock Text="📱" FontSize="18" Margin="0,0,8,0"/>
+                                    <TextBlock Text="نتائج OTP" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                                </StackPanel>
+
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding OtpResults}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border Margin="0,0,0,10" CornerRadius="8" Padding="16"
+                                                        BorderThickness="2">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="#0D1117"/>
+                                                            <Setter Property="BorderBrush" Value="#30363D"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding IsWithdrawn}" Value="True">
+                                                                    <Setter Property="Background" Value="#0D2818"/>
+                                                                    <Setter Property="BorderBrush" Value="#238636"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                                                    <Setter Property="Background" Value="#2D1117"/>
+                                                                    <Setter Property="BorderBrush" Value="#DA3633"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+
+                                                        <StackPanel Grid.Column="0">
+                                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                                <TextBlock Text="📞 Phone:" Foreground="#8B949E" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="{Binding PhoneNumber}" Foreground="#F0F6FC" 
+                                                                           FontWeight="SemiBold" FontSize="15"/>
+                                                                <Border Margin="12,0,0,0" CornerRadius="4" Padding="8,2">
+                                                                    <Border.Style>
+                                                                        <Style TargetType="Border">
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding OperatorName}" Value="Vodafone">
+                                                                                    <Setter Property="Background" Value="#E60000"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding OperatorName}" Value="Orange">
+                                                                                    <Setter Property="Background" Value="#FF7900"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding OperatorName}" Value="Etisalat">
+                                                                                    <Setter Property="Background" Value="#80B826"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </Border.Style>
+                                                                    <TextBlock Text="{Binding OperatorName}" Foreground="White" FontSize="11" FontWeight="Bold"/>
+                                                                </Border>
+                                                            </StackPanel>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <TextBlock Text="🔐 OTP:" Foreground="#8B949E" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="{Binding OtpCode}" Foreground="#58A6FF" 
+                                                                           FontWeight="Bold" FontSize="22" FontFamily="Consolas"/>
+                                                                <TextBlock Text="{Binding Amount, StringFormat=' ({0} ج.م)'}" 
+                                                                           Foreground="#8B949E" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                                            </StackPanel>
+                                                        </StackPanel>
+
+                                                        <Border Grid.Column="1" CornerRadius="6" Padding="12,8" Margin="10,0"
+                                                                VerticalAlignment="Center">
+                                                            <Border.Style>
+                                                                <Style TargetType="Border">
+                                                                    <Setter Property="Background" Value="#D29922"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                                                            <Setter Property="Background" Value="#DA3633"/>
+                                                                        </DataTrigger>
+                                                                        <DataTrigger Binding="{Binding IsWithdrawn}" Value="True">
+                                                                            <Setter Property="Background" Value="#238636"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Border.Style>
+                                                            <StackPanel>
+                                                                <TextBlock HorizontalAlignment="Center" Foreground="White" FontSize="11">
+                                                                    <TextBlock.Style>
+                                                                        <Style TargetType="TextBlock">
+                                                                            <Setter Property="Text" Value="⏱ باقي"/>
+                                                                            <Style.Triggers>
+                                                                                <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                                                                    <Setter Property="Text" Value="❌ انتهى"/>
+                                                                                </DataTrigger>
+                                                                                <DataTrigger Binding="{Binding IsWithdrawn}" Value="True">
+                                                                                    <Setter Property="Text" Value="✅ تم"/>
+                                                                                </DataTrigger>
+                                                                            </Style.Triggers>
+                                                                        </Style>
+                                                                    </TextBlock.Style>
+                                                                </TextBlock>
+                                                                <TextBlock Text="{Binding RemainingTimeDisplay}" 
+                                                                           Foreground="White" FontWeight="Bold" FontSize="16"
+                                                                           HorizontalAlignment="Center"
+                                                                           Visibility="{Binding IsWithdrawn, Converter={StaticResource InverseBoolToVisibility}}"/>
+                                                            </StackPanel>
+                                                        </Border>
+
+                                                        <Button Grid.Column="2" Content="✓" 
+                                                                Command="{Binding DataContext.ConfirmWithdrawalCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                Style="{StaticResource ModernButton}" 
+                                                                Width="50" Height="50" FontSize="20" Padding="0"
+                                                                VerticalAlignment="Center"
+                                                                Visibility="{Binding IsWithdrawn, Converter={StaticResource InverseBoolToVisibility}}">
+                                                            <Button.IsEnabled>
+                                                                <MultiBinding Converter="{StaticResource OtpVisibilityConverter}">
+                                                                    <Binding Path="IsWithdrawn"/>
+                                                                    <Binding Path="IsExpired"/>
+                                                                </MultiBinding>
+                                                            </Button.IsEnabled>
+                                                        </Button>
+
+                                                        <Button Grid.Column="3" Content="✗" 
+                                                                Command="{Binding DataContext.CancelOtpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                                CommandParameter="{Binding}"
+                                                                Style="{StaticResource RedButton}" 
+                                                                Width="50" Height="50" FontSize="20" Padding="0"
+                                                                VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
             <TabItem Header="⚙ الإعدادات" Style="{StaticResource TabItemStyle}">
                 <ScrollViewer Margin="10" VerticalScrollBarVisibility="Auto">
                     <StackPanel>

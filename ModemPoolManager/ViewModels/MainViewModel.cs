@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ModemPoolManager.Models;
@@ -224,12 +225,34 @@ public partial class MainViewModel : ObservableObject
     private string _currentSequentialCommand = "";
 
     private OcSeriesService? _ocSeriesService;
+    private OtpService? _otpService;
     private CancellationTokenSource? _ocSeriesCts;
     private CancellationTokenSource? _customTransferCts;
     private CancellationTokenSource? _sequentialUssdCts;
 
     private int _commandId = 0;
     private AppState _appState;
+
+    [ObservableProperty]
+    private ObservableCollection<OtpResult> _otpResults = new();
+
+    [ObservableProperty]
+    private string _otpPin = "";
+
+    [ObservableProperty]
+    private int _otpAmount = 500;
+
+    [ObservableProperty]
+    private bool _isOtpGenerating;
+
+    [ObservableProperty]
+    private decimal _totalWithdrawnAmount;
+
+    [ObservableProperty]
+    private int _successfulWithdrawals;
+
+    [ObservableProperty]
+    private int _pendingWithdrawals;
 
     [ObservableProperty]
     private decimal _senderCashBalance;
@@ -262,6 +285,7 @@ public partial class MainViewModel : ObservableObject
         _balanceQueryService = new BalanceQueryService(_modemService);
         _cardTopUpService = new CardTopUpService(_modemService);
         _ocSeriesService = new OcSeriesService(_modemService);
+        _otpService = new OtpService(_modemService, _smsService);
 
         CustomUssd1 = Settings.General.QuickUssdCommands.ElementAtOrDefault(0) ?? "*100#";
         CustomUssd2 = Settings.General.QuickUssdCommands.ElementAtOrDefault(1) ?? "*101#";
@@ -2893,6 +2917,164 @@ public partial class MainViewModel : ObservableObject
         IsSequentialRunning = false;
         SequentialUssdLog += "\n⏹ تم إيقاف التنفيذ المتسلسل\n";
         StatusMessage = "تم إيقاف التنفيذ المتسلسل";
+    }
+
+    #endregion
+
+    #region OTP Generation Commands
+
+    [RelayCommand]
+    private async Task GenerateOtpForAllAsync()
+    {
+        if (string.IsNullOrEmpty(OtpPin))
+        {
+            StatusMessage = "الرجاء إدخال الرقم السري (PIN)";
+            return;
+        }
+
+        if (OtpAmount <= 0)
+        {
+            StatusMessage = "الرجاء إدخال مبلغ صحيح";
+            return;
+        }
+
+        var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected).ToList();
+        
+        if (selectedModems.Count == 0)
+        {
+            StatusMessage = "الرجاء تحديد مودمات لتوليد OTP";
+            return;
+        }
+
+        try
+        {
+            IsOtpGenerating = true;
+            StatusMessage = $"جاري توليد OTP لـ {selectedModems.Count} مودم...";
+
+            var tasks = selectedModems.Select(async modem =>
+            {
+                modem.Status = "جاري توليد OTP...";
+                var result = await _otpService!.GenerateOtpAsync(modem, OtpAmount, OtpPin);
+                
+                Application.Current.Dispatcher.Invoke(() =>
+                {
+                    if (result.IsSuccess)
+                    {
+                        OtpResults.Add(result);
+                        modem.Status = $"OTP: {result.OtpCode}";
+                        modem.LastResponse = $"OTP: {result.OtpCode}\nينتهي في: {result.RemainingTimeDisplay}";
+                        PendingWithdrawals++;
+                    }
+                    else
+                    {
+                        modem.Status = $"فشل: {result.ErrorMessage}";
+                        modem.LastError = result.ErrorMessage;
+                    }
+                });
+
+                return result;
+            });
+
+            var results = await Task.WhenAll(tasks);
+            var successCount = results.Count(r => r.IsSuccess);
+            var failCount = results.Count(r => !r.IsSuccess);
+
+            StatusMessage = $"تم توليد {successCount} OTP بنجاح، {failCount} فشل";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsOtpGenerating = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ConfirmWithdrawal(OtpResult? otpResult)
+    {
+        if (otpResult == null || otpResult.IsWithdrawn || otpResult.IsExpired) return;
+
+        otpResult.IsWithdrawn = true;
+        otpResult.StopCountdown();
+        TotalWithdrawnAmount += otpResult.Amount;
+        SuccessfulWithdrawals++;
+        PendingWithdrawals = Math.Max(0, PendingWithdrawals - 1);
+
+        var modem = Modems.FirstOrDefault(m => m.PortName == otpResult.PortName);
+        if (modem != null)
+        {
+            modem.Status = $"تم السحب: {otpResult.Amount} ج.م";
+        }
+
+        StatusMessage = $"تم تأكيد السحب: {otpResult.Amount} ج.م من {otpResult.PhoneNumber}";
+    }
+
+    [RelayCommand]
+    private void CancelOtp(OtpResult? otpResult)
+    {
+        if (otpResult == null) return;
+
+        otpResult.StopCountdown();
+        OtpResults.Remove(otpResult);
+        
+        if (!otpResult.IsWithdrawn)
+        {
+            PendingWithdrawals = Math.Max(0, PendingWithdrawals - 1);
+        }
+
+        var modem = Modems.FirstOrDefault(m => m.PortName == otpResult.PortName);
+        if (modem != null)
+        {
+            modem.Status = "جاهز";
+        }
+
+        StatusMessage = $"تم إلغاء OTP لـ {otpResult.PhoneNumber}";
+    }
+
+    [RelayCommand]
+    private void StartNewWithdrawalSession()
+    {
+        foreach (var otp in OtpResults.ToList())
+        {
+            otp.StopCountdown();
+        }
+        OtpResults.Clear();
+        TotalWithdrawnAmount = 0;
+        SuccessfulWithdrawals = 0;
+        PendingWithdrawals = 0;
+
+        foreach (var modem in Modems)
+        {
+            if (modem.Status?.Contains("OTP") == true || modem.Status?.Contains("السحب") == true)
+            {
+                modem.Status = "جاهز";
+            }
+        }
+
+        StatusMessage = "تم بدء جلسة سحب جديدة";
+    }
+
+    [RelayCommand]
+    private void ClearAllOtps()
+    {
+        foreach (var otp in OtpResults.ToList())
+        {
+            otp.StopCountdown();
+        }
+        OtpResults.Clear();
+        PendingWithdrawals = 0;
+
+        foreach (var modem in Modems)
+        {
+            if (modem.Status?.Contains("OTP") == true)
+            {
+                modem.Status = "جاهز";
+            }
+        }
+
+        StatusMessage = "تم مسح جميع OTPs";
     }
 
     #endregion
