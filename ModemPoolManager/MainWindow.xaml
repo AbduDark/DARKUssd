@@ -766,7 +766,7 @@
                                                                                                                    FontSize="10" Foreground="#8B949E"/>
                                                                                                         
                                                                                                         <TextBlock Grid.Row="1" Grid.ColumnSpan="2" 
-                                                                                                                   Text="{Binding Message}" FontSize="11" Foreground="#C9D1D9"
+                                                                                                                   Text="{Binding Message}" FontSize="14" Foreground="#C9D1D9"
                                                                                                                    TextTrimming="CharacterEllipsis" MaxWidth="300" Margin="0,4,0,0"/>
                                                                                                     </Grid>
                                                                                                 </Border>
@@ -1340,7 +1340,7 @@
                                                                            Margin="0,0,12,0" VerticalAlignment="Center"/>
                                                                 <TextBlock Grid.Column="1" 
                                                                            Text="{Binding Message}" 
-                                                                           FontSize="11" 
+                                                                           FontSize="14" 
                                                                            Foreground="#8B949E"
                                                                            TextWrapping="Wrap" VerticalAlignment="Center"/>
                                                                 <TextBlock Grid.Column="2" 
@@ -1839,7 +1839,7 @@
                                                                            Margin="0,0,12,0" VerticalAlignment="Center"/>
                                                                 <TextBlock Grid.Column="1" 
                                                                            Text="{Binding Message}" 
-                                                                           FontSize="11" 
+                                                                           FontSize="14" 
                                                                            Foreground="#8B949E"
                                                                            TextWrapping="Wrap" VerticalAlignment="Center"/>
                                                                 <TextBlock Grid.Column="2" 
@@ -1852,7 +1852,7 @@
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
-                                            <TextBlock Text="{Binding CustomTransferLog}" FontSize="11" 
+                                            <TextBlock Text="{Binding CustomTransferLog}" FontSize="15" 
                                                        Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap" Margin="0,8,0,0"/>
                                         </StackPanel>
                                     </ScrollViewer>
