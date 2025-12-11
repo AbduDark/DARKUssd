@@ -637,29 +637,6 @@
                                                                            Visibility="{Binding IsRenewingValidity, Converter={StaticResource BoolToVisibility}}"/>
                                                             </StackPanel>
                                                         </Border>
-                                                    </StackPanel>
-
-                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
-                                                        <Button ToolTip="إعادة تشغيل كاملة للمودم (Reset)" Cursor="Hand"
-                                                                Command="{Binding DataContext.FullResetModemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                                                CommandParameter="{Binding}">
-                                                            <Button.Template>
-                                                                <ControlTemplate TargetType="Button">
-                                                                    <Border Background="#DA3633" BorderBrush="#F85149" BorderThickness="1" 
-                                                                            CornerRadius="4" Padding="10,4" x:Name="border">
-                                                                        <TextBlock Text="Reset" FontSize="11" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
-                                                                    </Border>
-                                                                    <ControlTemplate.Triggers>
-                                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                                            <Setter TargetName="border" Property="Background" Value="#F85149"/>
-                                                                        </Trigger>
-                                                                    </ControlTemplate.Triggers>
-                                                                </ControlTemplate>
-                                                            </Button.Template>
-                                                        </Button>
-                                                    </StackPanel>
-                                                </Grid>
-                                            </Border>
                                                         
                                                         <!-- SMS Popup -->
                                                         <Popup IsOpen="{Binding IsSmsPopupOpen}" 
@@ -791,6 +768,26 @@
                                                                 </Grid>
                                                             </Border>
                                                         </Popup>
+                                                    </StackPanel>
+
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left">
+                                                        <Button ToolTip="إعادة تشغيل كاملة للمودم (Reset)" Cursor="Hand"
+                                                                Command="{Binding DataContext.FullResetModemCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="#DA3633" BorderBrush="#F85149" BorderThickness="1" 
+                                                                            CornerRadius="4" Padding="10,4" x:Name="border">
+                                                                        <TextBlock Text="Reset" FontSize="11" Foreground="White" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#F85149"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
                                                     </StackPanel>
                                                 </Grid>
                                             </Border>
