@@ -244,6 +244,70 @@ public partial class MainViewModel : ObservableObject
     private string _otpPin = "";
 
     [ObservableProperty]
+    private ObservableCollection<OperationStatus> _activeOperations = new();
+
+    [ObservableProperty]
+    private string _currentOperationText = "";
+
+    [ObservableProperty]
+    private bool _hasActiveOperations;
+
+    public void AddOperation(string operationType, string description, string targetPhone = "")
+    {
+        var operation = new OperationStatus
+        {
+            OperationType = operationType,
+            Description = description,
+            TargetPhone = targetPhone
+        };
+        
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            ActiveOperations.Add(operation);
+            UpdateOperationText();
+        });
+    }
+
+    public void RemoveOperation(string operationType)
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            var toRemove = ActiveOperations.Where(o => o.OperationType == operationType).ToList();
+            foreach (var op in toRemove)
+            {
+                ActiveOperations.Remove(op);
+            }
+            UpdateOperationText();
+        });
+    }
+
+    public void ClearAllOperations()
+    {
+        Application.Current.Dispatcher.Invoke(() =>
+        {
+            ActiveOperations.Clear();
+            UpdateOperationText();
+        });
+    }
+
+    private void UpdateOperationText()
+    {
+        HasActiveOperations = ActiveOperations.Count > 0;
+        if (ActiveOperations.Count == 0)
+        {
+            CurrentOperationText = "لا توجد عمليات جارية";
+        }
+        else if (ActiveOperations.Count == 1)
+        {
+            CurrentOperationText = ActiveOperations[0].DisplayText;
+        }
+        else
+        {
+            CurrentOperationText = $"{ActiveOperations.Count} عمليات جارية";
+        }
+    }
+
+    [ObservableProperty]
     private int _otpAmount = 500;
 
     [ObservableProperty]
@@ -387,6 +451,7 @@ public partial class MainViewModel : ObservableObject
         
         _modemService.StartMonitoring(5000);
         IsMonitoring = true;
+        CurrentOperationText = "جاهز للعمل";
     }
 
     private void LoadAppState()
@@ -595,6 +660,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             IsProcessing = true;
+            AddOperation("REFRESH_PORTS", "جاري فحص المودمات");
             StatusMessage = "جاري إعادة فحص المودمات...";
             
             Modems.Clear();
@@ -643,6 +709,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsProcessing = false;
+            RemoveOperation("REFRESH_PORTS");
         }
     }
 
@@ -652,6 +719,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             IsProcessing = true;
+            AddOperation("FORCE_RESCAN", "جاري التنظيف القسري");
             StatusMessage = "⚡ جاري التنظيف القسري وإعادة البحث عن المودمات...";
             
             _modemService.StopMonitoring();
@@ -704,6 +772,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsProcessing = false;
+            RemoveOperation("FORCE_RESCAN");
         }
     }
 
@@ -921,6 +990,7 @@ public partial class MainViewModel : ObservableObject
         try
         {
             IsProcessing = true;
+            AddOperation("USSD", $"جاري تنفيذ {ussdCode}");
             Results.Clear();
             
             var selectedModems = Modems.Where(m => m.IsConnected && m.IsSelected).ToList();
@@ -928,6 +998,7 @@ public partial class MainViewModel : ObservableObject
             if (selectedModems.Count == 0)
             {
                 StatusMessage = "لا توجد مودمات محددة للتنفيذ";
+                RemoveOperation("USSD");
                 return;
             }
 
@@ -991,6 +1062,7 @@ public partial class MainViewModel : ObservableObject
         finally
         {
             IsProcessing = false;
+            RemoveOperation("USSD");
             foreach (var modem in Modems)
             {
                 modem.IsBusy = false;
