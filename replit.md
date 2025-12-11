@@ -17,8 +17,11 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage u
 The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems are displayed as individual cards in a `UniformGrid` (4x3 layout), featuring real-time information, animated loading circles, and color-coded elements. Phone numbers are color-coded by network operator. The theme is pure black (#000000) with dark card backgrounds (#0D0D0D) and operator-colored accents for borders and selected tab underlines. A `SignalBarsToOpacityConverter` provides visual signal strength feedback.
 
 **Recent UI Updates (December 2025):**
+- **Fullscreen Mode:** Application now launches in fullscreen (Maximized) with a custom close button (X) in the top-right corner for clean, immersive experience.
+- **Increased Font Sizes:** All text sizes increased for better readability: USSD responses (16px), SMS messages (16px), Logs (15px), OTP headers (14px).
 - **Operations Status Bar:** The main header now displays a dynamic operations status bar showing active background tasks (e.g., "جاري فحص المودمات", "جاري تنفيذ *100#"). Shows "جاهز للعمل" when idle with an animated spinner during active operations. Connected count displayed as a compact badge on the left.
 - **Modem Card Redesign:** Phone number now prominently displayed in the center (32px font, bold). Action buttons (SMS, Signal refresh, Phone refresh, Reset) moved to the card footer for a cleaner layout. Checkbox on left, signal bars on right in header. Better visual hierarchy with less clutter.
+- **OTP with Auto Passwords:** OtpService now automatically uses operator-specific cash passwords from Settings (Orange, Vodafone, Etisalat) - no need to enter password manually.
 
 ### Technical Implementations
 - **Modem Management:** Supports up to 12 ZTE modems via WMI queries for automatic detection. Features parallel command execution, robust reconnection logic (cleaning up resources and re-detecting), and automatic removal of disconnected modems from the UI.
