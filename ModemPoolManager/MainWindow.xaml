@@ -11,6 +11,9 @@
         FlowDirection="RightToLeft"
         Background="#000000"
         WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        WindowStyle="None"
+        ResizeMode="NoResize"
         MinHeight="700" MinWidth="1100">
 
     <Window.Resources>
@@ -342,6 +345,29 @@
                     <Button Content="⚙ الإعدادات" Style="{StaticResource GhostButton}" Command="{Binding OpenSettingsCommand}"/>
                     <Button Content="↻ تحديث" Style="{StaticResource BlueButton}" Command="{Binding RefreshPortsCommand}" 
                             IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                    <Button x:Name="CloseButton" Content="✕" Click="CloseButton_Click"
+                            Width="40" Height="40" Margin="10,0,0,0"
+                            FontSize="18" FontWeight="Bold"
+                            Background="#DA3633" Foreground="White"
+                            BorderThickness="0" Cursor="Hand">
+                        <Button.Template>
+                            <ControlTemplate TargetType="Button">
+                                <Border Background="{TemplateBinding Background}" CornerRadius="6">
+                                    <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                </Border>
+                            </ControlTemplate>
+                        </Button.Template>
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Setter Property="Background" Value="#DA3633"/>
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Background" Value="#F85149"/>
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
                 </StackPanel>
             </Grid>
         </Border>
@@ -811,7 +837,7 @@
                                                         </Style>
                                                     </ScrollViewer.Style>
                                                     <TextBlock Text="{Binding LastResponse}" 
-                                                               FontSize="12" Foreground="#3FB950" 
+                                                               FontSize="16" Foreground="#3FB950" 
                                                                TextWrapping="Wrap" FlowDirection="LeftToRight"
                                                                FontFamily="Consolas">
                                                         <TextBlock.Style>
@@ -934,7 +960,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Text="🔐" FontSize="28" VerticalAlignment="Center" Margin="0,0,12,0"/>
                                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                                            <TextBlock Text="رمز التحقق OTP" FontSize="11" Foreground="#8B949E" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="رمز التحقق OTP" FontSize="14" Foreground="#8B949E" FontWeight="SemiBold"/>
                                                             <TextBlock Text="{Binding ExtractedOtp}" FontSize="32" FontWeight="Bold" 
                                                                        Foreground="#3FB950" FontFamily="Consolas"/>
                                                         </StackPanel>
@@ -980,7 +1006,7 @@
                                                 
                                                 <!-- Message Content -->
                                                 <Border Grid.Row="2" Background="#21262D" Padding="14,12" CornerRadius="0,0,12,12">
-                                                    <TextBlock FontSize="14" Foreground="#C9D1D9" TextWrapping="Wrap" LineHeight="22">
+                                                    <TextBlock FontSize="16" Foreground="#C9D1D9" TextWrapping="Wrap" LineHeight="26">
                                                         <TextBlock.Style>
                                                             <Style TargetType="TextBlock">
                                                                 <Setter Property="Text" Value="{Binding Message}"/>
@@ -1327,7 +1353,7 @@
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
-                                            <TextBlock Text="{Binding TransferLog}" FontSize="11" 
+                                            <TextBlock Text="{Binding TransferLog}" FontSize="15" 
                                                        Foreground="#3FB950" FontFamily="Consolas"
                                                        TextWrapping="Wrap" Margin="0,8,0,0"/>
                                         </StackPanel>
@@ -1559,7 +1585,7 @@
                                                 Style="{StaticResource GhostButton}" Padding="4,2" Margin="8,0,0,0"/>
                                     </StackPanel>
                                     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                        <TextBlock Text="{Binding OcSeriesLog}" FontSize="11" 
+                                        <TextBlock Text="{Binding OcSeriesLog}" FontSize="15" 
                                                    Foreground="#3FB950" FontFamily="Consolas" TextWrapping="Wrap"/>
                                     </ScrollViewer>
                                 </Grid>

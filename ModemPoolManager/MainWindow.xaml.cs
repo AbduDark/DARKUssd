@@ -42,4 +42,13 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            vm.SaveAppState();
+        }
+        Application.Current.Shutdown();
+    }
 }

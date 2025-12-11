@@ -7,11 +7,43 @@ public class OtpService
 {
     private readonly ModemService _modemService;
     private readonly SmsService _smsService;
+    private readonly AppSettings _settings;
 
-    public OtpService(ModemService modemService, SmsService smsService)
+    public OtpService(ModemService modemService, SmsService smsService, AppSettings? settings = null)
     {
         _modemService = modemService;
         _smsService = smsService;
+        _settings = settings ?? AppSettings.Load();
+    }
+
+    public string GetCashPasswordForOperator(string operatorName)
+    {
+        var op = operatorName?.ToLower() ?? "";
+        if (op.Contains("vodafone") || op.Contains("فودافون"))
+            return _settings.CashPasswords.VodafoneCashPassword;
+        else if (op.Contains("orange") || op.Contains("أورانج") || op.Contains("اورانج"))
+            return _settings.CashPasswords.OrangeCashPassword;
+        else if (op.Contains("etisalat") || op.Contains("اتصالات"))
+            return _settings.CashPasswords.EtisalatCashPassword;
+        return "";
+    }
+
+    public async Task<OtpResult> GenerateOtpWithAutoPasswordAsync(Modem modem, int amount)
+    {
+        var pin = GetCashPasswordForOperator(modem.Operator ?? "");
+        if (string.IsNullOrEmpty(pin))
+        {
+            return new OtpResult
+            {
+                PortName = modem.PortName,
+                ModemIndex = modem.Index,
+                PhoneNumber = modem.PhoneNumber ?? "",
+                Amount = amount,
+                OperatorName = modem.Operator ?? "Unknown",
+                ErrorMessage = $"لم يتم تعيين كلمة سر الكاش لـ {modem.Operator} في الإعدادات"
+            };
+        }
+        return await GenerateOtpAsync(modem, amount, pin);
     }
 
     public async Task<OtpResult> GenerateVodafoneOtpAsync(string portName, int modemIndex, string phoneNumber, int amount, string pin)
