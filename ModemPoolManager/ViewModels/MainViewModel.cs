@@ -524,6 +524,7 @@ public partial class MainViewModel : ObservableObject
     private async void OnModemConnected(object? sender, Modem modem)
     {
         Modem? targetModem = null;
+        bool isNewModem = false;
         
         Application.Current.Dispatcher.Invoke(() =>
         {
@@ -534,7 +535,8 @@ public partial class MainViewModel : ObservableObject
                 modem.PropertyChanged += OnModemPropertyChanged;
                 Modems.Add(modem);
                 targetModem = modem;
-                StatusMessage = $"تم اكتشاف مودم جديد: {modem.PortName} - جاري جلب الرقم...";
+                isNewModem = true;
+                StatusMessage = $"⚡ تم اكتشاف مودم جديد: {modem.PortName} - جاري جلب الرقم...";
             }
             else
             {
@@ -546,9 +548,16 @@ public partial class MainViewModel : ObservableObject
                 existing.LastActivity = DateTime.Now;
                 existing.ValidityRenewed = false;
                 targetModem = existing;
-                StatusMessage = $"تم إعادة توصيل المودم: {modem.PortName}";
             }
             UpdateCounts();
+            
+            if (!isNewModem && targetModem != null)
+            {
+                var phoneDisplay = !string.IsNullOrEmpty(targetModem.PhoneNumber) && targetModem.PhoneNumber != "غير معروف"
+                    ? targetModem.PhoneNumber 
+                    : targetModem.PortName;
+                StatusMessage = $"✅ تم إعادة توصيل المودم: {phoneDisplay} - {ConnectedCount} مودم متصل";
+            }
         });
 
         if (targetModem != null && AutoRenewValidityForAll && !targetModem.ValidityRenewed)
@@ -558,7 +567,7 @@ public partial class MainViewModel : ObservableObject
             if (!string.IsNullOrEmpty(targetModem.PhoneNumber) && targetModem.PhoneNumber != "غير معروف")
             {
                 Application.Current.Dispatcher.Invoke(() => 
-                    StatusMessage = $"جاري تجديد صلاحية الخط: {targetModem.PhoneNumber}...");
+                    StatusMessage = $"📅 جاري تجديد صلاحية الخط: {targetModem.PhoneNumber}...");
                 
                 var success = await _validityRenewalService.RenewValidityAsync(targetModem);
                 
@@ -567,6 +576,10 @@ public partial class MainViewModel : ObservableObject
                     if (success)
                     {
                         StatusMessage = $"✅ تم تجديد صلاحية الخط: {targetModem.PhoneNumber}";
+                    }
+                    else
+                    {
+                        StatusMessage = $"⚠️ فشل تجديد الصلاحية: {targetModem.PhoneNumber}";
                     }
                 });
             }

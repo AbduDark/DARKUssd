@@ -25,6 +25,7 @@
         <converters:StringToVisibilityConverter x:Key="StringToVisibility"/>
         <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
         <converters:OtpVisibilityConverter x:Key="OtpVisibilityConverter"/>
+        <converters:OtpTextVisibilityConverter x:Key="OtpTextVisibilityConverter"/>
         <converters:TransferStatusToColorConverter x:Key="TransferStatusToColorConverter"/>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
         
@@ -342,7 +343,7 @@
                 </Border>
 
                 <StackPanel Grid.Column="2" Orientation="Horizontal">
-                    <Button Content="⚙ الإعدادات" Style="{StaticResource GhostButton}" Command="{Binding OpenSettingsCommand}"/>
+                    <Button Content="⚙ الإعدادات" Style="{StaticResource GhostButton}" Click="SettingsButton_Click"/>
                     <Button Content="↻ تحديث" Style="{StaticResource BlueButton}" Command="{Binding RefreshPortsCommand}" 
                             IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
                     <Button x:Name="CloseButton" Content="✕" Click="CloseButton_Click"
@@ -948,7 +949,7 @@
                                                 
                                                 <!-- OTP Display (Large and Prominent) -->
                                                 <Border Grid.Row="0" Background="#0D2818" CornerRadius="12,12,0,0" Padding="16,12"
-                                                        Visibility="{Binding ExtractedOtp, Converter={StaticResource OtpVisibilityConverter}}">
+                                                        Visibility="{Binding ExtractedOtp, Converter={StaticResource OtpTextVisibilityConverter}}">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
@@ -2414,127 +2415,6 @@
                 </Grid>
             </TabItem>
 
-            <TabItem Header="⚙ الإعدادات" Style="{StaticResource TabItemStyle}">
-                <ScrollViewer Margin="10" VerticalScrollBarVisibility="Auto">
-                    <StackPanel>
-                        <Border Style="{StaticResource CardPanel}">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <TextBlock Text="🔧" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="إعدادات المودم" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                </StackPanel>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Baud Rate:" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Modem.BaudRate}" 
-                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Read Timeout:" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Modem.ReadTimeout}" 
-                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Text="Max Modems:" Foreground="#8B949E" VerticalAlignment="Center"/>
-                                    <TextBox Grid.Column="1" Text="{Binding Settings.Modem.MaxModems}" 
-                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Cash Passwords Settings -->
-                        <Border Style="{StaticResource CardPanel}" Margin="0,16,0,0">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <TextBlock Text="🔐" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="كلمات سر الكاش" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                </StackPanel>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Background="#FF7900" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
-                                            <TextBlock Text="Orange" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBox Grid.Column="1" Text="{Binding OrangeCashPassword, UpdateSourceTrigger=PropertyChanged}" 
-                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"
-                                             FlowDirection="LeftToRight" FontFamily="Consolas"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Background="#E60000" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
-                                            <TextBlock Text="Vodafone" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBox Grid.Column="1" Text="{Binding VodafoneCashPassword, UpdateSourceTrigger=PropertyChanged}" 
-                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"
-                                             FlowDirection="LeftToRight" FontFamily="Consolas"/>
-                                </Grid>
-
-                                <Grid Margin="0,0,0,12">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="150"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Background="#80B826" CornerRadius="4" Padding="8,4" Margin="0,0,8,0">
-                                            <TextBlock Text="Etisalat" Foreground="White" FontWeight="Bold" FontSize="12"/>
-                                        </Border>
-                                    </StackPanel>
-                                    <TextBox Grid.Column="1" Text="{Binding EtisalatCashPassword, UpdateSourceTrigger=PropertyChanged}" 
-                                             Style="{StaticResource ModernTextBox}" Width="200" HorizontalAlignment="Left"
-                                             FlowDirection="LeftToRight" FontFamily="Consolas"/>
-                                </Grid>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Validity Settings -->
-                        <Border Style="{StaticResource CardPanel}" Margin="0,16,0,0">
-                            <StackPanel>
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
-                                    <TextBlock Text="📅" FontSize="18" Margin="0,0,8,0"/>
-                                    <TextBlock Text="إعدادات الصلاحية" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                </StackPanel>
-
-                                <CheckBox IsChecked="{Binding AutoRenewValidityForAll}" 
-                                          Content="تجديد صلاحية الخطوط تلقائياً عند التوصيل" 
-                                          Foreground="#F0F6FC" FontSize="14" Margin="0,0,0,8"
-                                          Style="{StaticResource ModernCheckBox}"/>
-                                <TextBlock Text="عند تفعيل هذا الخيار، سيتم إرسال رسالة SMS إلى 2656 تلقائياً عند توصيل أي مودم لتجديد صلاحية الخط." 
-                                           Foreground="#8B949E" FontSize="12" TextWrapping="Wrap"/>
-                            </StackPanel>
-                        </Border>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0">
-                            <Button Content="💾 حفظ الإعدادات" Command="{Binding SaveSettingsCommand}" Style="{StaticResource ModernButton}"/>
-                            <Button Content="↩ إعادة تعيين" Command="{Binding ResetSettingsCommand}" Style="{StaticResource GhostButton}"/>
-                        </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
         </TabControl>
 
         <Border Grid.Row="2" Background="#161B22" BorderBrush="#30363D" BorderThickness="0,1,0,0" Padding="16,8">

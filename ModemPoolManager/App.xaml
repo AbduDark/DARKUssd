@@ -10,6 +10,7 @@
         <converters:OperatorToBrushConverter x:Key="OperatorToBrushConverter"/>
         <converters:OperatorToGlowColorConverter x:Key="OperatorToGlowColorConverter"/>
         <converters:OtpVisibilityConverter x:Key="OtpVisibilityConverter"/>
+        <converters:OtpTextVisibilityConverter x:Key="OtpTextVisibilityConverter"/>
         <converters:SignalBarsConverter x:Key="SignalBarsConverter"/>
         <converters:SignalBarsToOpacityConverter x:Key="SignalBarsToOpacityConverter"/>
         <converters:SignalColorConverter x:Key="SignalColorConverter"/>

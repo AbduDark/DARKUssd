@@ -51,4 +51,16 @@ public partial class MainWindow : Window
         }
         Application.Current.Shutdown();
     }
+
+    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainViewModel vm)
+        {
+            var settingsWindow = new SettingsWindow(vm)
+            {
+                Owner = this
+            };
+            settingsWindow.ShowDialog();
+        }
+    }
 }
