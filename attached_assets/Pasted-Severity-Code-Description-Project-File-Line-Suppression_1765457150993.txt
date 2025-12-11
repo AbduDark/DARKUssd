@@ -1,0 +1,50 @@
+Severity	Code	Description	Project	File	Line	Suppression State
+Error	XLS0305	Closing tag for element '<Window>' was not found.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	858	
+Error (active)	MC3000	'The 'Grid' start tag on line 517 position 42 does not match the end tag of 'StackPanel'. Line 794, position 55.' XML is not valid.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	794	
+Error	XLS0301	Character sequence '</' was not expected at this location.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	859	
+Error	XLS0301	Character sequence 'Border' was not expected at this location.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	796	
+Error	XLS0301	Character sequence 'Grid' was not expected at this location.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	857	
+Error	XLS0301	Character sequence 'Grid.Row' was not expected at this location.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	798	
+Error	XLS0305	Closing tag for element '<Border>' was not found.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	795	
+Error	XLS0305	Closing tag for element '<Grid>' was not found.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	794	
+Error	XLS0305	Closing tag for element '<TabItem>' was not found.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	856	
+Error	XLS0415	The attachable property 'RowDefinitions' was not found in type 'Grid'.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	799	
+Error	XDG0000	The closing XML tag "Border" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	795	
+Error	XDG0000	The closing XML tag "DataTemplate" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	795	
+Error	XDG0000	The closing XML tag "Grid" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	794	
+Error	XDG0000	The closing XML tag "ItemsControl" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	795	
+Error	XDG0000	The closing XML tag "ItemsControl.ItemTemplate" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	795	
+Error	XDG0000	The closing XML tag "ScrollViewer" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	795	
+Error	XDG0000	The closing XML tag "TabControl" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	857	
+Error	XDG0000	The closing XML tag "TabItem" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	796	
+Error	XDG0000	The closing XML tag "Window" is mismatched.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	858	
+Error	XLS0501	The property 'Content' is set more than once.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	398	
+Error	XLS0501	The property 'Content' is set more than once.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	804	
+Error	XLS0501	The property 'Content' is set more than once.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	829	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	859	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	860	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	861	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	862	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	863	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	864	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2541	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2560	
+Error	XDG0000	The token "</" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2561	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	859	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	860	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	861	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	862	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	863	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	864	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2541	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2560	
+Error	XDG0000	The token ">" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2561	
+Error	XDG0000	The token "DataTemplate" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	859	
+Error	XDG0000	The token "Grid" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	863	
+Error	XDG0000	The token "Grid" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2560	
+Error	XDG0000	The token "ItemsControl" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	861	
+Error	XDG0000	The token "ItemsControl.ItemTemplate" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	860	
+Error	XDG0000	The token "ScrollViewer" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	862	
+Error	XDG0000	The token "TabControl" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2541	
+Error	XDG0000	The token "TabItem" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	864	
+Error	XDG0000	The token "Window" is unexpected.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2561	
