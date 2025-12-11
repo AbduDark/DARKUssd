@@ -8,7 +8,7 @@ namespace ModemPoolManager.Models;
 
 public class AppSettings
 {
-    public const int CurrentVersion = 2;
+    public const int CurrentVersion = 3;
     
     public int SettingsVersion { get; set; } = CurrentVersion;
     public ModemSettings Modem { get; set; } = new();
@@ -16,6 +16,7 @@ public class AppSettings
     public AiSettings Ai { get; set; } = new();
     public GeneralSettings General { get; set; } = new();
     public FeatureFlags Features { get; set; } = new();
+    public CashPasswordSettings CashPasswords { get; set; } = new();
 
     private static readonly string SettingsPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
@@ -57,6 +58,7 @@ public class AppSettings
         settings.Ui ??= new UiSettings();
         settings.Ai ??= new AiSettings();
         settings.General ??= new GeneralSettings();
+        settings.CashPasswords ??= new CashPasswordSettings();
         
         if (settings.Features == null)
         {
@@ -161,6 +163,7 @@ public class GeneralSettings
     public string LogLevel { get; set; } = "Info";
     public bool EnableSounds { get; set; } = true;
     public bool EnableNotifications { get; set; } = true;
+    public bool AutoRenewValidityForAll { get; set; } = false;
 
     public List<string> QuickUssdCommands { get; set; } = new()
     {
@@ -171,6 +174,13 @@ public class GeneralSettings
         "*121#",
         "*123#"
     };
+}
+
+public class CashPasswordSettings
+{
+    public string OrangeCashPassword { get; set; } = "";
+    public string VodafoneCashPassword { get; set; } = "";
+    public string EtisalatCashPassword { get; set; } = "";
 }
 
 public class FeatureFlags

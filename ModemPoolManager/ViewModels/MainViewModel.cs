@@ -70,9 +70,6 @@ public partial class MainViewModel : ObservableObject
     private string _aiResponse = "مرحباً! أنا المساعد الذكي لإدارة المودمات.\n\nيمكنني مساعدتك في:\n• تحليل ردود USSD\n• اقتراح أوامر مناسبة\n• تشخيص مشاكل المودمات\n• فهم رسائل SMS\n\nاكتب سؤالك أو اختر أحد الأزرار للبدء.";
 
     [ObservableProperty]
-    private string _orangeCashPassword = "";
-
-    [ObservableProperty]
     private string _primarySenderPhone = "";
 
     [ObservableProperty]
@@ -282,6 +279,88 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _currentTransferStatus = "";
 
+    [ObservableProperty]
+    private string _txtTransferTimeRemaining = "";
+
+    [ObservableProperty]
+    private int _txtTransferProgress;
+
+    [ObservableProperty]
+    private int _txtTransferCompleted;
+
+    private DateTime _transferStartTime;
+
+    public string OrangeCashPassword
+    {
+        get => Settings?.CashPasswords?.OrangeCashPassword ?? "";
+        set
+        {
+            if (Settings?.CashPasswords != null)
+            {
+                Settings.CashPasswords.OrangeCashPassword = value;
+                OnPropertyChanged(nameof(OrangeCashPassword));
+                Settings.Save();
+            }
+        }
+    }
+
+    public string VodafoneCashPassword
+    {
+        get => Settings?.CashPasswords?.VodafoneCashPassword ?? "";
+        set
+        {
+            if (Settings?.CashPasswords != null)
+            {
+                Settings.CashPasswords.VodafoneCashPassword = value;
+                OnPropertyChanged(nameof(VodafoneCashPassword));
+                Settings.Save();
+            }
+        }
+    }
+
+    public string EtisalatCashPassword
+    {
+        get => Settings?.CashPasswords?.EtisalatCashPassword ?? "";
+        set
+        {
+            if (Settings?.CashPasswords != null)
+            {
+                Settings.CashPasswords.EtisalatCashPassword = value;
+                OnPropertyChanged(nameof(EtisalatCashPassword));
+                Settings.Save();
+            }
+        }
+    }
+
+    public bool AutoRenewValidityForAll
+    {
+        get => Settings?.General?.AutoRenewValidityForAll ?? false;
+        set
+        {
+            if (Settings?.General != null)
+            {
+                Settings.General.AutoRenewValidityForAll = value;
+                OnPropertyChanged(nameof(AutoRenewValidityForAll));
+                Settings.Save();
+            }
+        }
+    }
+
+    public string GetCashPasswordForOperator(string operatorName)
+    {
+        if (string.IsNullOrEmpty(operatorName)) return "";
+        
+        var op = operatorName.ToLower();
+        if (op.Contains("orange") || op.Contains("اورنج") || op.Contains("أورانج"))
+            return OrangeCashPassword;
+        if (op.Contains("vodafone") || op.Contains("فودافون"))
+            return VodafoneCashPassword;
+        if (op.Contains("etisalat") || op.Contains("اتصالات"))
+            return EtisalatCashPassword;
+        
+        return OrangeCashPassword;
+    }
+
     public MainViewModel()
     {
         Settings = AppSettings.Load();
@@ -318,7 +397,6 @@ public partial class MainViewModel : ObservableObject
         CustomUssd3 = _appState.CustomUssd3;
         SmsPhoneNumber = _appState.SmsPhoneNumber;
         SmsMessage = _appState.SmsMessage;
-        OrangeCashPassword = _appState.OrangeCashPassword;
         PrimarySenderPhone = _appState.PrimarySenderPhone;
         TransferAmount = _appState.TransferAmount;
         OcSeriesTargetPhone = _appState.OcSeriesTargetPhone;
@@ -354,7 +432,6 @@ public partial class MainViewModel : ObservableObject
         _appState.CustomUssd3 = CustomUssd3;
         _appState.SmsPhoneNumber = SmsPhoneNumber;
         _appState.SmsMessage = SmsMessage;
-        _appState.OrangeCashPassword = OrangeCashPassword;
         _appState.PrimarySenderPhone = PrimarySenderPhone;
         _appState.TransferAmount = TransferAmount;
         _appState.OcSeriesTargetPhone = OcSeriesTargetPhone;
@@ -409,7 +486,7 @@ public partial class MainViewModel : ObservableObject
             UpdateCounts();
         });
 
-        if (targetModem != null && targetModem.AutoRenewValidity && !targetModem.ValidityRenewed)
+        if (targetModem != null && AutoRenewValidityForAll && !targetModem.ValidityRenewed)
         {
             await Task.Delay(2000);
             
@@ -2677,6 +2754,10 @@ public partial class MainViewModel : ObservableObject
         {
             IsCustomTransferRunning = true;
             _customTransferCts = new CancellationTokenSource();
+            _transferStartTime = DateTime.Now;
+            TxtTransferCompleted = 0;
+            TxtTransferProgress = 0;
+            
             CustomTransferLog = $"🚀 بدء التحويل المخصص من {SelectedSenderModem.PhoneNumber}\n";
             CustomTransferLog += $"📋 عدد التحويلات: {ExcelTransferItems.Count}\n";
             CustomTransferLogEntries.Clear();
@@ -2748,6 +2829,10 @@ public partial class MainViewModel : ObservableObject
                     CustomTransferLog += $"   ❌ فشل: {message}\n";
                 }
 
+                TxtTransferCompleted = i + 1;
+                TxtTransferProgress = (int)((double)(i + 1) / ExcelTransferItems.Count * 100);
+                UpdateTimeRemaining(i + 1, ExcelTransferItems.Count);
+
                 if (i < ExcelTransferItems.Count - 1 && !_customTransferCts.Token.IsCancellationRequested)
                 {
                     CustomTransferLog += $"\n⏳ انتظار {CustomTransferDelay} ثانية...\n";
@@ -2785,6 +2870,33 @@ public partial class MainViewModel : ObservableObject
         {
             IsCustomTransferRunning = false;
             CustomTransferCountdown = 0;
+            TxtTransferTimeRemaining = "";
+        }
+    }
+
+    private void UpdateTimeRemaining(int completed, int total)
+    {
+        if (completed == 0) return;
+        
+        var elapsed = DateTime.Now - _transferStartTime;
+        var averagePerTransfer = elapsed.TotalSeconds / completed;
+        var remaining = total - completed;
+        var estimatedSeconds = remaining * averagePerTransfer;
+        
+        if (remaining > 0)
+        {
+            estimatedSeconds += remaining * CustomTransferDelay;
+        }
+        
+        var timeSpan = TimeSpan.FromSeconds(estimatedSeconds);
+        
+        if (timeSpan.TotalMinutes >= 1)
+        {
+            TxtTransferTimeRemaining = $"{(int)timeSpan.TotalMinutes} دقيقة و {timeSpan.Seconds} ثانية";
+        }
+        else
+        {
+            TxtTransferTimeRemaining = $"{(int)timeSpan.TotalSeconds} ثانية";
         }
     }
 
