@@ -295,7 +295,7 @@ public partial class MainViewModel : ObservableObject
         HasActiveOperations = ActiveOperations.Count > 0;
         if (ActiveOperations.Count == 0)
         {
-            CurrentOperationText = "لا توجد عمليات جارية";
+            CurrentOperationText = "جاهز للعمل";
         }
         else if (ActiveOperations.Count == 1)
         {
