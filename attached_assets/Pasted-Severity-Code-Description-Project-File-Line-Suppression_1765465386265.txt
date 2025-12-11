@@ -1,0 +1,53 @@
+Severity	Code	Description	Project	File	Line	Suppression State
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	348	
+Error (active)	CS1061	'ModemSettings' does not contain a definition for 'ReadTimeout' and no accessible extension method 'ReadTimeout' accepting a first argument of type 'ModemSettings' could be found (are you missing a using directive or an assembly reference?)	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\SettingsWindow.xaml.cs	29	
+Error (active)	CS1061	'ModemSettings' does not contain a definition for 'ReadTimeout' and no accessible extension method 'ReadTimeout' accepting a first argument of type 'ModemSettings' could be found (are you missing a using directive or an assembly reference?)	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\SettingsWindow.xaml.cs	55	
+Error	XDG0006	Object reference not set to an instance of an object.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	474	
+Error	XDG0008	The name "InverseBoolConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	20	
+Error	XDG0008	The name "InverseBoolToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	26	
+Error	XDG0008	The name "OperatorToBrushConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	21	
+Error	XDG0008	The name "OperatorToGlowColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	22	
+Error	XDG0008	The name "OtpTextVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	28	
+Error	XDG0008	The name "OtpVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	27	
+Error	XDG0008	The name "SignalBarsToOpacityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	24	
+Error	XDG0008	The name "SignalColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	23	
+Error	XDG0008	The name "StringToVisibilityConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	25	
+Error	XDG0008	The name "TransferStatusToColorConverter" does not exist in the namespace "clr-namespace:ModemPoolManager.Converters".	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	29	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	427	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	437	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	443	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	449	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	458	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	461	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	895	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	897	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1247	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1254	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1790	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2141	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2150	
+Error	XDG-0001	The resource "InverseBoolConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2261	
+Error	XDG-0001	The resource "InverseBoolToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	336	
+Error	XDG-0001	The resource "InverseBoolToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	768	
+Error	XDG-0001	The resource "InverseBoolToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1433	
+Error	XDG-0001	The resource "InverseBoolToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2142	
+Error	XDG-0001	The resource "InverseBoolToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2381	
+Error	XDG-0001	The resource "InverseBoolToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	2391	
+Error	XDG-0001	The resource "OperatorToBrushConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	476	
+Error	XDG-0001	The resource "OperatorToBrushConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	536	
+Error	XDG-0001	The resource "OperatorToBrushConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1420	
+Error	XDG-0001	The resource "OperatorToGlowColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	483	
+Error	XDG-0001	The resource "OtpTextVisibilityConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	952	
+Error	XDG-0001	The resource "SignalBarsToOpacityConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	545	
+Error	XDG-0001	The resource "SignalBarsToOpacityConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	548	
+Error	XDG-0001	The resource "SignalBarsToOpacityConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	557	
+Error	XDG-0001	The resource "SignalColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	547	
+Error	XDG-0001	The resource "SignalColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	550	
+Error	XDG-0001	The resource "SignalColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	553	
+Error	XDG-0001	The resource "SignalColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	556	
+Error	XDG-0001	The resource "StringToVisibility" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1427	
+Error	XDG-0001	The resource "TransferStatusToColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1337	
+Error	XDG-0001	The resource "TransferStatusToColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1347	
+Error	XDG-0001	The resource "TransferStatusToColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1826	
+Error	XDG-0001	The resource "TransferStatusToColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1836	
+Error	XDG-0001	The resource "TransferStatusToColorConverter" has an incompatible type.	ModemPoolManager	D:\DARKUssd\DARKUssd\ModemPoolManager\MainWindow.xaml	1846	
