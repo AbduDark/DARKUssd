@@ -111,6 +111,7 @@ public class AppSettings
 public class ModemSettings
 {
     public int BaudRate { get; set; } = 115200;
+    public int ReadTimeout { get; set; } = 10000;
     public int CommandTimeout { get; set; } = 30000;
     public int UssdTimeout { get; set; } = 60000;
     public int SmsTimeout { get; set; } = 30000;
