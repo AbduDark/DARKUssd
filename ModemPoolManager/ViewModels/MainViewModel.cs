@@ -228,6 +228,39 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private string _currentSequentialCommand = "";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ControlPanelToggleText))]
+    private bool _isControlPanelVisible = true;
+
+    public string ControlPanelToggleText => IsControlPanelVisible ? "👁 إخفاء" : "👁 إظهار";
+
+    [ObservableProperty]
+    private string _batchUssdCode1 = "";
+
+    [ObservableProperty]
+    private string _batchUssdCode2 = "";
+
+    [ObservableProperty]
+    private string _batchUssdCode3 = "";
+
+    [ObservableProperty]
+    private string _batchUssdCode4 = "";
+
+    [ObservableProperty]
+    private string _batchUssdCode5 = "";
+
+    [ObservableProperty]
+    private bool _isBatchExecuting;
+
+    [ObservableProperty]
+    private int _batchExecutionSession;
+
+    [ObservableProperty]
+    private string _getMissedLog = "";
+
+    [ObservableProperty]
+    private int _missedModemsCount;
+
     private OcSeriesService? _ocSeriesService;
     private OtpService? _otpService;
     private CancellationTokenSource? _ocSeriesCts;
@@ -3394,6 +3427,327 @@ public partial class MainViewModel : ObservableObject
         }
 
         StatusMessage = "تم مسح جميع OTPs";
+    }
+
+    #endregion
+
+    #region Get Missed Commands
+
+    [RelayCommand]
+    private async Task GetMissedModems()
+    {
+        GetMissedLog = "";
+        AddOperation("GetMissed", "جاري البحث عن المودمات المفقودة...");
+        
+        try
+        {
+            var missedModems = Modems.Where(m => 
+                !string.IsNullOrEmpty(m.PortName) && 
+                (string.IsNullOrEmpty(m.PhoneNumber) || m.PhoneNumber == "غير معروف" || !m.IsConnected)
+            ).ToList();
+
+            MissedModemsCount = missedModems.Count;
+            
+            if (missedModems.Count == 0)
+            {
+                GetMissedLog = "✅ لا توجد مودمات مفقودة - جميع المودمات تعمل بشكل صحيح\n";
+                StatusMessage = "لا توجد مودمات مفقودة";
+                return;
+            }
+
+            GetMissedLog = $"🔍 تم العثور على {missedModems.Count} مودم مفقود:\n";
+            
+            foreach (var modem in missedModems)
+            {
+                GetMissedLog += $"  • {modem.PortName}: ";
+                if (!modem.IsConnected)
+                    GetMissedLog += "غير متصل";
+                else if (string.IsNullOrEmpty(modem.PhoneNumber) || modem.PhoneNumber == "غير معروف")
+                    GetMissedLog += "رقم غير معروف";
+                GetMissedLog += "\n";
+            }
+
+            GetMissedLog += "\n🔄 جاري إعادة تشغيل المودمات المفقودة...\n";
+
+            var restartTasks = missedModems.Select(async modem =>
+            {
+                try
+                {
+                    modem.Status = "جاري إعادة التشغيل...";
+                    await _modemService.RestartModemAsync(modem.PortName);
+                    await Task.Delay(3000);
+                    
+                    var phoneNumber = await _modemService.GetPhoneNumberAsync(modem.PortName);
+                    if (!string.IsNullOrEmpty(phoneNumber) && phoneNumber != "غير معروف")
+                    {
+                        modem.PhoneNumber = phoneNumber;
+                        modem.IsConnected = true;
+                        modem.Status = "متصل";
+                        return (modem.PortName, Success: true, phoneNumber);
+                    }
+                    return (modem.PortName, Success: false, "فشل جلب الرقم");
+                }
+                catch (Exception ex)
+                {
+                    return (modem.PortName, Success: false, ex.Message);
+                }
+            });
+
+            var results = await Task.WhenAll(restartTasks);
+            
+            var successCount = results.Count(r => r.Success);
+            var failCount = results.Count(r => !r.Success);
+
+            GetMissedLog += "\n📊 النتائج:\n";
+            foreach (var result in results)
+            {
+                if (result.Success)
+                    GetMissedLog += $"  ✅ {result.PortName}: تم استعادة الرقم {result.Item3}\n";
+                else
+                    GetMissedLog += $"  ❌ {result.PortName}: {result.Item3}\n";
+            }
+
+            GetMissedLog += $"\n📈 الإجمالي: {successCount} نجح، {failCount} فشل\n";
+            StatusMessage = $"تم استعادة {successCount}/{missedModems.Count} مودم";
+        }
+        catch (Exception ex)
+        {
+            GetMissedLog += $"\n❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            RemoveOperation("GetMissed");
+        }
+    }
+
+    [RelayCommand]
+    private async Task ResetMissedModems()
+    {
+        GetMissedLog = "";
+        AddOperation("ResetMissed", "جاري إعادة تشغيل المودمات الفاشلة...");
+        
+        try
+        {
+            var missedModems = Modems.Where(m => 
+                !string.IsNullOrEmpty(m.PortName) && 
+                (string.IsNullOrEmpty(m.PhoneNumber) || m.PhoneNumber == "غير معروف")
+            ).ToList();
+
+            if (missedModems.Count == 0)
+            {
+                GetMissedLog = "✅ جميع المودمات لديها أرقام - لا حاجة لإعادة التشغيل\n";
+                StatusMessage = "لا توجد مودمات تحتاج إعادة تشغيل";
+                return;
+            }
+
+            GetMissedLog = $"🔄 جاري إعادة تشغيل {missedModems.Count} مودم...\n";
+
+            foreach (var modem in missedModems)
+            {
+                modem.Status = "جاري إعادة التشغيل...";
+                GetMissedLog += $"  ⏳ {modem.PortName}...\n";
+                
+                try
+                {
+                    await _modemService.FullResetModemAsync(modem.PortName);
+                    GetMissedLog += $"  ✅ {modem.PortName}: تم إعادة التشغيل\n";
+                    modem.Status = "تم إعادة التشغيل";
+                }
+                catch (Exception ex)
+                {
+                    GetMissedLog += $"  ❌ {modem.PortName}: {ex.Message}\n";
+                    modem.Status = "فشل";
+                }
+            }
+
+            StatusMessage = $"تم إعادة تشغيل {missedModems.Count} مودم";
+        }
+        catch (Exception ex)
+        {
+            GetMissedLog += $"\n❌ خطأ: {ex.Message}\n";
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            RemoveOperation("ResetMissed");
+        }
+    }
+
+    #endregion
+
+    #region Control Panel Toggle
+
+    [RelayCommand]
+    private void ToggleControlPanel()
+    {
+        IsControlPanelVisible = !IsControlPanelVisible;
+    }
+
+    #endregion
+
+    #region Batch USSD Execution
+
+    [RelayCommand]
+    private async Task ExecuteBatchUssd()
+    {
+        if (IsBatchExecuting) return;
+
+        var codes = new List<string>();
+        if (!string.IsNullOrWhiteSpace(BatchUssdCode1)) codes.Add(BatchUssdCode1.Trim());
+        if (!string.IsNullOrWhiteSpace(BatchUssdCode2)) codes.Add(BatchUssdCode2.Trim());
+        if (!string.IsNullOrWhiteSpace(BatchUssdCode3)) codes.Add(BatchUssdCode3.Trim());
+        if (!string.IsNullOrWhiteSpace(BatchUssdCode4)) codes.Add(BatchUssdCode4.Trim());
+        if (!string.IsNullOrWhiteSpace(BatchUssdCode5)) codes.Add(BatchUssdCode5.Trim());
+
+        if (codes.Count == 0)
+        {
+            StatusMessage = "أدخل كود USSD واحد على الأقل";
+            return;
+        }
+
+        IsBatchExecuting = true;
+        BatchExecutionSession++;
+        var sessionId = BatchExecutionSession;
+
+        AddOperation("BatchUssd", $"جاري تنفيذ {codes.Count} أكواد على جميع المودمات...");
+
+        try
+        {
+            var selectedModems = Modems.Where(m => m.IsSelected && m.IsConnected).ToList();
+            
+            if (selectedModems.Count == 0)
+            {
+                StatusMessage = "لا توجد مودمات محددة ومتصلة";
+                return;
+            }
+
+            foreach (var modem in selectedModems)
+            {
+                modem.IsAuthorized = false;
+                modem.LastResponse = "";
+            }
+
+            for (int i = 0; i < codes.Count; i++)
+            {
+                var code = codes[i];
+                StatusMessage = $"جلسة {sessionId}: تنفيذ الكود {i + 1}/{codes.Count}: {code}";
+
+                var tasks = selectedModems.Select(async modem =>
+                {
+                    try
+                    {
+                        modem.Status = $"تنفيذ {code}...";
+                        var result = await _modemService.ExecuteUssdAsync(modem, code);
+                        
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            modem.LastResponse = result.Response;
+                            modem.Status = result.IsSuccess ? "نجح" : "فشل";
+                            
+                            if (result.IsSuccess && !string.IsNullOrEmpty(result.Response))
+                            {
+                                modem.IsAuthorized = true;
+                            }
+                        });
+                        
+                        return result;
+                    }
+                    catch (Exception ex)
+                    {
+                        modem.Status = "خطأ";
+                        modem.LastResponse = ex.Message;
+                        return new UssdResult { IsSuccess = false, Response = ex.Message };
+                    }
+                });
+
+                await Task.WhenAll(tasks);
+
+                if (i < codes.Count - 1)
+                {
+                    await Task.Delay(1000);
+                }
+            }
+
+            var successCount = selectedModems.Count(m => m.IsAuthorized);
+            StatusMessage = $"جلسة {sessionId}: تم تنفيذ {codes.Count} أكواد - {successCount}/{selectedModems.Count} نجح";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"خطأ: {ex.Message}";
+        }
+        finally
+        {
+            IsBatchExecuting = false;
+            RemoveOperation("BatchUssd");
+        }
+    }
+
+    [RelayCommand]
+    private void ClearBatchCodes()
+    {
+        BatchUssdCode1 = "";
+        BatchUssdCode2 = "";
+        BatchUssdCode3 = "";
+        BatchUssdCode4 = "";
+        BatchUssdCode5 = "";
+    }
+
+    #endregion
+
+    #region Internet Toggle
+
+    [RelayCommand]
+    private async Task ToggleModemInternet(Modem? modem)
+    {
+        if (modem == null || modem.IsEnablingInternet) return;
+
+        modem.IsEnablingInternet = true;
+        var wasEnabled = modem.IsInternetEnabled;
+
+        try
+        {
+            if (wasEnabled)
+            {
+                modem.Status = "جاري إيقاف الإنترنت...";
+                var result = await _modemService.SendATCommandAsync(modem.PortName, "AT+CGATT=0", 5000);
+                
+                if (result.Contains("OK"))
+                {
+                    modem.IsInternetEnabled = false;
+                    modem.Status = "تم إيقاف الإنترنت";
+                    StatusMessage = $"تم إيقاف الإنترنت على {modem.DisplayName}";
+                }
+                else
+                {
+                    modem.Status = "فشل إيقاف الإنترنت";
+                }
+            }
+            else
+            {
+                modem.Status = "جاري تشغيل الإنترنت...";
+                
+                await _modemService.SendATCommandAsync(modem.PortName, "AT+CGATT=1", 5000);
+                await Task.Delay(500);
+                
+                var cgdcont = await _modemService.SendATCommandAsync(modem.PortName, "AT+CGDCONT=1,\"IP\",\"internet\"", 3000);
+                
+                await _modemService.SendATCommandAsync(modem.PortName, "AT+CGACT=1,1", 5000);
+                
+                modem.IsInternetEnabled = true;
+                modem.Status = "الإنترنت يعمل";
+                StatusMessage = $"تم تشغيل الإنترنت على {modem.DisplayName}";
+            }
+        }
+        catch (Exception ex)
+        {
+            modem.Status = $"خطأ: {ex.Message}";
+            StatusMessage = $"خطأ في تبديل الإنترنت: {ex.Message}";
+        }
+        finally
+        {
+            modem.IsEnablingInternet = false;
+        }
     }
 
     #endregion

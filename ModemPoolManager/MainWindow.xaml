@@ -399,12 +399,23 @@
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
 
-                    <Border Grid.Row="0" Style="{StaticResource CardPanel}">
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
+                        <Button Command="{Binding ToggleControlPanelCommand}" 
+                                Style="{StaticResource GhostButton}"
+                                ToolTip="إخفاء/إظهار لوحة التحكم"
+                                Padding="12,6"
+                                Content="{Binding ControlPanelToggleText}"/>
+                    </StackPanel>
+
+                    <Border Grid.Row="1" Style="{StaticResource CardPanel}" 
+                            Visibility="{Binding IsControlPanelVisible, Converter={StaticResource BoolToVisibility}}">
                         <Grid>
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                             </Grid.RowDefinitions>
@@ -459,11 +470,66 @@
                                 <Button Content="📶 تحديث الإشارات" Command="{Binding RefreshAllSignalsCommand}" 
                                         Style="{StaticResource OrangeButton}"
                                         IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                
+                                <Button Content="🔍 Get Missed" Command="{Binding GetMissedModemsCommand}" 
+                                        Style="{StaticResource RedButton}"
+                                        ToolTip="البحث عن المودمات المفقودة وإعادة تشغيلها"
+                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
                             </StackPanel>
+
+                            <Border Grid.Row="2" Background="#161B22" CornerRadius="6" Padding="12" Margin="0,12,0,0">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <TextBlock Grid.Row="0" Text="⚡ تنفيذ متوازي متعدد الأكواد" FontSize="14" FontWeight="Bold" Foreground="#F0F6FC" Margin="0,0,0,8"/>
+                                    
+                                    <Grid Grid.Row="1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <StackPanel Grid.Column="0">
+                                            <TextBox Text="{Binding BatchUssdCode1, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,4"
+                                                     FlowDirection="LeftToRight" FontSize="13"/>
+                                            <TextBox Text="{Binding BatchUssdCode2, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,4"
+                                                     FlowDirection="LeftToRight" FontSize="13"/>
+                                            <TextBox Text="{Binding BatchUssdCode3, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,4"
+                                                     FlowDirection="LeftToRight" FontSize="13"/>
+                                            <TextBox Text="{Binding BatchUssdCode4, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{StaticResource ModernTextBox}" Margin="0,0,0,4"
+                                                     FlowDirection="LeftToRight" FontSize="13"/>
+                                            <TextBox Text="{Binding BatchUssdCode5, UpdateSourceTrigger=PropertyChanged}" 
+                                                     Style="{StaticResource ModernTextBox}"
+                                                     FlowDirection="LeftToRight" FontSize="13"/>
+                                        </StackPanel>
+                                        
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0,0,0">
+                                            <Button Content="▶ تنفيذ الكل" 
+                                                    Command="{Binding ExecuteBatchUssdCommand}"
+                                                    Style="{StaticResource OrangeButton}"
+                                                    FontSize="14" Padding="20,10"
+                                                    IsEnabled="{Binding IsBatchExecuting, Converter={StaticResource InverseBoolConverter}}"/>
+                                            <Button Content="🗑 مسح" 
+                                                    Command="{Binding ClearBatchCodesCommand}"
+                                                    Style="{StaticResource GhostButton}"
+                                                    FontSize="12" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{Binding BatchExecutionSession, StringFormat='جلسة: {0}'}" 
+                                                       FontSize="11" Foreground="#8B949E" Margin="0,8,0,0" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+                            </Border>
                         </Grid>
                     </Border>
 
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                         <ItemsControl ItemsSource="{Binding Modems}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
@@ -638,6 +704,34 @@
                                                                            Visibility="{Binding IsRenewingValidity, Converter={StaticResource BoolToVisibility}}"/>
                                                             </StackPanel>
                                                         </Border>
+                                                        
+                                                        <Border Background="{Binding IsAuthorized, Converter={StaticResource BoolToVisibility}, ConverterParameter=#238636}" 
+                                                                BorderBrush="#3FB950" BorderThickness="1" 
+                                                                CornerRadius="4" Padding="6,4" Margin="0,0,4,0" ToolTip="صلاحية مفعلة"
+                                                                Visibility="{Binding IsAuthorized, Converter={StaticResource BoolToVisibility}}">
+                                                            <TextBlock Text="✓" FontSize="12" Foreground="#3FB950" VerticalAlignment="Center" FontWeight="Bold"/>
+                                                        </Border>
+
+                                                        <Button ToolTip="{Binding IsInternetEnabled, Converter={StaticResource BoolToVisibility}, ConverterParameter='إيقاف الإنترنت|تشغيل الإنترنت'}" 
+                                                                Cursor="Hand" Margin="0,0,4,0"
+                                                                Command="{Binding DataContext.ToggleModemInternetCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                                                CommandParameter="{Binding}"
+                                                                IsEnabled="{Binding IsEnablingInternet, Converter={StaticResource InverseBoolConverter}}">
+                                                            <Button.Template>
+                                                                <ControlTemplate TargetType="Button">
+                                                                    <Border Background="{Binding IsInternetEnabled, Converter={StaticResource BoolToVisibility}, ConverterParameter='#238636|#21262D'}" 
+                                                                            BorderBrush="{Binding IsInternetEnabled, Converter={StaticResource BoolToVisibility}, ConverterParameter='#3FB950|#30363D'}" 
+                                                                            BorderThickness="1" CornerRadius="4" Padding="8,4" x:Name="border">
+                                                                        <TextBlock Text="🌐" FontSize="12" VerticalAlignment="Center"/>
+                                                                    </Border>
+                                                                    <ControlTemplate.Triggers>
+                                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                                            <Setter TargetName="border" Property="Background" Value="#30363D"/>
+                                                                        </Trigger>
+                                                                    </ControlTemplate.Triggers>
+                                                                </ControlTemplate>
+                                                            </Button.Template>
+                                                        </Button>
                                                         
                                                         <!-- SMS Popup -->
                                                         <Popup IsOpen="{Binding IsSmsPopupOpen}" 

@@ -134,6 +134,15 @@ public partial class Modem : ObservableObject
     [ObservableProperty]
     private string _validityStatus = "";
 
+    [ObservableProperty]
+    private bool _isAuthorized;
+
+    [ObservableProperty]
+    private bool _isInternetEnabled;
+
+    [ObservableProperty]
+    private bool _isEnablingInternet;
+
     public double SuccessRate => SuccessfulCommands + FailedCommands > 0 
         ? (double)SuccessfulCommands / (SuccessfulCommands + FailedCommands) * 100 
         : 0;

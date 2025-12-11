@@ -49,6 +49,11 @@ The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems a
 - **Automatic Validity Renewal (صلاحية الخطوط):** Global setting in Settings tab. When enabled, the system automatically sends SMS to 2656 upon modem connection to renew line validity. A checkmark (✅) appears on modem cards when renewal is successful.
 - **Centralized Cash Passwords:** Settings tab contains separate password fields for Orange, Vodafone, and Etisalat networks. Passwords are automatically used based on the modem's operator.
 - **TXT Transfer Progress:** Real-time progress display showing completed/total transfers and estimated time remaining during batch transfers.
+- **Get Missed Feature (🔍 Get Missed):** Detects and auto-restarts modems that have failed or disconnected. Uses parallel execution for fast recovery.
+- **Authorization Indicator (✓):** A green checkmark appears in the modem card USSD response area when a line gets successful USSD authorization response.
+- **Batch USSD Execution (⚡):** Multi-code batch execution panel supporting up to 5 USSD codes executed sequentially on all selected modems. Each batch creates a new session ID for tracking.
+- **Internet Toggle (📶):** Toggle button on each modem card to enable/disable mobile data using AT+CGATT and AT+CGACT commands.
+- **Control Panel Toggle (👁):** Button to show/hide the main control panel for a cleaner interface when needed.
 
 ## External Dependencies
 -   **.NET 8.0:** Application Framework.

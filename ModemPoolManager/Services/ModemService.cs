@@ -643,7 +643,7 @@ public class ModemService : IDisposable
         return results.ToList();
     }
 
-    private async Task<string> SendATCommandAsync(string portName, string command, int timeout = 5000)
+    public async Task<string> SendATCommandAsync(string portName, string command, int timeout = 5000)
     {
         var portLock = GetPortLock(portName);
         await portLock.WaitAsync();
