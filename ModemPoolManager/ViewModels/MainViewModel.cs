@@ -196,6 +196,9 @@ public partial class MainViewModel : ObservableObject
     private Modem? _selectedSenderModem;
 
     [ObservableProperty]
+    private ObservableCollection<SenderLine> _senderLines = new();
+
+    [ObservableProperty]
     private int _fixedTransferAmount = 100;
 
     [ObservableProperty]
@@ -476,6 +479,7 @@ public partial class MainViewModel : ObservableObject
         CustomUssd3 = Settings.General.QuickUssdCommands.ElementAtOrDefault(2) ?? "*102#";
         
         LoadAppState();
+        InitializeSenderLines();
         
         _modemService.ModemConnected += OnModemConnected;
         _modemService.ModemDisconnected += OnModemDisconnected;
@@ -2772,6 +2776,44 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void AddSenderLine()
+    {
+        var newSender = new SenderLine
+        {
+            Index = SenderLines.Count + 1
+        };
+        SenderLines.Add(newSender);
+        StatusMessage = $"تمت إضافة مرسل جديد #{newSender.Index}";
+    }
+
+    [RelayCommand]
+    private void RemoveSenderLine(SenderLine? sender)
+    {
+        if (sender == null) return;
+        if (SenderLines.Count <= 1)
+        {
+            StatusMessage = "يجب وجود مرسل واحد على الأقل";
+            return;
+        }
+        
+        SenderLines.Remove(sender);
+        // Reindex
+        for (int i = 0; i < SenderLines.Count; i++)
+        {
+            SenderLines[i].Index = i + 1;
+        }
+        StatusMessage = "تم حذف المرسل";
+    }
+
+    private void InitializeSenderLines()
+    {
+        if (SenderLines.Count == 0)
+        {
+            SenderLines.Add(new SenderLine { Index = 1 });
+        }
+    }
+
+    [RelayCommand]
     private async Task QuerySenderCashBalanceAsync()
     {
         if (SelectedSenderModem == null)
@@ -2836,9 +2878,14 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task StartCustomTransferAsync()
     {
-        if (SelectedSenderModem == null)
+        // Get active senders with valid modems
+        var activeSenders = SenderLines
+            .Where(s => s.IsActive && s.SelectedModem != null && s.SelectedModem.IsConnected)
+            .ToList();
+
+        if (activeSenders.Count == 0)
         {
-            StatusMessage = "الرجاء اختيار مودم المرسل";
+            StatusMessage = "الرجاء اختيار مودم مرسل واحد على الأقل";
             return;
         }
 
@@ -2875,8 +2922,19 @@ public partial class MainViewModel : ObservableObject
             _transferStartTime = DateTime.Now;
             TxtTransferCompleted = 0;
             TxtTransferProgress = 0;
+
+            // Reset all item statuses
+            foreach (var item in ExcelTransferItems)
+            {
+                item.Status = "في الانتظار";
+                item.IsSuccess = false;
+                item.IsFailed = false;
+                item.Result = "";
+            }
             
-            CustomTransferLog = $"🚀 بدء التحويل المخصص من {SelectedSenderModem.PhoneNumber}\n";
+            var senderPhones = string.Join(", ", activeSenders.Select(s => s.SelectedModem!.PhoneNumber));
+            CustomTransferLog = $"🚀 بدء التحويل المتوازي من {activeSenders.Count} مرسل\n";
+            CustomTransferLog += $"📱 المرسلون: {senderPhones}\n";
             CustomTransferLog += $"📋 عدد التحويلات: {ExcelTransferItems.Count}\n";
             CustomTransferLogEntries.Clear();
             if (IsCashBalanceQueried)
@@ -2888,80 +2946,136 @@ public partial class MainViewModel : ObservableObject
             int successCount = 0;
             int failCount = 0;
 
-            for (int i = 0; i < ExcelTransferItems.Count; i++)
+            // Distribute items across senders using round-robin
+            var itemQueue = new Queue<ExcelTransferItem>(ExcelTransferItems);
+            var senderTasks = new List<Task>();
+            var lockObject = new object();
+
+            foreach (var sender in activeSenders)
+            {
+                sender.CompletedCount = 0;
+                sender.Status = "جاري التحويل...";
+            }
+
+            // Process items in parallel across senders
+            while (itemQueue.Count > 0 || senderTasks.Count > 0)
             {
                 if (_customTransferCts.Token.IsCancellationRequested) break;
 
-                var item = ExcelTransferItems[i];
-                
-                CurrentTransferIndex = i + 1;
-                CurrentTransferPhone = item.PhoneNumber;
-                CurrentTransferAmount = item.Amount;
-                CurrentTransferStatus = "جاري التحويل...";
-                
-                item.Status = "جاري التحويل...";
-                CustomTransferLog += $"━━━━━━━━━━━━━━━━━━━━\n";
-                CustomTransferLog += $"📤 تحويل {i + 1}/{ExcelTransferItems.Count}\n";
-                CustomTransferLog += $"   إلى: {item.PhoneNumber}\n";
-                CustomTransferLog += $"   المبلغ: {item.Amount} ج.م\n";
-                if (IsCashBalanceQueried)
+                // Start tasks for available senders
+                foreach (var sender in activeSenders)
                 {
-                    CustomTransferLog += $"   💰 الرصيد المتبقي: {SenderCashBalanceRemaining} ج.م\n";
-                }
-
-                var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
-                    SelectedSenderModem.PortName,
-                    OrangeCashPassword,
-                    item.PhoneNumber,
-                    item.Amount);
-
-                item.Result = message;
-                CustomTransferLog += $"   📨 رد الشبكة: {rawResponse}\n";
-                CustomTransferLogEntries.Add(new TransferLogEntry
-                {
-                    PhoneNumber = item.PhoneNumber,
-                    Message = success ? "تم التحويل بنجاح" : message,
-                    IsSuccess = success,
-                    RawResponse = rawResponse
-                });
-
-                if (success)
-                {
-                    item.Status = "تم ✓";
-                    CurrentTransferStatus = "تم ✓";
-                    successCount++;
-                    CustomTransferLog += $"   ✅ نجح: {message}\n";
+                    if (_customTransferCts.Token.IsCancellationRequested) break;
                     
-                    if (IsCashBalanceQueried)
+                    // Check if sender is busy
+                    var existingTask = senderTasks.FirstOrDefault(t => t.AsyncState == sender);
+                    if (existingTask != null && !existingTask.IsCompleted) continue;
+                    
+                    // Remove completed task
+                    if (existingTask != null)
                     {
-                        SenderCashBalanceRemaining -= item.Amount;
-                        CustomTransferLog += $"   💰 الرصيد بعد الخصم: {SenderCashBalanceRemaining} ج.م\n";
-                        SaveAppState();
+                        senderTasks.Remove(existingTask);
                     }
-                }
-                else
-                {
-                    item.Status = "فشل ✗";
-                    CurrentTransferStatus = "فشل ✗";
-                    failCount++;
-                    CustomTransferLog += $"   ❌ فشل: {message}\n";
+
+                    // Get next item
+                    ExcelTransferItem? item = null;
+                    lock (lockObject)
+                    {
+                        if (itemQueue.Count > 0)
+                        {
+                            item = itemQueue.Dequeue();
+                        }
+                    }
+
+                    if (item == null) continue;
+
+                    // Start transfer task
+                    var task = Task.Run(async () =>
+                    {
+                        var modem = sender.SelectedModem!;
+                        
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            item.Status = $"جاري من {modem.PhoneNumber}...";
+                            CurrentTransferPhone = item.PhoneNumber;
+                            CurrentTransferAmount = item.Amount;
+                            CurrentTransferStatus = "جاري التحويل...";
+                        });
+
+                        var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
+                            modem.PortName,
+                            OrangeCashPassword,
+                            item.PhoneNumber,
+                            item.Amount);
+
+                        Application.Current.Dispatcher.Invoke(() =>
+                        {
+                            item.Result = message;
+                            item.IsSuccess = success;
+                            item.IsFailed = !success;
+
+                            CustomTransferLogEntries.Add(new TransferLogEntry
+                            {
+                                PhoneNumber = item.PhoneNumber,
+                                Message = success ? $"تم من {modem.PhoneNumber}" : message,
+                                IsSuccess = success,
+                                RawResponse = rawResponse
+                            });
+
+                            if (success)
+                            {
+                                item.Status = "تم ✓";
+                                lock (lockObject) { successCount++; }
+                                CustomTransferLog += $"✅ {item.PhoneNumber} ← {modem.PhoneNumber}: نجح\n";
+                                
+                                if (IsCashBalanceQueried)
+                                {
+                                    SenderCashBalanceRemaining -= item.Amount;
+                                }
+                            }
+                            else
+                            {
+                                item.Status = "فشل ✗";
+                                lock (lockObject) { failCount++; }
+                                CustomTransferLog += $"❌ {item.PhoneNumber} ← {modem.PhoneNumber}: {message}\n";
+                            }
+
+                            sender.CompletedCount++;
+                            sender.Status = $"أكمل {sender.CompletedCount}";
+
+                            lock (lockObject)
+                            {
+                                TxtTransferCompleted = successCount + failCount;
+                                TxtTransferProgress = (int)((double)TxtTransferCompleted / ExcelTransferItems.Count * 100);
+                                UpdateTimeRemaining(TxtTransferCompleted, ExcelTransferItems.Count);
+                            }
+                        });
+
+                        // Delay between transfers for same sender
+                        await Task.Delay(CustomTransferDelay * 1000);
+                    }, _customTransferCts.Token);
+
+                    task = Task.Run(async () => await task, _customTransferCts.Token);
+                    senderTasks.Add(task);
                 }
 
-                TxtTransferCompleted = i + 1;
-                TxtTransferProgress = (int)((double)(i + 1) / ExcelTransferItems.Count * 100);
-                UpdateTimeRemaining(i + 1, ExcelTransferItems.Count);
-
-                if (i < ExcelTransferItems.Count - 1 && !_customTransferCts.Token.IsCancellationRequested)
+                // Wait a bit before checking again
+                if (senderTasks.Count > 0)
                 {
-                    CustomTransferLog += $"\n⏳ انتظار {CustomTransferDelay} ثانية...\n";
-                    for (int sec = CustomTransferDelay; sec > 0; sec--)
-                    {
-                        if (_customTransferCts.Token.IsCancellationRequested) break;
-                        CustomTransferCountdown = sec;
-                        await Task.Delay(1000);
-                    }
-                    CustomTransferCountdown = 0;
+                    await Task.WhenAny(senderTasks.Concat(new[] { Task.Delay(100) }));
+                    senderTasks.RemoveAll(t => t.IsCompleted);
                 }
+            }
+
+            // Wait for remaining tasks
+            if (senderTasks.Count > 0)
+            {
+                await Task.WhenAll(senderTasks);
+            }
+
+            foreach (var sender in activeSenders)
+            {
+                sender.Status = $"أكمل {sender.CompletedCount} ✓";
             }
             
             CurrentTransferPhone = "";
@@ -2976,7 +3090,7 @@ public partial class MainViewModel : ObservableObject
                 CustomTransferLog += $"   💰 الرصيد المتبقي: {SenderCashBalanceRemaining} ج.م\n";
             }
 
-            StatusMessage = $"تم التحويل المخصص: {successCount}/{ExcelTransferItems.Count} نجح";
+            StatusMessage = $"تم التحويل المتوازي: {successCount}/{ExcelTransferItems.Count} نجح";
             SaveAppState();
         }
         catch (Exception ex)

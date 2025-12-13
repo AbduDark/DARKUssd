@@ -385,7 +385,12 @@ public class ExcelTransferItem : CommunityToolkit.Mvvm.ComponentModel.Observable
     public string Status 
     { 
         get => _status; 
-        set => SetProperty(ref _status, value); 
+        set 
+        { 
+            SetProperty(ref _status, value);
+            OnPropertyChanged(nameof(StatusColor));
+            OnPropertyChanged(nameof(IsTransferCompleted));
+        } 
     }
     
     private string _result = "";
@@ -393,5 +398,71 @@ public class ExcelTransferItem : CommunityToolkit.Mvvm.ComponentModel.Observable
     { 
         get => _result; 
         set => SetProperty(ref _result, value); 
+    }
+
+    private bool _isSuccess;
+    public bool IsSuccess 
+    { 
+        get => _isSuccess; 
+        set 
+        { 
+            SetProperty(ref _isSuccess, value);
+            OnPropertyChanged(nameof(StatusColor));
+            OnPropertyChanged(nameof(IsTransferCompleted));
+        } 
+    }
+
+    private bool _isFailed;
+    public bool IsFailed 
+    { 
+        get => _isFailed; 
+        set 
+        { 
+            SetProperty(ref _isFailed, value);
+            OnPropertyChanged(nameof(StatusColor));
+            OnPropertyChanged(nameof(IsTransferCompleted));
+        } 
+    }
+
+    public bool IsTransferCompleted => IsSuccess || IsFailed;
+
+    public string StatusColor => IsSuccess ? "#238636" : (IsFailed ? "#DA3633" : "#8B949E");
+}
+
+public class SenderLine : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
+{
+    private int _index;
+    public int Index 
+    { 
+        get => _index; 
+        set => SetProperty(ref _index, value); 
+    }
+
+    private Modem? _selectedModem;
+    public Modem? SelectedModem 
+    { 
+        get => _selectedModem; 
+        set => SetProperty(ref _selectedModem, value); 
+    }
+
+    private bool _isActive = true;
+    public bool IsActive 
+    { 
+        get => _isActive; 
+        set => SetProperty(ref _isActive, value); 
+    }
+
+    private string _status = "جاهز";
+    public string Status 
+    { 
+        get => _status; 
+        set => SetProperty(ref _status, value); 
+    }
+
+    private int _completedCount;
+    public int CompletedCount 
+    { 
+        get => _completedCount; 
+        set => SetProperty(ref _completedCount, value); 
     }
 }
