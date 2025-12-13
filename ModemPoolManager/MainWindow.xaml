@@ -1782,7 +1782,10 @@
                                       BorderThickness="0" CanUserAddRows="False" CanUserDeleteRows="False"
                                       GridLinesVisibility="Horizontal" HeadersVisibility="Column"
                                       RowBackground="#000000" AlternatingRowBackground="#0D0D0D"
-                                      Foreground="#C9D1D9">
+                                      Foreground="#C9D1D9"
+                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                      ScrollViewer.CanContentScroll="True"
+                                      EnableRowVirtualization="True">
                                 <DataGrid.ColumnHeaderStyle>
                                     <Style TargetType="DataGridColumnHeader">
                                         <Setter Property="Background" Value="#1A1A1A"/>
