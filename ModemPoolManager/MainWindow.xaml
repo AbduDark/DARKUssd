@@ -72,6 +72,15 @@
             </Style.Triggers>
         </Style>
 
+        <Style x:Key="GreenButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
+            <Setter Property="Background" Value="#238636"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#2EA043"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="OrangeButton" TargetType="Button" BasedOn="{StaticResource ModernButton}">
             <Setter Property="Background" Value="#D29922"/>
             <Style.Triggers>
@@ -1707,10 +1716,14 @@
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
                                 <TextBlock Text="📄" FontSize="18" Margin="0,0,8,0"/>
                                 <TextBlock Text="قائمة التحويلات" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
-                                <Button Content="📂 استيراد TXT" Command="{Binding ImportExcelCommand}" 
-                                        Style="{StaticResource OrangeButton}" Margin="20,0,0,0" Padding="12,6"/>
+                                <Button Content="📂 استيراد" Command="{Binding ImportExcelCommand}" 
+                                        Style="{StaticResource OrangeButton}" Margin="12,0,0,0" Padding="8,4" FontSize="12"/>
                                 <Button Content="🗑 مسح" Command="{Binding ClearExcelTransfersCommand}" 
-                                        Style="{StaticResource RedButton}" Margin="8,0,0,0" Padding="12,6"/>
+                                        Style="{StaticResource RedButton}" Margin="4,0,0,0" Padding="8,4" FontSize="12"/>
+                                <Button Content="✅ تصدير ناجح" Command="{Binding ExportSuccessfulCommand}" 
+                                        Style="{StaticResource GreenButton}" Margin="8,0,0,0" Padding="8,4" FontSize="12"/>
+                                <Button Content="❌ تصدير فاشل" Command="{Binding ExportFailedCommand}" 
+                                        Style="{StaticResource RedButton}" Margin="4,0,0,0" Padding="8,4" FontSize="12"/>
                             </StackPanel>
 
                             <!-- Summary Section -->
@@ -1794,11 +1807,21 @@
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="50" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="رقم الهاتف" Binding="{Binding PhoneNumber}" Width="180" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount}" Width="100" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="120" IsReadOnly="True"/>
-                                    <DataGridTextColumn Header="النتيجة" Binding="{Binding Result}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="#" Binding="{Binding Index}" Width="40" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="رقم الهاتف" Binding="{Binding PhoneNumber}" Width="130" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="المبلغ" Binding="{Binding Amount}" Width="60" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="الحالة" Binding="{Binding Status}" Width="100" IsReadOnly="True"/>
+                                    <DataGridTemplateColumn Header="رد الشبكة" Width="*" IsReadOnly="True">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding NetworkResponse}" 
+                                                           Foreground="{Binding NetworkResponseColor}" 
+                                                           TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                           ToolTip="{Binding NetworkResponse}" FontSize="12"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="محاولات" Binding="{Binding RetryCount}" Width="60" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                         </Grid>
@@ -1835,10 +1858,13 @@
                                         <DataTemplate>
                                             <Border Background="#161B22" CornerRadius="6" Padding="8" Margin="0,0,0,6" BorderBrush="#FF7900" BorderThickness="1">
                                                 <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="*"/>
-                                                        <ColumnDefinition Width="Auto"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
                                                     
@@ -1868,14 +1894,19 @@
                                                         </ComboBox.Resources>
                                                     </ComboBox>
                                                     
-                                                    <TextBlock Grid.Column="2" Text="{Binding Status}" FontSize="11" 
-                                                               Foreground="#3FB950" VerticalAlignment="Center" Margin="8,0"/>
-                                                    
-                                                    <Button Grid.Column="3" Content="✕" 
+                                                    <Button Grid.Column="2" Content="✕" 
                                                             Command="{Binding DataContext.RemoveSenderLineCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                             CommandParameter="{Binding}"
                                                             Style="{StaticResource RedButton}" Padding="6,2" FontSize="12"
                                                             ToolTip="حذف المرسل"/>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Margin="0,4,0,0">
+                                                        <TextBlock Text="💰" FontSize="12" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                                        <TextBlock Text="{Binding CashBalanceDisplay}" FontSize="12" FontWeight="Bold" 
+                                                                   Foreground="#3FB950" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                        <TextBlock Text="{Binding Status}" FontSize="11" 
+                                                                   Foreground="#8B949E" VerticalAlignment="Center"/>
+                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

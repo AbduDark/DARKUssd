@@ -2776,6 +2776,60 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void ExportSuccessful()
+    {
+        var successItems = ExcelTransferItems.Where(x => x.IsSuccess).ToList();
+        if (successItems.Count == 0)
+        {
+            StatusMessage = "لا توجد تحويلات ناجحة للتصدير";
+            return;
+        }
+        
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSV Files|*.csv|Text Files|*.txt",
+            FileName = $"تحويلات_ناجحة_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+            Title = "تصدير التحويلات الناجحة"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            var lines = new List<string> { "الرقم,المبلغ,رد الشبكة" };
+            lines.AddRange(successItems.Select(x => $"{x.PhoneNumber},{x.Amount},\"{x.NetworkResponse?.Replace("\"", "\"\"")}\""));
+            System.IO.File.WriteAllLines(dialog.FileName, lines, System.Text.Encoding.UTF8);
+            StatusMessage = $"تم تصدير {successItems.Count} تحويلة ناجحة";
+            CustomTransferLog += $"📁 تم تصدير {successItems.Count} تحويلة ناجحة إلى: {dialog.FileName}\n";
+        }
+    }
+
+    [RelayCommand]
+    private void ExportFailed()
+    {
+        var failedItems = ExcelTransferItems.Where(x => x.IsFailed).ToList();
+        if (failedItems.Count == 0)
+        {
+            StatusMessage = "لا توجد تحويلات فاشلة للتصدير";
+            return;
+        }
+        
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSV Files|*.csv|Text Files|*.txt",
+            FileName = $"تحويلات_فاشلة_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+            Title = "تصدير التحويلات الفاشلة"
+        };
+
+        if (dialog.ShowDialog() == true)
+        {
+            var lines = new List<string> { "الرقم,المبلغ,رد الشبكة,عدد المحاولات" };
+            lines.AddRange(failedItems.Select(x => $"{x.PhoneNumber},{x.Amount},\"{x.NetworkResponse?.Replace("\"", "\"\"")}\",{x.RetryCount + 1}"));
+            System.IO.File.WriteAllLines(dialog.FileName, lines, System.Text.Encoding.UTF8);
+            StatusMessage = $"تم تصدير {failedItems.Count} تحويلة فاشلة";
+            CustomTransferLog += $"📁 تم تصدير {failedItems.Count} تحويلة فاشلة إلى: {dialog.FileName}\n";
+        }
+    }
+
+    [RelayCommand]
     private void AddSenderLine()
     {
         var newSender = new SenderLine
@@ -2816,9 +2870,13 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand]
     private async Task QuerySenderCashBalanceAsync()
     {
-        if (SelectedSenderModem == null)
+        var activeSenders = SenderLines
+            .Where(s => s.IsActive && s.SelectedModem != null && s.SelectedModem.IsConnected)
+            .ToList();
+
+        if (activeSenders.Count == 0)
         {
-            StatusMessage = "الرجاء اختيار مودم المرسل أولاً";
+            StatusMessage = "الرجاء اختيار مودم مرسل واحد على الأقل";
             return;
         }
 
@@ -2831,43 +2889,69 @@ public partial class MainViewModel : ObservableObject
         try
         {
             IsProcessing = true;
-            SelectedSenderModem.Status = "جاري استعلام الرصيد...";
-            CustomTransferLog += $"\n🔍 جاري استعلام رصيد الكاش للمرسل...\n";
-            
-            var balanceResult = await _modemService.GetOrangeCashBalanceAsync(
-                SelectedSenderModem.PortName, 
-                OrangeCashPassword);
-            
-            if (decimal.TryParse(
-                System.Text.RegularExpressions.Regex.Match(balanceResult, @"[\d,]+\.?\d*").Value.Replace(",", ""), 
-                out decimal balance))
+            CustomTransferLog += $"\n🔍 جاري استعلام رصيد الكاش لـ {activeSenders.Count} مرسل...\n";
+
+            decimal totalBalance = 0;
+            var tasks = activeSenders.Select(async sender =>
             {
-                SenderCashBalance = balance;
-                SenderCashBalanceRemaining = balance;
-                IsCashBalanceQueried = true;
-                SelectedSenderModem.Status = $"رصيد الكاش: {balance} ج.م";
-                CustomTransferLog += $"✅ رصيد الكاش: {balance} ج.م\n";
-                StatusMessage = $"رصيد الكاش: {balance} ج.م";
-                
-                if (TxtTransferTotal > 0 && balance < TxtTransferTotal)
+                sender.CashBalance = 0;
+                sender.Status = "جاري الاستعلام...";
+                try
                 {
-                    CustomTransferLog += $"⚠️ تحذير: الرصيد ({balance} ج.م) أقل من الإجمالي المطلوب ({TxtTransferTotal} ج.م)\n";
+                    var balanceResult = await _modemService.GetOrangeCashBalanceAsync(
+                        sender.SelectedModem!.PortName, 
+                        OrangeCashPassword);
+                    
+                    if (decimal.TryParse(
+                        System.Text.RegularExpressions.Regex.Match(balanceResult, @"[\d,]+\.?\d*").Value.Replace(",", ""), 
+                        out decimal balance))
+                    {
+                        sender.CashBalance = balance;
+                        sender.Status = $"💰 {balance} ج.م";
+                        return balance;
+                    }
+                    else
+                    {
+                        sender.Status = "خطأ في الاستعلام";
+                        return 0m;
+                    }
                 }
-                
-                SaveAppState();
-            }
-            else
+                catch (Exception ex)
+                {
+                    sender.Status = $"خطأ: {ex.Message}";
+                    return 0m;
+                }
+            }).ToList();
+
+            var results = await Task.WhenAll(tasks);
+            totalBalance = results.Sum();
+
+            SenderCashBalance = totalBalance;
+            SenderCashBalanceRemaining = totalBalance;
+            IsCashBalanceQueried = true;
+
+            foreach (var sender in activeSenders)
             {
-                CustomTransferLog += $"⚠️ لم يتم التعرف على الرصيد: {balanceResult}\n";
-                StatusMessage = "لم يتم التعرف على الرصيد";
-                SelectedSenderModem.Status = "خطأ في الاستعلام";
+                if (sender.CashBalance > 0)
+                {
+                    CustomTransferLog += $"✅ مرسل #{sender.Index} ({sender.SelectedModem?.PhoneNumber}): {sender.CashBalance} ج.م\n";
+                }
             }
+            
+            CustomTransferLog += $"💰 إجمالي رصيد الكاش: {totalBalance} ج.م\n";
+            StatusMessage = $"إجمالي رصيد الكاش: {totalBalance} ج.م";
+            
+            if (TxtTransferTotal > 0 && totalBalance < TxtTransferTotal)
+            {
+                CustomTransferLog += $"⚠️ تحذير: الرصيد ({totalBalance} ج.م) أقل من الإجمالي المطلوب ({TxtTransferTotal} ج.م)\n";
+            }
+            
+            SaveAppState();
         }
         catch (Exception ex)
         {
             CustomTransferLog += $"❌ خطأ: {ex.Message}\n";
             StatusMessage = $"خطأ: {ex.Message}";
-            SelectedSenderModem.Status = "خطأ";
         }
         finally
         {
@@ -2930,6 +3014,8 @@ public partial class MainViewModel : ObservableObject
                 item.IsSuccess = false;
                 item.IsFailed = false;
                 item.Result = "";
+                item.NetworkResponse = "";
+                item.RetryCount = 0;
             }
             
             var senderPhones = string.Join(", ", activeSenders.Select(s => s.SelectedModem!.PhoneNumber));
@@ -2989,24 +3075,64 @@ public partial class MainViewModel : ObservableObject
 
                     if (item == null) continue;
 
-                    // Start transfer task
+                    // Start transfer task with retry logic
                     var task = Task.Run(async () =>
                     {
                         var modem = sender.SelectedModem!;
+                        const int maxRetries = 3;
+                        bool success = false;
+                        string message = "";
+                        string rawResponse = "";
                         
-                        Application.Current.Dispatcher.Invoke(() =>
+                        for (int retry = 0; retry <= maxRetries && !success; retry++)
                         {
-                            item.Status = $"جاري من {modem.PhoneNumber}...";
-                            CurrentTransferPhone = item.PhoneNumber;
-                            CurrentTransferAmount = item.Amount;
-                            CurrentTransferStatus = "جاري التحويل...";
-                        });
+                            if (_customTransferCts.Token.IsCancellationRequested) break;
+                            
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                item.RetryCount = retry;
+                                item.Status = retry > 0 ? $"محاولة {retry + 1}/{maxRetries + 1}..." : $"جاري من {modem.PhoneNumber}...";
+                                CurrentTransferPhone = item.PhoneNumber;
+                                CurrentTransferAmount = item.Amount;
+                                CurrentTransferStatus = item.Status;
+                            });
 
-                        var (success, message, rawResponse) = await _modemService.ExecuteOrangeCashTransferAsync(
-                            modem.PortName,
-                            OrangeCashPassword,
-                            item.PhoneNumber,
-                            item.Amount);
+                            var result = await _modemService.ExecuteOrangeCashTransferAsync(
+                                modem.PortName,
+                                OrangeCashPassword,
+                                item.PhoneNumber,
+                                item.Amount);
+                            
+                            success = result.Success;
+                            message = result.Message;
+                            rawResponse = result.RawResponse;
+
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                item.NetworkResponse = rawResponse;
+                            });
+
+                            // Check if we should retry
+                            if (!success && retry < maxRetries)
+                            {
+                                bool shouldRetry = rawResponse.Contains("Retry operation", StringComparison.OrdinalIgnoreCase) ||
+                                                   rawResponse.Contains("no ussd response", StringComparison.OrdinalIgnoreCase) ||
+                                                   rawResponse.Contains("timeout", StringComparison.OrdinalIgnoreCase) ||
+                                                   message.Contains("Retry", StringComparison.OrdinalIgnoreCase) ||
+                                                   string.IsNullOrEmpty(rawResponse);
+                                
+                                if (shouldRetry)
+                                {
+                                    Application.Current.Dispatcher.Invoke(() =>
+                                    {
+                                        CustomTransferLog += $"🔄 {item.PhoneNumber}: إعادة محاولة ({retry + 1}/{maxRetries})...\n";
+                                    });
+                                    await Task.Delay(2000); // Wait 2 seconds before retry
+                                    continue;
+                                }
+                            }
+                            break;
+                        }
 
                         Application.Current.Dispatcher.Invoke(() =>
                         {
@@ -3035,7 +3161,7 @@ public partial class MainViewModel : ObservableObject
                             }
                             else
                             {
-                                item.Status = "فشل ✗";
+                                item.Status = $"فشل ✗ ({item.RetryCount + 1})";
                                 lock (lockObject) { failCount++; }
                                 CustomTransferLog += $"❌ {item.PhoneNumber} ← {modem.PhoneNumber}: {message}\n";
                             }
@@ -3055,7 +3181,6 @@ public partial class MainViewModel : ObservableObject
                         await Task.Delay(CustomTransferDelay * 1000);
                     }, _customTransferCts.Token);
 
-                    task = Task.Run(async () => await task, _customTransferCts.Token);
                     senderTasks.Add(task);
                 }
 

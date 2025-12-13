@@ -400,6 +400,37 @@ public class ExcelTransferItem : CommunityToolkit.Mvvm.ComponentModel.Observable
         set => SetProperty(ref _result, value); 
     }
 
+    private string _networkResponse = "";
+    public string NetworkResponse 
+    { 
+        get => _networkResponse; 
+        set 
+        {
+            SetProperty(ref _networkResponse, value);
+            OnPropertyChanged(nameof(NetworkResponseColor));
+        }
+    }
+
+    public string NetworkResponseColor
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(NetworkResponse)) return "#8B949E";
+            if (NetworkResponse.Contains("تم تحويل") || NetworkResponse.Contains("بنجاح") || 
+                NetworkResponse.Contains("تم التحويل") || NetworkResponse.Contains("successfully") ||
+                NetworkResponse.Contains("Success"))
+                return "#3FB950";
+            return "#F85149";
+        }
+    }
+
+    private int _retryCount;
+    public int RetryCount 
+    { 
+        get => _retryCount; 
+        set => SetProperty(ref _retryCount, value); 
+    }
+
     private bool _isSuccess;
     public bool IsSuccess 
     { 
@@ -465,4 +496,19 @@ public class SenderLine : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
         get => _completedCount; 
         set => SetProperty(ref _completedCount, value); 
     }
+
+    private decimal _cashBalance;
+    public decimal CashBalance 
+    { 
+        get => _cashBalance; 
+        set 
+        {
+            SetProperty(ref _cashBalance, value);
+            OnPropertyChanged(nameof(CashBalanceDisplay));
+            OnPropertyChanged(nameof(HasCashBalance));
+        }
+    }
+
+    public string CashBalanceDisplay => HasCashBalance ? $"{CashBalance} ج.م" : "--";
+    public bool HasCashBalance => CashBalance > 0;
 }
