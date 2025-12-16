@@ -1843,7 +1843,8 @@
                             </StackPanel>
 
                             <!-- Settings -->
-                            <StackPanel Grid.Row="1">
+                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                            <StackPanel>
                                 <!-- Multiple Senders Section -->
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="الأرقام المرسلة:" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center"/>
@@ -1975,6 +1976,7 @@
                                         Style="{StaticResource RedButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"
                                         Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}"/>
                             </StackPanel>
+                            </ScrollViewer>
 
                             <!-- Log -->
                             <Border Grid.Row="2" Background="#000000" CornerRadius="8" Margin="0,16,0,0" Padding="8">
