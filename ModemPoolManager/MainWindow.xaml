@@ -1843,18 +1843,24 @@
                             </StackPanel>
 
                             <!-- Settings -->
-                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                            <StackPanel>
-                                <!-- Multiple Senders Section -->
-                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                            <Grid Grid.Row="1">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*" MinHeight="60"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Multiple Senders Section Header -->
+                                <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
                                     <TextBlock Text="الأرقام المرسلة:" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center"/>
                                     <Button Content="➕" Command="{Binding AddSenderLineCommand}" 
                                             Style="{StaticResource ModernButton}" Padding="8,4" Margin="12,0,0,0" FontSize="14"
                                             ToolTip="إضافة مرسل جديد"/>
                                 </StackPanel>
                                 
-                                <!-- Sender Lines List -->
-                                <ItemsControl ItemsSource="{Binding SenderLines}" Margin="0,0,0,12">
+                                <!-- Sender Lines List with Scroll -->
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Margin="0,0,0,12">
+                                <ItemsControl ItemsSource="{Binding SenderLines}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <Border Background="#161B22" CornerRadius="6" Padding="8" Margin="0,0,0,6" BorderBrush="#FF7900" BorderThickness="1">
@@ -1913,70 +1919,73 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+                                </ScrollViewer>
                                 
-                                <Button Content="💰 استعلام الكاش" 
-                                        Command="{Binding QuerySenderCashBalanceCommand}" 
-                                        Style="{StaticResource BlueButton}" Padding="12,6" Margin="0,0,0,12" HorizontalAlignment="Stretch"
-                                        IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
+                                <!-- Action Buttons Section -->
+                                <StackPanel Grid.Row="2">
+                                    <Button Content="💰 استعلام الكاش" 
+                                            Command="{Binding QuerySenderCashBalanceCommand}" 
+                                            Style="{StaticResource BlueButton}" Padding="12,6" Margin="0,0,0,12" HorizontalAlignment="Stretch"
+                                            IsEnabled="{Binding IsProcessing, Converter={StaticResource InverseBoolConverter}}"/>
 
-                                <!-- Fixed Amount Section -->
-                                <Border Background="#0D0D0D" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#FF7900" BorderThickness="1">
-                                    <StackPanel>
-                                        <CheckBox IsChecked="{Binding UseFixedAmount}" Content="استخدام مبلغ موحد لجميع الأرقام" 
-                                                  Foreground="#F0F6FC" FontSize="13" Margin="0,0,0,8"/>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="المبلغ لكل سطر:" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                            <TextBox Text="{Binding FixedTransferAmount, UpdateSourceTrigger=PropertyChanged}" 
-                                                     Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="16" 
-                                                     FontWeight="Bold" Width="100"
-                                                     FlowDirection="LeftToRight" IsEnabled="{Binding UseFixedAmount}"/>
-                                            <TextBlock Text="ج.م" Foreground="#FF7900" FontSize="14" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                    <!-- Fixed Amount Section -->
+                                    <Border Background="#0D0D0D" CornerRadius="8" Padding="12" Margin="0,0,0,12" BorderBrush="#FF7900" BorderThickness="1">
+                                        <StackPanel>
+                                            <CheckBox IsChecked="{Binding UseFixedAmount}" Content="استخدام مبلغ موحد لجميع الأرقام" 
+                                                      Foreground="#F0F6FC" FontSize="13" Margin="0,0,0,8"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="المبلغ لكل سطر:" Foreground="#8B949E" FontSize="13" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBox Text="{Binding FixedTransferAmount, UpdateSourceTrigger=PropertyChanged}" 
+                                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="16" 
+                                                         FontWeight="Bold" Width="100"
+                                                         FlowDirection="LeftToRight" IsEnabled="{Binding UseFixedAmount}"/>
+                                                <TextBlock Text="ج.م" Foreground="#FF7900" FontSize="14" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                            </StackPanel>
                                         </StackPanel>
-                                    </StackPanel>
-                                </Border>
+                                    </Border>
 
-                                <TextBlock Text="تأخير بين التحويلات (ثانية):" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
-                                <TextBox Text="{Binding CustomTransferDelay, UpdateSourceTrigger=PropertyChanged}" 
-                                         Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
-                                         FlowDirection="LeftToRight" Margin="0,0,0,16"/>
+                                    <TextBlock Text="تأخير بين التحويلات (ثانية):" Foreground="#8B949E" FontSize="13" Margin="0,0,0,4"/>
+                                    <TextBox Text="{Binding CustomTransferDelay, UpdateSourceTrigger=PropertyChanged}" 
+                                             Style="{StaticResource ModernTextBox}" FontFamily="Consolas" FontSize="14"
+                                             FlowDirection="LeftToRight" Margin="0,0,0,16"/>
 
-                                <!-- Progress Display -->
-                                <Border Background="#1A0F00" CornerRadius="8" Padding="12" Margin="0,0,0,12"
-                                        Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}">
-                                    <StackPanel HorizontalAlignment="Center">
-                                        <TextBlock FontSize="14" Foreground="#FF7900" HorizontalAlignment="Center">
-                                            <Run Text="📊 التقدم: "/>
-                                            <Run Text="{Binding TxtTransferCompleted}"/>
-                                            <Run Text="/"/>
-                                            <Run Text="{Binding TxtTransferCount}"/>
-                                        </TextBlock>
-                                        <TextBlock Text="{Binding TxtTransferTimeRemaining, StringFormat='⏱️ الوقت المتبقي: {0}'}" 
-                                                   FontSize="20" FontWeight="Bold" Foreground="#3FB950" HorizontalAlignment="Center" Margin="0,8,0,0"/>
-                                        <TextBlock Text="{Binding CustomTransferCountdown, StringFormat='⏳ انتظار: {0} ثانية'}" 
-                                                   FontSize="16" Foreground="#FF7900" HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                    </StackPanel>
-                                </Border>
+                                    <!-- Progress Display -->
+                                    <Border Background="#1A0F00" CornerRadius="8" Padding="12" Margin="0,0,0,12"
+                                            Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}">
+                                        <StackPanel HorizontalAlignment="Center">
+                                            <TextBlock FontSize="14" Foreground="#FF7900" HorizontalAlignment="Center">
+                                                <Run Text="📊 التقدم: "/>
+                                                <Run Text="{Binding TxtTransferCompleted}"/>
+                                                <Run Text="/"/>
+                                                <Run Text="{Binding TxtTransferCount}"/>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding TxtTransferTimeRemaining, StringFormat='⏱️ الوقت المتبقي: {0}'}" 
+                                                       FontSize="20" FontWeight="Bold" Foreground="#3FB950" HorizontalAlignment="Center" Margin="0,8,0,0"/>
+                                            <TextBlock Text="{Binding CustomTransferCountdown, StringFormat='⏳ انتظار: {0} ثانية'}" 
+                                                       FontSize="16" Foreground="#FF7900" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </Border>
 
-                                <Button Content="🚀 بدء التحويل" 
-                                        Command="{Binding StartCustomTransferCommand}" 
-                                        FontSize="16" Padding="20,14" HorizontalAlignment="Stretch"
-                                        IsEnabled="{Binding IsCustomTransferRunning, Converter={StaticResource InverseBoolConverter}}">
-                                    <Button.Style>
-                                        <Style TargetType="Button" BasedOn="{StaticResource OrangeButton}">
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding IsCustomTransferRunning}" Value="True">
-                                                    <Setter Property="Background" Value="#484F58"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                </Button>
+                                    <Button Content="🚀 بدء التحويل" 
+                                            Command="{Binding StartCustomTransferCommand}" 
+                                            FontSize="16" Padding="20,14" HorizontalAlignment="Stretch"
+                                            IsEnabled="{Binding IsCustomTransferRunning, Converter={StaticResource InverseBoolConverter}}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource OrangeButton}">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCustomTransferRunning}" Value="True">
+                                                        <Setter Property="Background" Value="#484F58"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Button.Style>
+                                    </Button>
 
-                                <Button Content="⛔ إيقاف" Command="{Binding StopCustomTransferCommand}" 
-                                        Style="{StaticResource RedButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"
-                                        Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}"/>
-                            </StackPanel>
-                            </ScrollViewer>
+                                    <Button Content="⛔ إيقاف" Command="{Binding StopCustomTransferCommand}" 
+                                            Style="{StaticResource RedButton}" HorizontalAlignment="Stretch" Margin="0,8,0,0"
+                                            Visibility="{Binding IsCustomTransferRunning, Converter={StaticResource BoolToVisibility}}"/>
+                                </StackPanel>
+                            </Grid>
 
                             <!-- Log -->
                             <Border Grid.Row="2" Background="#000000" CornerRadius="8" Margin="0,16,0,0" Padding="8">
