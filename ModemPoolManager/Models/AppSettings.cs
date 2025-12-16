@@ -165,6 +165,7 @@ public class GeneralSettings
     public bool EnableSounds { get; set; } = true;
     public bool EnableNotifications { get; set; } = true;
     public bool AutoRenewValidityForAll { get; set; } = false;
+    public string SelectedOperator { get; set; } = "All";
 
     public List<string> QuickUssdCommands { get; set; } = new()
     {

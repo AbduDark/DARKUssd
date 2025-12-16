@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using ModemPoolManager.ViewModels;
 
@@ -7,13 +8,14 @@ namespace ModemPoolManager;
 public partial class SettingsWindow : Window
 {
     private readonly MainViewModel _viewModel;
-    private string _originalBaudRate;
-    private string _originalReadTimeout;
-    private string _originalMaxModems;
-    private string _originalOrangeCashPassword;
-    private string _originalVodafoneCashPassword;
-    private string _originalEtisalatCashPassword;
+    private string _originalBaudRate = "115200";
+    private string _originalReadTimeout = "10000";
+    private string _originalMaxModems = "12";
+    private string _originalOrangeCashPassword = "";
+    private string _originalVodafoneCashPassword = "";
+    private string _originalEtisalatCashPassword = "";
     private bool _originalAutoRenewValidity;
+    private string _originalSelectedOperator = "All";
 
     public SettingsWindow(MainViewModel viewModel)
     {
@@ -32,6 +34,7 @@ public partial class SettingsWindow : Window
         _originalVodafoneCashPassword = _viewModel.VodafoneCashPassword ?? "";
         _originalEtisalatCashPassword = _viewModel.EtisalatCashPassword ?? "";
         _originalAutoRenewValidity = _viewModel.AutoRenewValidityForAll;
+        _originalSelectedOperator = _viewModel.SelectedOperator ?? "All";
     }
 
     private void LoadSettings()
@@ -43,6 +46,19 @@ public partial class SettingsWindow : Window
         VodafoneCashPasswordTextBox.Text = _originalVodafoneCashPassword;
         EtisalatCashPasswordTextBox.Text = _originalEtisalatCashPassword;
         AutoRenewValidityCheckBox.IsChecked = _originalAutoRenewValidity;
+        
+        foreach (ComboBoxItem item in OperatorComboBox.Items)
+        {
+            if (item.Tag?.ToString() == _originalSelectedOperator)
+            {
+                OperatorComboBox.SelectedItem = item;
+                break;
+            }
+        }
+        if (OperatorComboBox.SelectedItem == null)
+        {
+            OperatorComboBox.SelectedIndex = 0;
+        }
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
@@ -61,6 +77,9 @@ public partial class SettingsWindow : Window
         _viewModel.VodafoneCashPassword = VodafoneCashPasswordTextBox.Text;
         _viewModel.EtisalatCashPassword = EtisalatCashPasswordTextBox.Text;
         _viewModel.AutoRenewValidityForAll = AutoRenewValidityCheckBox.IsChecked ?? false;
+        
+        var selectedItem = OperatorComboBox.SelectedItem as ComboBoxItem;
+        _viewModel.SelectedOperator = selectedItem?.Tag?.ToString() ?? "All";
 
         _viewModel.SaveSettingsCommand.Execute(null);
         _viewModel.StatusMessage = "تم حفظ الإعدادات بنجاح";

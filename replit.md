@@ -55,6 +55,10 @@ The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems a
 - **Batch USSD Execution (⚡):** Multi-code batch execution panel supporting up to 5 USSD codes executed sequentially on all selected modems. Each batch creates a new session ID for tracking.
 - **Internet Toggle (📶):** Toggle button on each modem card to enable/disable mobile data using AT+CGATT and AT+CGACT commands.
 - **Control Panel Toggle (👁):** Button to show/hide the main control panel for a cleaner interface when needed.
+- **Operator Selection Filter (December 2025):** New setting in Settings tab to select a specific operator (Orange, Vodafone, Etisalat, or All). When a specific operator is selected:
+  - Only tabs relevant to that operator are shown (e.g., Orange Cash tabs only appear when Orange is selected)
+  - Phone number retrieval uses the selected operator's USSD code instead of auto-detecting the operator
+  - This is useful when working exclusively with one operator's SIM cards
 
 ## External Dependencies
 -   **.NET 8.0:** Application Framework.

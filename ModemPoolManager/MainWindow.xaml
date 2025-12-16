@@ -1132,7 +1132,8 @@
 
 
             <!-- Orange Cash Tab -->
-            <TabItem Header="💰 أورانج كاش" Style="{StaticResource OrangeTabItem}">
+            <TabItem Header="💰 أورانج كاش" Style="{StaticResource OrangeTabItem}"
+                     Visibility="{Binding IsOrangeTabsVisible, Converter={StaticResource BoolToVisibility}}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -1467,7 +1468,8 @@
             </TabItem>
 
             <!-- OC Series Tab - تحويل متسلسل -->
-            <TabItem Header="🔄 OC متسلسل" Style="{StaticResource OrangeTabItem}">
+            <TabItem Header="🔄 OC متسلسل" Style="{StaticResource OrangeTabItem}"
+                     Visibility="{Binding IsOrangeTabsVisible, Converter={StaticResource BoolToVisibility}}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
@@ -1697,7 +1699,8 @@
             </TabItem>
 
             <!-- Custom Orange Transfer Tab - تحويل مخصص -->
-            <TabItem Header="📊 تحويل TXT" Style="{StaticResource OrangeTabItem}">
+            <TabItem Header="📊 تحويل TXT" Style="{StaticResource OrangeTabItem}"
+                     Visibility="{Binding IsOrangeTabsVisible, Converter={StaticResource BoolToVisibility}}">
                 <Grid Margin="10">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>

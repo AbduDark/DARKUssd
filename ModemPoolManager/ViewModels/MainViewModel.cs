@@ -446,6 +446,27 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
+    public string SelectedOperator
+    {
+        get => Settings?.General?.SelectedOperator ?? "All";
+        set
+        {
+            if (Settings?.General != null)
+            {
+                Settings.General.SelectedOperator = value;
+                OnPropertyChanged(nameof(SelectedOperator));
+                OnPropertyChanged(nameof(IsOrangeTabsVisible));
+                OnPropertyChanged(nameof(IsVodafoneTabsVisible));
+                OnPropertyChanged(nameof(IsEtisalatTabsVisible));
+                Settings.Save();
+            }
+        }
+    }
+
+    public bool IsOrangeTabsVisible => SelectedOperator == "All" || SelectedOperator == "Orange";
+    public bool IsVodafoneTabsVisible => SelectedOperator == "All" || SelectedOperator == "Vodafone";
+    public bool IsEtisalatTabsVisible => SelectedOperator == "All" || SelectedOperator == "Etisalat";
+
     public string GetCashPasswordForOperator(string operatorName)
     {
         if (string.IsNullOrEmpty(operatorName)) return "";
@@ -856,8 +877,10 @@ public partial class MainViewModel : ObservableObject
             
             var tasks = modemsWithUnknownNumbers.Select(async modem =>
             {
-                modem.Operator = await _modemService.GetOperatorAsync(modem.PortName);
-                modem.PhoneNumber = await _modemService.GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
+                var detectedOperator = await _modemService.GetOperatorAsync(modem.PortName);
+                modem.Operator = detectedOperator;
+                var operatorForUssd = SelectedOperator != "All" ? SelectedOperator : detectedOperator;
+                modem.PhoneNumber = await _modemService.GetPhoneNumberViaUssdDirectAsync(modem.PortName, operatorForUssd);
                 modem.SignalStrength = await _modemService.GetSignalStrengthAsync(modem.PortName);
                 modem.Info = await _modemService.GetModemInfoAsync(modem.PortName);
                 modem.UnreadSmsCount = await _smsService.GetUnreadCountAsync(modem.PortName);
@@ -915,7 +938,7 @@ public partial class MainViewModel : ObservableObject
             var previousStatus = modem.Status;
             modem.Status = "جاري جلب الرقم...";
             
-            var success = await _modemService.RefreshModemPhoneNumberAsync(modem);
+            var success = await _modemService.RefreshModemPhoneNumberAsync(modem, SelectedOperator);
             
             modem.Status = success ? "جاهز" : previousStatus;
             StatusMessage = success 

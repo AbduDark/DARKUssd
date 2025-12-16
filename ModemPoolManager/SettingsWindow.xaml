@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="الإعدادات - Settings" 
-        Height="550" Width="500"
+        Height="650" Width="500"
         FlowDirection="RightToLeft"
         Background="#0D1117"
         WindowStartupLocation="CenterOwner"
@@ -211,6 +211,55 @@
                                 <TextBox Grid.Column="1" x:Name="EtisalatCashPasswordTextBox" Style="{StaticResource ModernTextBox}" 
                                          FlowDirection="LeftToRight" FontFamily="Consolas"/>
                             </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardPanel}" Margin="0,16,0,0">
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,16">
+                                <TextBlock Text="📡" FontSize="18" Margin="0,0,8,0"/>
+                                <TextBlock Text="اختيار المزود" FontSize="16" FontWeight="Bold" Foreground="#F0F6FC"/>
+                            </StackPanel>
+
+                            <Grid Margin="0,0,0,12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="120"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="المزود:" Foreground="#8B949E" VerticalAlignment="Center"/>
+                                <ComboBox Grid.Column="1" x:Name="OperatorComboBox" 
+                                          Background="#0D1117" Foreground="#C9D1D9" 
+                                          FontSize="14" Padding="12,10"
+                                          BorderBrush="#30363D" BorderThickness="1">
+                                    <ComboBoxItem Content="الكل" Tag="All"/>
+                                    <ComboBoxItem Tag="Orange">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="#FF7900" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                                                <TextBlock Text="Orange" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                            </Border>
+                                            <TextBlock Text="اورنج" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem Tag="Vodafone">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="#E60000" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                                                <TextBlock Text="Vodafone" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                            </Border>
+                                            <TextBlock Text="فودافون" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                    <ComboBoxItem Tag="Etisalat">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Border Background="#80B826" CornerRadius="3" Padding="6,2" Margin="0,0,8,0">
+                                                <TextBlock Text="Etisalat" Foreground="White" FontWeight="Bold" FontSize="11"/>
+                                            </Border>
+                                            <TextBlock Text="اتصالات" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </ComboBoxItem>
+                                </ComboBox>
+                            </Grid>
+                            <TextBlock Text="عند اختيار مزود معين، سيتم إظهار التابات الخاصة به فقط واستخدام كود USSD الخاص به لجلب أرقام الخطوط." 
+                                       Foreground="#8B949E" FontSize="12" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
 

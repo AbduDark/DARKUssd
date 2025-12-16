@@ -499,7 +499,7 @@ public class ModemService : IDisposable
         }
     }
 
-    public async Task<bool> RefreshModemPhoneNumberAsync(Modem modem)
+    public async Task<bool> RefreshModemPhoneNumberAsync(Modem modem, string? selectedOperator = null)
     {
         if (modem.IsBusy) return false;
         
@@ -512,7 +512,11 @@ public class ModemService : IDisposable
                 modem.Operator = await GetOperatorAsync(modem.PortName);
             }
             
-            var number = await GetPhoneNumberViaUssdDirectAsync(modem.PortName, modem.Operator);
+            var operatorForUssd = (!string.IsNullOrEmpty(selectedOperator) && selectedOperator != "All") 
+                ? selectedOperator 
+                : modem.Operator;
+            
+            var number = await GetPhoneNumberViaUssdDirectAsync(modem.PortName, operatorForUssd);
             
             modem.PhoneNumber = number;
             modem.LastActivity = DateTime.Now;
