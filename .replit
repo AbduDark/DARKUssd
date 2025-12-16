@@ -23,7 +23,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd ModemPoolManager.Console && dotnet run"
+args = "cd ModemPoolManager && dotnet build"
 
 [nix]
 channel = "stable-25_05"
