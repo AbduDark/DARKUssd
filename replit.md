@@ -13,6 +13,35 @@ Modem Pool Manager Pro is a professional C# WPF application designed to manage u
 
 ## System Architecture
 
+### 🆕 Worker-Based Modem Architecture (December 2025)
+
+**NEW CLASSES ADDED:**
+- **ModemWorker.cs** - Manages a single modem with its own isolated worker:
+  - One dedicated SerialPort per worker
+  - One bounded command queue (size=1, auto-drops old jobs)
+  - Sequential command execution per modem (no race conditions)
+  - Automatic recovery on disconnect
+  - Full CancellationToken support
+  
+- **ModemManager.cs** - Orchestrates multiple ModemWorker instances:
+  - Supports up to 20 parallel modems
+  - Broadcasts commands to all modems simultaneously
+  - Worker lifecycle management
+  - Clean parallel/sequential execution model
+  
+- **UssdJob.cs** - USSD execution job record with cancellation support
+
+**Key Improvements:**
+- ❌ Removed: Shared SerialPort instances (caused race conditions)
+- ❌ Removed: SemaphoreSlim locks on ports (bottleneck for scaling)
+- ✅ Added: One worker thread per modem (true isolation)
+- ✅ Added: Bounded queue with auto-drop (prevents command buildup)
+- ✅ Added: Automatic USSD cancellation (AT+CUSD=2) before new commands
+- ✅ Added: Support for 20+ modems with 24/7 stability
+
+**Integration Example:**
+See `ModemManagerIntegration.cs` for usage patterns to refactor MainViewModel.
+
 ### UI/UX Decisions
 The application uses WPF with the MVVM pattern (CommunityToolkit.Mvvm). Modems are displayed as individual cards in a `UniformGrid` (4x3 layout), featuring real-time information, animated loading circles, and color-coded elements. Phone numbers are color-coded by network operator. The theme is pure black (#000000) with dark card backgrounds (#0D0D0D) and operator-colored accents for borders and selected tab underlines. A `SignalBarsToOpacityConverter` provides visual signal strength feedback.
 
