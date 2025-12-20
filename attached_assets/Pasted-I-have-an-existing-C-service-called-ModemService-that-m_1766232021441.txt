@@ -1,0 +1,138 @@
+I have an existing C# service called ModemService that manages multiple USB modems via SerialPort and executes AT/USSD commands.
+The current implementation uses shared SerialPort instances, semaphores, and timers, which causes conflicts, race conditions, and instability when scaling beyond 5–8 modems.
+
+🎯 GOAL
+
+Refactor the architecture to reliably support up to 20 USB modems with the following strict requirements:
+
+✅ FUNCTIONAL REQUIREMENTS
+
+Each modem must have its own isolated worker:
+
+One dedicated thread/task
+
+One dedicated SerialPort instance
+
+No shared SerialPort usage
+
+Commands must run in parallel across modems
+BUT sequential per modem (never parallel on the same COM port).
+
+When the user triggers “Execute on All”:
+
+Start a new USSD session on every modem
+
+Do NOT reply to any previous USSD session
+
+Always send:
+
+AT+CUSD=2
+AT+CUSD=1,"<USSD>",15
+
+
+If a new “Execute on All” is triggered while a previous one is still running:
+
+The previous command must be cancelled
+
+Only the latest command should execute
+(no replay, no queue buildup).
+
+System must be stable for 24/7 operation.
+
+🧱 ARCHITECTURE REQUIREMENTS
+
+Implement the following components:
+
+1️⃣ ModemWorker
+
+Manages one modem only
+
+Owns:
+
+SerialPort lifecycle
+
+USSD execution
+
+Error recovery
+
+Uses an internal bounded queue (size = 1) or Channel<T>
+
+Maintains a simple state machine:
+
+Idle → Executing → WaitingResponse → Completed / Error
+
+2️⃣ UssdJob
+
+Represents a single USSD execution:
+
+record UssdJob(string UssdCode, Guid JobId, DateTime CreatedAt);
+
+3️⃣ ModemManager (Orchestrator)
+
+Discovers modems
+
+Starts one ModemWorker per modem
+
+Broadcasts commands to all workers in parallel
+
+Exposes:
+
+Task ExecuteOnAllAsync(string ussdCode);
+
+🛑 CONCURRENCY RULES (MANDATORY)
+
+❌ No SemaphoreSlim for SerialPort access
+
+❌ No shared SerialPort instances
+
+❌ No AT commands during active USSD session
+
+❌ No reply-based USSD flows
+
+❌ No timers interacting directly with SerialPort
+
+✅ One worker = one modem = one SerialPort
+
+✅ CancellationToken must cancel in-flight USSD
+
+✅ Bounded queue must drop old commands
+
+🔌 SERIAL / USSD RULES
+
+Always cancel previous USSD before sending a new one
+
+Wait 200–500ms between AT+CUSD=2 and AT+CUSD=1
+
+USSD timeout: 8–12 seconds
+
+Handle:
+
+No response
+
+ERROR
+
+Partial responses
+
+Modem disconnects
+
+🧪 ERROR HANDLING & RECOVERY
+
+Auto-reopen COM port on failure
+
+Detect modem unplug/replug
+
+Worker must recover without restarting the app
+
+No unhandled exceptions
+
+📦 DELIVERABLES
+
+New ModemWorker.cs
+
+New ModemManager.cs
+
+Minimal integration example with existing UI / ViewModel
+
+Remove or deprecate old shared-SerialPort logic
+
+Clean, readable, production-ready C# code
