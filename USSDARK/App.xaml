@@ -1,0 +1,17 @@
+<Application x:Class="USSDARK.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:USSDARK.Converters"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+        <converters:InverseBoolConverter x:Key="InverseBoolConverter"/>
+        <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility"/>
+        <converters:OperatorToBrushConverter x:Key="OperatorToBrushConverter"/>
+        <converters:OperatorToGlowColorConverter x:Key="OperatorToGlowColorConverter"/>
+        <converters:OtpVisibilityConverter x:Key="OtpVisibilityConverter"/>
+        <converters:SignalBarsConverter x:Key="SignalBarsConverter"/>
+        <converters:SignalBarsToOpacityConverter x:Key="SignalBarsToOpacityConverter"/>
+        <converters:StringToVisibilityConverter x:Key="StringToVisibility"/>
+    </Application.Resources>
+</Application>

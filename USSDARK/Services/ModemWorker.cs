@@ -2,9 +2,9 @@ using System.IO.Ports;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
-using ModemPoolManager.Models;
+using USSDARK.Models;
 
-namespace ModemPoolManager.Services;
+namespace USSDARK.Services;
 
 /// <summary>
 /// Manages a single modem with isolated worker thread
@@ -191,6 +191,7 @@ public class ModemWorker : IDisposable
     /// </summary>
     private async Task<string> SendATCommandAsync(string command, int timeoutMs = 3000)
     {
+        // Write command
         lock (_portLock)
         {
             if (_port == null || !_port.IsOpen)
@@ -209,6 +210,7 @@ public class ModemWorker : IDisposable
             }
         }
 
+        // Read response
         var response = new StringBuilder();
         var startTime = DateTime.Now;
 
